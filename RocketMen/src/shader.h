@@ -1,0 +1,39 @@
+
+#pragma once
+
+class Shader
+{
+public:
+	enum class EType
+	{
+		FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
+		VERTEX_SHADER = GL_VERTEX_SHADER,
+	//	GEOMETRY_SHADER = GL_GEOMETRY_SHADER
+	};
+
+public:
+	Shader();
+	~Shader();
+
+	void use();
+	bool isUsed() const;
+	bool isInitialized() const;
+	bool compile( const std::string& vertexShader, 
+				 const std::string& fragmentShader);
+
+	void setFloat(const char* name, float value);
+	void setInt(const char* name, int value);
+	void setVec2f(const char* name, const glm::vec2& vector);
+	void setVec3f(const char* name, const glm::vec3& vector);
+	void setVec4f(const char* name, const glm::vec4& vector);
+	void setMatrix4(const char* name, const glm::mat4& matrix);
+
+private:
+
+	bool m_isInitialized;
+	GLuint m_shaders[2];
+	GLuint m_programID;
+
+	static Shader* s_currentShader;
+
+};

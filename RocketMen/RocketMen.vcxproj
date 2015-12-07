@@ -1,0 +1,205 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{05E73988-F30D-4A16-9A29-5E511E4FF610}</ProjectGuid>
+    <RootNamespace>RocketMen</RootNamespace>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)/dep/glfw-3.1.2-build/$(Configuration);$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
+    <OutDir>$(SolutionDir)/bin/</OutDir>
+    <TargetName>$(ProjectName)_d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)/dep/glfw-3.1.2-build/$(Configuration);$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
+    <OutDir>$(SolutionDir)/bin/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glfw-3.1.2/$(Configuration);dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
+    <OutDir>$(SolutionDir)/bin/</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
+    <OutDir>$(SolutionDir)/bin/</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;opengl32.lib;SOIL.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;SOIL.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glew32s.lib;glfw3.lib;;glew32s.lib;;glew32s.lib;;glew32s.lib;SOIL.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;glew32s.lib;;glew32s.lib;;glew32s.lib;SOIL.lib</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="src\bitstream.cpp" />
+    <ClCompile Include="src\camera.cpp" />
+    <ClCompile Include="src\client.cpp" />
+    <ClCompile Include="src\core.cpp" />
+    <ClCompile Include="src\debug.cpp" />
+    <ClCompile Include="src\ImmutableString.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\networker.cpp" />
+    <ClCompile Include="src\networkinterface.cpp" />
+    <ClCompile Include="src\renderer.cpp" />
+    <ClCompile Include="src\resourcemanager.cpp" />
+    <ClCompile Include="src\rocketmen.cpp" />
+    <ClCompile Include="src\server.cpp" />
+    <ClCompile Include="src\shader.cpp" />
+    <ClCompile Include="src\socket.cpp" />
+    <ClCompile Include="src\spriterenderer.cpp" />
+    <ClCompile Include="src\String.cpp" />
+    <ClCompile Include="src\texture.cpp" />
+    <ClCompile Include="src\time.cpp" />
+    <ClCompile Include="src\window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="data\shaders\basicSpriteFragmentShader.frag" />
+    <ClInclude Include="src\bitstream.h" />
+    <ClInclude Include="src\camera.h" />
+    <ClInclude Include="src\client.h" />
+    <ClInclude Include="src\core.h" />
+    <ClInclude Include="src\debug.h" />
+    <ClInclude Include="src\game.h" />
+    <ClInclude Include="src\ImmutableString.h" />
+    <ClInclude Include="src\includes.h" />
+    <ClInclude Include="src\netadress.h" />
+    <ClInclude Include="src\networker.h" />
+    <ClInclude Include="src\networkinterface.h" />
+    <ClInclude Include="src\renderer.h" />
+    <ClInclude Include="src\resourcemanager.h" />
+    <ClInclude Include="src\rocketmen.h" />
+    <ClInclude Include="src\server.h" />
+    <ClInclude Include="src\shader.h" />
+    <ClInclude Include="src\socket.h" />
+    <ClInclude Include="src\spriterenderer.h" />
+    <ClInclude Include="src\String.h" />
+    <ClInclude Include="src\texture.h" />
+    <ClInclude Include="src\time.h" />
+    <ClInclude Include="src\window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="data\shaders\basicSpriteVertexShader.vert" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
