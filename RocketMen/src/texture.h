@@ -8,9 +8,18 @@ public:
 	~Texture();
 	
 	void bind();
-	bool isBound();
+	bool isBound() const;
+	void unbind();
+
+	bool generate(unsigned char* imageData, uint32_t width, uint32_t height);
+
+	uint32_t getWidth() const;
+	uint32_t getHeight() const;
 
 private:
 	GLuint m_id;
-	bool m_isBound;
+	uint32_t m_width;
+	uint32_t m_height;
+
+	static Texture* s_currentTexture;
 };

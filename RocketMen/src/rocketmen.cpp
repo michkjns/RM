@@ -1,15 +1,23 @@
 
+#include "includes.h"
 #include "rocketmen.h"
-#include "ImmutableString.h"
+#include "resource_manager.h"
 
 bool RocketMenGame::initialize()
 {
+	ResourceManager::LoadTexture("data/textures/mario.png", "demoTexture", true);
+
 	return false;
 }
 
-void RocketMenGame::tick(uint64_t dt)
+void RocketMenGame::fixedUpdate(uint64_t timestep)
 {
 
+}
+
+void RocketMenGame::update(const Time& time)
+{
+	const float deltaTime = time.getDeltaSeconds();
 
 }
 

@@ -35,7 +35,11 @@ void Shader::use()
 		LOG_ERROR("Shader::use() : This shader has not been sucessfully initialized!\n");
 		return;
 	}
-	s_currentShader = this;
+	if (s_currentShader != this)
+	{
+		s_currentShader = this;
+		glUseProgram(m_programID);
+	}
 }
 
 bool Shader::isUsed() const

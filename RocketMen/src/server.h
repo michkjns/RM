@@ -2,6 +2,7 @@
 #pragma once
 
 #include "networker.h"
+#include "time.h"
 
 namespace network
 {
@@ -11,7 +12,7 @@ namespace network
 		virtual ~Server() {};
 	
 		virtual bool initialize() = 0;
-		virtual void tick(uint64_t dt) = 0;
+		virtual void tick(const Time& time) = 0;
 	
 		virtual unsigned int getNumClients() const = 0;
 

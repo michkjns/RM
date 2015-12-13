@@ -11,7 +11,7 @@ namespace network
 		virtual ~Client() {};
 	
 		virtual bool initialize() = 0;
-		virtual void tick(uint64_t dt) = 0;
+		virtual void tick() = 0;
 	
 		virtual unsigned int getNumClients() const = 0;
 	

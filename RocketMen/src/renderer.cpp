@@ -1,7 +1,7 @@
 
 #include "includes.h"
 #include "renderer.h"
-#include "spriterenderer.h"
+#include "sprite_renderer.h"
 #include "window.h"
 
 #include <GLFW/glfw3.h>
@@ -80,8 +80,9 @@ void Renderer_impl::render()
 
 void Renderer_impl::renderSprites()
 {
-	return;
+	m_spriteRenderer.render(glm::mat4());
 
+	return;
 }
 
 void Renderer_impl::renderUI()

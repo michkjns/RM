@@ -10,6 +10,7 @@
 Time::Time()
 	: m_currentTime(0)
 	, m_lastRealTime(0)
+	, m_tickCount(0)
 {
 #ifdef _WIN32
 	QueryPerformanceFrequency(reinterpret_cast<LARGE_INTEGER*>(&m_frequency));
@@ -17,7 +18,7 @@ Time::Time()
 	// TODO: Support more platforms
 	assert(false);
 #endif
-	m_frequency /= 1000000;
+	m_frequency /= static_cast<uint64_t>(1000000);
 	m_lastRealTime = getRealTime();
 }
 
@@ -40,8 +41,10 @@ void Time::update()
 {
 	uint64_t currentRealTime = getRealTime();
 	m_deltaTime = (currentRealTime - m_lastRealTime);
+	m_deltaSeconds = static_cast<float>(m_deltaTime) * 0.000001f;
 	m_lastRealTime = currentRealTime;
 	updateBy(m_deltaTime);
+	m_tickCount++;
 }
 
 void Time::updateBy(uint64_t time)
@@ -56,7 +59,7 @@ float Time::getSeconds() const
 
 uint64_t Time::getMilliSeconds() const
 {
-	return (uint64_t)(m_currentTime * 0.001f);
+	return m_currentTime / 1000;
 }
 
 uint64_t Time::getMicroSeconds() const
@@ -66,15 +69,20 @@ uint64_t Time::getMicroSeconds() const
 
 float Time::getDeltaSeconds() const
 {
-	return m_deltaTime * 0.000001f;
+	return m_deltaSeconds;
 }
 
 uint64_t Time::getDeltaMilliSeconds() const
 {
-	return (uint64_t)(m_deltaTime * 0.001f);
+	return (m_deltaTime / 1000);
 }
 
 uint64_t Time::getDeltaMicroSeconds() const
 {
 	return m_deltaTime;
+}
+
+uint64_t Time::getTickCount() const
+{
+	return m_tickCount;
 }

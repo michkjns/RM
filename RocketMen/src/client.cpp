@@ -13,7 +13,7 @@ public:
 
 
 	bool initialize() override;
-	void tick(uint64_t dt) override;
+	void tick() override;
 
 	unsigned int getNumClients() const override;
 
@@ -45,9 +45,9 @@ bool Client_impl::initialize()
 	return true;
 }
 
-void Client_impl::tick(uint64_t dt)
+void Client_impl::tick()
 {
-	Networker::tick(dt);
+	Networker::tick();
 }
 
 unsigned int Client_impl::getNumClients() const

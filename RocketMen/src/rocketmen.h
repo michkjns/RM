@@ -9,7 +9,8 @@ class RocketMenGame : public Game
 {
 public:
 	bool initialize() override;
-	void tick(uint64_t dt) override;
+	void fixedUpdate(uint64_t timestep) override;
+	void update(const Time& time) override;
 	void terminate() override;
 
 private:
