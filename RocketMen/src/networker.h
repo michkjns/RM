@@ -2,7 +2,7 @@
 #pragma once
 
 #include "time.h"
-#include "networkinterface.h"
+#include "network_interface.h"
 #include "bitstream.h"
 
 namespace network
@@ -15,7 +15,7 @@ namespace network
 		virtual ~Networker();
 	
 		virtual bool initialize();
-		virtual void tick(uint64_t dt);
+		virtual void tick();
 	
 		bool isInitialized() const;
 		bool isConnected() const;

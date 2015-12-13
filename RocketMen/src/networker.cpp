@@ -19,7 +19,7 @@ bool Networker::initialize()
 	return true;
 }
 
-void Networker::tick(uint64_t dt)
+void Networker::tick()
 {
 }
 

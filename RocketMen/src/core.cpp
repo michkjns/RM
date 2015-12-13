@@ -6,7 +6,7 @@
 #include "game.h"
 #include "window.h"
 #include "renderer.h"
-#include "resourcemanager.h"
+#include "resource_manager.h"
 #include "server.h"
 #include "time.h"
 
@@ -54,7 +54,8 @@ Core_impl::~Core_impl()
 	if(m_client) delete m_client;
 	if(m_server) delete m_server;
 
-	delete m_renderer;
+	if(m_renderer) delete m_renderer;
+
 	delete m_window;
 }
 
@@ -92,16 +93,16 @@ bool Core_impl::initialize(Game* game, int argc, char* argv[])
 	m_window = Window::create();
 	m_window->initialize(DEF_WIDTH, DEF_HEIGHT);
 	
-	LOG_INFO("Core: Creating renderer..");
-	m_renderer = Renderer::get();
-	m_renderer->initialize(Renderer::EProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
-
 	LOG_INFO("Core: Creating server..");
 	m_server = Server::create();
 	m_server->initialize();
 
 	if (!runDedicated)
 	{
+		LOG_INFO("Core: Creating renderer..");
+		m_renderer = Renderer::get();
+		m_renderer->initialize(Renderer::EProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
+
 		LOG_INFO("Core: Creating client..");
 		m_client = Client::create();
 		m_client->initialize();
@@ -127,7 +128,6 @@ bool Core_impl::loadResources()
 
 void Core_impl::run()
 {
-
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
 
@@ -139,29 +139,35 @@ void Core_impl::run()
 	{
 		gameTime.update();
 
-		uint64_t currentTime = gameTime.getMicroSeconds();
-		while (currentTime - updatedTime > m_timestep)
+		/****************
+		/** Server Update */
+		if (m_server)
 		{
-			if (m_server)
-			{
-				m_server->tick(m_timestep);
-			}
-			
-			if (m_client)
-			{
-				m_client->tick(m_timestep);
-			}
+			m_server->tick(gameTime);
+			uint64_t currentTime = gameTime.getMicroSeconds();
 
-			m_game->tick(m_timestep);
+			/** Fixed timestep simulation */
+			while (currentTime - updatedTime > m_timestep)
+			{
+				m_game->fixedUpdate(m_timestep);
+				updatedTime += m_timestep;
+			}
+		}
+		
+		m_game->update(gameTime);
 
-			updatedTime += m_timestep;
+		/****************/
+		/** Client Update */
+		if (m_client)
+		{
+			m_client->tick();
+			m_renderer->render();
 		}
 
-		//m_renderer->render();
 		m_window->swapBuffers();
 	}
 
-	LOG_DEBUG("Core: Game loop ended..");
+	LOG_DEBUG("Core: main loop ended..");
 }
 
 void Core_impl::destroy()
@@ -171,8 +177,11 @@ void Core_impl::destroy()
 	LOG_INFO("Core: Terminating game..");
 	m_game->terminate();
 
-	LOG_INFO("Core: Terminating renderer..");
-	m_renderer->destroy();
+	if (m_renderer != nullptr)
+	{
+		LOG_INFO("Core: Terminating renderer..");
+		m_renderer->destroy();
+	}
 
 	LOG_INFO("Core: Terminating window..");
 	m_window->terminate();
