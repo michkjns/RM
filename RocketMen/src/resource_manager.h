@@ -9,16 +9,18 @@
 class ResourceManager
 {
 public:
-	static Shader& LoadShader(const char* vertexShaderFile
+	static Shader& loadShader(const char* vertexShaderFile
 							 , const char* fragmentShaderFile
 							 , const char* name);
-	static Shader& GetShader(std::string name);
 
-	static Texture& LoadTexture(const char* file, std::string name
-							   , bool alpha = true);
-	static Texture& GetTexture(std::string name);
+	static Shader& getShader(std::string name);
 
-	static void Clear();
+	static Texture& loadTexture(const char* file, std::string name
+							   , Texture::EBlendMode blendMode = Texture::EBlendMode::MODE_OPAQUE);
+
+	static Texture& getTexture(std::string name);
+
+	static void clear();
 
 private:
 	ResourceManager() {}

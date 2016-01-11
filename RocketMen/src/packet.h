@@ -39,8 +39,8 @@ namespace network
 			int8_t recipientID;
 			int8_t senderID;
 		};
-		bool broadcast;
-		bool reliable;
+		EBroadcast broadcast;
+		EReliable reliable;
 	};
 
 }; // namespace network

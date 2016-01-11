@@ -87,7 +87,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 
 bool Core::loadResources()
 {
-	ResourceManager::LoadShader("data/shaders/basicSpriteVertexShader.vert"
+	ResourceManager::loadShader("data/shaders/basicSpriteVertexShader.vert"
 								, "data/shaders/basicSpriteFragmentShader.frag"
 								, "spriteShader");
 

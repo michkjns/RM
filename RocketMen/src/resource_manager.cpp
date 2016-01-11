@@ -16,7 +16,7 @@ std::map<std::string, Texture> ResourceManager::m_textures;
 
 Shader dummyShader;
 
-Shader& ResourceManager::LoadShader(const char* vertexShaderFile, const char* fragmentShaderFile, const char* name)
+Shader& ResourceManager::loadShader(const char* vertexShaderFile, const char* fragmentShaderFile, const char* name)
 {
 	LOG_INFO("ResourceManager: Loading shader %s", name);
 
@@ -38,17 +38,18 @@ Shader& ResourceManager::LoadShader(const char* vertexShaderFile, const char* fr
 	return m_shaders[name];
 }
 
-Shader& ResourceManager::GetShader(std::string name)
+Shader& ResourceManager::getShader(std::string name)
 {
 	return m_shaders[name];
 }
 
-Texture& ResourceManager::LoadTexture(const char* file, std::string name
-									 , bool alpha)
+Texture& ResourceManager::loadTexture(const char* file, std::string name
+									 , Texture::EBlendMode blendMode /* = Texture::EBlendMode::MODE_OPAQUE */)
 {
 	LOG_INFO("ResourceManager: Loading texture %s", file);
 	int width, height;
-	unsigned char* imageData = SOIL_load_image((std::string("../") + std::string(file)).c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char* imageData = SOIL_load_image( (std::string("../") + std::string(file)).c_str(), 
+											   &width, &height, 0, SOIL_LOAD_RGB );
 	assert(imageData);
 	Texture texture;
 	if (imageData == nullptr)
@@ -66,12 +67,12 @@ Texture& ResourceManager::LoadTexture(const char* file, std::string name
 	return m_textures[name];
 }
 
-Texture& ResourceManager::GetTexture(std::string name)
+Texture& ResourceManager::getTexture(std::string name)
 {
 	return m_textures[name];
 }
 
-void ResourceManager::Clear()
+void ResourceManager::clear()
 {
 	m_shaders.clear();
 	m_textures.clear();
@@ -96,7 +97,6 @@ std::string ResourceManager::loadShaderFromFile(const char* shaderFile)
 
 	std::string source(std::istreambuf_iterator<char>(ifs), (std::istreambuf_iterator<char>()));
 	ifs.close();
-
 
 	return source;
 }

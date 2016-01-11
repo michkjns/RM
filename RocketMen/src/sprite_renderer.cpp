@@ -43,7 +43,7 @@ bool SpriteRenderer::initialize()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	m_spriteShader = &ResourceManager::GetShader("spriteShader");
+	m_spriteShader = &ResourceManager::getShader("spriteShader");
 
 	checkGL();
 
@@ -63,7 +63,7 @@ void SpriteRenderer::render(const glm::mat4& modelMatrix, const glm::mat4& proje
 		m_spriteShader->setVec3f("spriteColor", glm::vec3(1.0f));
 
 		glActiveTexture(GL_TEXTURE0);
-		ResourceManager::GetTexture("demoTexture").bind();
+		ResourceManager::getTexture("demoTexture").bind();
 		m_spriteShader->setInt("image", 0);
 		checkGL();
 

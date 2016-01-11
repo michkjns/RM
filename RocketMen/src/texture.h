@@ -16,6 +16,12 @@ public:
 	uint32_t getWidth() const;
 	uint32_t getHeight() const;
 
+	enum EBlendMode
+	{
+		MODE_OPAQUE,
+		MODE_ALPHA
+	};
+
 private:
 	GLuint m_id;
 	uint32_t m_width;

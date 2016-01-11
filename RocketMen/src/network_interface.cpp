@@ -6,7 +6,7 @@ using namespace network;
 
 NetworkInterface::NetworkInterface()
 {
-	m_socket = Socket::create(Socket::NetProtocol::ESocket_UDP);
+	m_socket = Socket::create(Socket::ENetProtocol::PROTOCOL_UDP);
 }
 
 NetworkInterface::~NetworkInterface()
@@ -15,8 +15,8 @@ NetworkInterface::~NetworkInterface()
 }
 
 void NetworkInterface::Send(const void* data, int32_t dataLength,
-							bool broadcast, int32_t recipientID,
-							bool reliable /* = true */,
+							EBroadcast broadcast, int32_t recipientID,
+							EReliable reliable /* = EReliable::RELIABLE */,
 							uint8_t channel /* = 0 */)
 {
 	//
