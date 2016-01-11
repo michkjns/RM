@@ -25,6 +25,8 @@ namespace network
 		NetworkInterface();
 		virtual	~NetworkInterface();
 
+		void tick();
+
 		void Send(const void* data, int32_t dataLength,
 				  EBroadcast broadcast, int32_t recipientID,
 				  EReliable reliable = EReliable::RELIABLE,

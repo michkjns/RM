@@ -33,7 +33,7 @@ namespace network
 		void sendPacket(const Packet& packet);
 
 		/** Handle an incoming packet */
-		void handlePacket(const Packet& packet);
+		virtual void handlePacket(const Packet& packet) = 0;
 
 	private:
 		NetworkInterface	m_networkInterface;

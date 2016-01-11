@@ -16,7 +16,8 @@ public:
 	static Shader& getShader(std::string name);
 
 	static Texture& loadTexture(const char* file, std::string name
-							   , Texture::EBlendMode blendMode = Texture::EBlendMode::MODE_OPAQUE);
+								, Texture::EBlendMode blendMode 
+									= Texture::EBlendMode::MODE_OPAQUE);
 
 	static Texture& getTexture(std::string name);
 

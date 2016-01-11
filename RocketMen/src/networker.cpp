@@ -21,6 +21,7 @@ bool Networker::initialize()
 
 void Networker::tick()
 {
+	m_networkInterface.tick();
 }
 
 bool Networker::isInitialized() const
@@ -81,8 +82,4 @@ void Networker::sendPacket(const Packet& packet)
 	m_networkInterface.Send(completePacket, packetSize, packet.broadcast, packet.reliable);
 
 	delete completePacket;
-}
-
-void Networker::handlePacket(const Packet& packet)
-{
 }

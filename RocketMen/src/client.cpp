@@ -17,10 +17,11 @@ public:
 
 	unsigned int getNumClients() const override;
 
-
 private:
-	void OnClientConnect();
-	void OnClientDisconnect();
+	void onClientConnect();
+	void onClientDisconnect();
+
+	void handlePacket(const Packet& packet) override;
 
 	unsigned int m_numClients;
 };
@@ -55,12 +56,12 @@ unsigned int Client_impl::getNumClients() const
 	return m_numClients;
 }
 
-void Client_impl::OnClientConnect()
+void Client_impl::onClientConnect()
 {
 	m_numClients++;
 }
 
-void Client_impl::OnClientDisconnect()
+void Client_impl::onClientDisconnect()
 {
 	m_numClients--;
 	assert(m_numClients >= 0);
@@ -69,4 +70,35 @@ void Client_impl::OnClientDisconnect()
 Client* Client::create()
 {
 	return new Client_impl();
+}
+
+void Client_impl::handlePacket(const Packet& packet)
+{
+	switch (packet.header.type)
+	{
+		switch (packet.header.type)
+		{
+			/** Server to client */
+			case EPacketType::SERVER_GAMESTATE:
+			{
+				break;
+			}
+			case EPacketType::SERVER_HANDSHAKE:
+			{
+				break;
+			}
+
+			/** Connection */
+			case EPacketType::CONNECTION_CONNECT:
+			{
+				break;
+			}
+			case EPacketType::CONNECTION_DISCONNECT:
+			{
+				break;
+			}
+
+			default: break;
+		}
+	}
 }

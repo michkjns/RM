@@ -19,6 +19,7 @@ public:
 private:
 	void OnClientConnect();
 	void OnClientDisconnect();
+	void handlePacket(const Packet& packet) override;
 
 	unsigned int m_numClients;
 };
@@ -66,4 +67,32 @@ void Server_impl::OnClientDisconnect()
 {
 	m_numClients--;
 	assert(m_numClients >= 0);
+}
+
+void Server_impl::handlePacket(const Packet& packet)
+{
+	switch (packet.header.type)
+	{	
+		/** Client to server */
+		case EPacketType::PLAYER_INTRO:
+		{
+			break;
+		}
+		case EPacketType::PLAYER_INPUT:
+		{
+			break;
+		}
+
+		/** Connection */
+		case EPacketType::CONNECTION_CONNECT:
+		{
+			break;
+		}
+		case EPacketType::CONNECTION_DISCONNECT:
+		{
+			break;
+		}
+
+		default: break;
+	}
 }
