@@ -82,34 +82,21 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		LOG_ERROR("Core: Loading resources has failed");
 	}
 
-
 	return true;
 }
 
 bool Core::loadResources()
 {
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-		return false;
-	}
 	ResourceManager::LoadShader("data/shaders/basicSpriteVertexShader.vert"
 								, "data/shaders/basicSpriteFragmentShader.frag"
 								, "spriteShader");
 
-	error = glGetError();
-	if (error != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-		return false;
-	}
+
 	return true;
 }
 
 void Core::run()
 {
-	checkGL();
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
 	checkGL();

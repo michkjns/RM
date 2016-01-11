@@ -19,25 +19,9 @@ Shader dummyShader;
 Shader& ResourceManager::LoadShader(const char* vertexShaderFile, const char* fragmentShaderFile, const char* name)
 {
 	LOG_INFO("ResourceManager: Loading shader %s", name);
-	GLenum error = glGetError();
-	if (error != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-	}
 
 	std::string vertexShaderSource = loadShaderFromFile(vertexShaderFile);
-	error = glGetError();
-	if (error = glGetError() != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-	}
-
 	std::string fragmentShaderSource = loadShaderFromFile(fragmentShaderFile);
-	error = glGetError();
-	if (error = glGetError() != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-	}
 
 	Shader shader = Shader();
 	LOG_INFO("ResourceManager: Compiling shader %s", name);
@@ -46,19 +30,10 @@ Shader& ResourceManager::LoadShader(const char* vertexShaderFile, const char* fr
 		LOG_ERROR("ResourceManager: Shader compilation failed");
 		return dummyShader;
 	}
-	error = glGetError();
-	if (error = glGetError() != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-	}
 
+	checkGL();
 	m_shaders[name] = shader;
-	error = glGetError();
-	if (error = glGetError() != GL_NO_ERROR)
-	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
-	}
-
+	
 	shader.clear();
 	return m_shaders[name];
 }
@@ -72,7 +47,6 @@ Texture& ResourceManager::LoadTexture(const char* file, std::string name
 									 , bool alpha)
 {
 	LOG_INFO("ResourceManager: Loading texture %s", file);
-	checkGL();
 	int width, height;
 	unsigned char* imageData = SOIL_load_image((std::string("../") + std::string(file)).c_str(), &width, &height, 0, SOIL_LOAD_RGB);
 	assert(imageData);
