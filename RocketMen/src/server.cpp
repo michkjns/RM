@@ -10,13 +10,11 @@ class Server_impl : public Server, public Networker
 public:
 	Server_impl();
 	~Server_impl();
-
 	
 	bool initialize() override;
 	void tick(const Time& time) override;
 
 	unsigned int getNumClients() const override;
-
 
 private:
 	void OnClientConnect();

@@ -15,25 +15,25 @@ namespace network
 	{
 	public:
 		virtual ~Socket() {}
-		virtual bool initialize(int port = DEFAULT_PORT, bool isHost = false) = 0;
+		virtual bool initialize(uint32_t port = DEFAULT_PORT, bool isHost = false) = 0;
 		virtual bool isInitialized() = 0;
 
 		virtual int receive() = 0;
-		virtual bool send(Adress adress, char* buffer, int bufferLength) = 0;
+		virtual bool send(Adress adress, const char* buffer, int bufferLength) = 0;
 	
-		virtual int getPort() = 0;
-		virtual uint64_t getBytesReceived() = 0;
-		virtual uint64_t getBytesSent() = 0;
-		virtual uint64_t getPacketsReceived() = 0;
-		virtual uint64_t getPacketsSent() = 0;
+		virtual uint32_t getPort()				const = 0;
+		virtual uint64_t getBytesReceived()		const = 0;
+		virtual uint64_t getBytesSent()			const = 0;
+		virtual uint64_t getPacketsReceived()	const = 0;
+		virtual uint64_t getPacketsSent()		const = 0;
 	
-		enum class NetProtocol
+		enum class ENetProtocol
 		{
-			ESocket_UDP,
-			ESocket_TCP
+			PROTOCOL_UDP,
+			PROTOCOL_TCP
 		};
 
-		static Socket* create(NetProtocol type);
+		static Socket* create(ENetProtocol type);
 	};
 
 }; // namespace network

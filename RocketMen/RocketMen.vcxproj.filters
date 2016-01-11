@@ -155,6 +155,9 @@
     <ClInclude Include="src\check_gl_error.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\packet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="data\shaders\basicSpriteVertexShader.vert">

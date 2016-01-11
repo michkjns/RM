@@ -186,6 +186,7 @@
     <ClInclude Include="src\netadress.h" />
     <ClInclude Include="src\networker.h" />
     <ClInclude Include="src\network_interface.h" />
+    <ClInclude Include="src\packet.h" />
     <ClInclude Include="src\renderer.h" />
     <ClInclude Include="src\resource_manager.h" />
     <ClInclude Include="src\rocketmen.h" />

@@ -1,6 +1,7 @@
 
 #include "socket.h"
 #include "bitstream.h"
+#include "debug.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -22,48 +23,47 @@ static bool closeWSA();
 class Socket_impl : public Socket
 {
 public:
-	Socket_impl(NetProtocol type);
+	Socket_impl(ENetProtocol type);
 	~Socket_impl();
 
-	bool initialize(int port, bool isHost) override;
+	bool initialize(uint32_t port, bool isHost) override;
 	bool isInitialized() override;
 
 	int receive() override;
-	bool send(Adress adress, char* buffer, int bufferLength) override;
+	bool send(Adress adress, const char* buffer, int bufferLength) override;
 
-	int getPort() override;
-	uint64_t getBytesSent() override;
-	uint64_t getBytesReceived() override;
-	uint64_t getPacketsReceived() override;
-	uint64_t getPacketsSent() override;
+	uint32_t	getPort()				const override;
+	uint64_t	getBytesSent()			const override;
+	uint64_t	getBytesReceived()		const override;
+	uint64_t	getPacketsReceived()	const override;
+	uint64_t	getPacketsSent()		const override;
 
 private:
-
 	bool initializeUDP(int port, bool isHost);
 	bool initializeTCP(int port, bool isHost);
 
-	bool sendUDP(Adress adress, char* buffer, int bufferLength);
-	bool sendTCP(Adress adress, char* buffer, int bufferLength);
+	bool sendUDP(Adress adress, const char* buffer, int bufferLength);
+	bool sendTCP(Adress adress, const char* buffer, int bufferLength);
 
 	int receiveUDP();
 	int receiveTCP();
 
-	bool m_isInitialized;
-	int m_port;
-	uint64_t m_bytesReceived;
-	uint64_t m_bytesSent;
-	uint64_t m_packetsReceived;
-	uint64_t m_packetsSent;
-	NetProtocol m_type;
+	bool					m_isInitialized;
+	int						m_port;
+	uint64_t				m_bytesReceived;
+	uint64_t				m_bytesSent;
+	uint64_t				m_packetsReceived;
+	uint64_t				m_packetsSent;
+	ENetProtocol			m_type;
 
-	std::queue<BitStream*> m_incomingPackets;
-	std::queue<BitStream*> m_outgoingPackets;
+	std::queue<BitStream*>	m_incomingPackets;
+	std::queue<BitStream*>	m_outgoingPackets;
 
-	SOCKET m_winSocket;
+	SOCKET					m_winSocket;
 
 };
 
-Socket_impl::Socket_impl(NetProtocol type)
+Socket_impl::Socket_impl(ENetProtocol type)
 	: m_isInitialized(false)
 	, m_bytesReceived(0)
 	, m_port(DEFAULT_PORT)
@@ -83,7 +83,7 @@ Socket_impl::~Socket_impl()
 	{
 		if (WSACleanup() != 0)
 		{
-			printf("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
+			LOG_ERROR("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
 			assert(false);
 		}
 
@@ -92,14 +92,14 @@ Socket_impl::~Socket_impl()
 
 }
 
-bool Socket_impl::initialize(int port, bool isHost)
+bool Socket_impl::initialize(uint32_t port, bool isHost)
 {
 	if (s_initializeWSA)
 	{
 		initializeWSA();
 	}
 
-	if (m_type == NetProtocol::ESocket_UDP)
+	if (m_type == ENetProtocol::PROTOCOL_UDP)
 	{
 		m_isInitialized = initializeUDP(port, isHost);
 	}
@@ -117,9 +117,9 @@ bool Socket_impl::isInitialized()
 	return m_isInitialized;
 }
 
-bool Socket_impl::send(Adress adress, char* buffer, int bufferLength)
+bool Socket_impl::send(Adress adress, const char* buffer, int bufferLength)
 {
-	if (m_type == NetProtocol::ESocket_UDP)
+	if (m_type == ENetProtocol::PROTOCOL_UDP)
 	{
 		return sendUDP(adress, buffer, bufferLength);
 	}
@@ -129,39 +129,39 @@ bool Socket_impl::send(Adress adress, char* buffer, int bufferLength)
 	}
 }
 
-int Socket_impl::getPort()
+uint32_t Socket_impl::getPort() const
 {
 	return m_port;
 }
 
-uint64_t Socket_impl::getBytesSent()
+uint64_t Socket_impl::getBytesSent() const
 {
 	return m_bytesSent;
 }
 
-uint64_t Socket_impl::getBytesReceived()
+uint64_t Socket_impl::getBytesReceived() const
 {
 	return m_bytesReceived;
 }
 
-uint64_t Socket_impl::getPacketsReceived()
+uint64_t Socket_impl::getPacketsReceived() const
 {
 	return m_packetsReceived;
 }
 
-uint64_t Socket_impl::getPacketsSent()
+uint64_t Socket_impl::getPacketsSent() const
 {
 	return m_packetsSent;
 }
 
-Socket* Socket::create(NetProtocol type)
+Socket* Socket::create(ENetProtocol type)
 {
 	return new Socket_impl(type);
 }
 
 int Socket_impl::receive()
 {
-	if (m_type == NetProtocol::ESocket_UDP)
+	if (m_type == ENetProtocol::PROTOCOL_UDP)
 	{
 		return receiveUDP();
 	}
@@ -187,7 +187,7 @@ bool Socket_impl::initializeUDP(int port, bool isHost)
 
 		if (bind(m_winSocket, (sockaddr*)&localAddress, sizeof(localAddress)) != 0)
 		{
-			printf("WSA bind failed. Error Code : %d\n", WSAGetLastError());
+			LOG_ERROR("WSA bind failed. Error Code : %d\n", WSAGetLastError());
 			return false;
 		}
 	}
@@ -197,13 +197,12 @@ bool Socket_impl::initializeUDP(int port, bool isHost)
 
 bool Socket_impl::initializeTCP(int port, bool isHost)
 {
-
 	// TODO
 	assert(false);
 	return false;
 }
 
-bool Socket_impl::sendUDP(Adress adress, char* buffer, int bufferLength)
+bool Socket_impl::sendUDP(Adress adress, const char* buffer, int bufferLength)
 {
 	sockaddr_in remoteAddress;
 	remoteAddress.sin_family = AF_INET;
@@ -214,11 +213,11 @@ bool Socket_impl::sendUDP(Adress adress, char* buffer, int bufferLength)
 
 	char testBuffer[32] = "testbuffer";
 
-	printf("Sending %s\n", testBuffer);
+	LOG_DEBUG("Sending %s\n", testBuffer);
 	int dataSent = sendto(m_winSocket, testBuffer, sizeof(testBuffer), 0, reinterpret_cast<sockaddr*>(&remoteAddress), (int)sizeof(remoteAddress));
 	if (dataSent == SOCKET_ERROR)
 	{
-		printf("Send failed. Error Code : %d\n", WSAGetLastError());
+		LOG_ERROR("Send failed. Error Code : %d\n", WSAGetLastError());
 		return false;
 	}
 
@@ -228,7 +227,7 @@ bool Socket_impl::sendUDP(Adress adress, char* buffer, int bufferLength)
 	return true;
 }
 
-bool Socket_impl::sendTCP(Adress adress, char* buffer, int bufferLength)
+bool Socket_impl::sendTCP(Adress adress, const char* buffer, int bufferLength)
 {
 	// TODO
 	assert(false);
@@ -256,14 +255,14 @@ int Socket_impl::receiveUDP()
 
 			default:
 			{
-				printf("recvfrom failed. Error Code : %d\n", error);
+				LOG_ERROR("recvfrom failed. Error Code : %d\n", error);
 				return -1;
 			}
 		}
 	}
 	else
 	{
-		printf("recv (%d): %s\n", receivedLength, buffer);
+		LOG_DEBUG("recv (%d): %s\n", receivedLength, buffer);
 		BitStream* stream = BitStream::create();
 		stream->writeBuffer(buffer, receivedLength);
 		m_incomingPackets.push(stream);
@@ -283,7 +282,7 @@ bool initializeWSA()
 {
 	if (WSAStartup(MAKEWORD(2, 2), &s_wsa) != 0)
 	{
-		printf("WSAStartup failed. Error Code : %d\n", WSAGetLastError());
+		LOG_ERROR("WSAStartup failed. Error Code : %d\n", WSAGetLastError());
 		return false;
 	}
 
@@ -295,7 +294,7 @@ bool closeWSA()
 {
 	if (WSACleanup() != 0)
 	{
-		printf("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
+		LOG_ERROR("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
 		return false;
 	}
 	return true;

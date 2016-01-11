@@ -1,13 +1,15 @@
 
 #pragma once
 
-#include "time.h"
-#include "network_interface.h"
 #include "bitstream.h"
+#include "network_interface.h"
+#include "packet.h"
+#include "time.h"
+
+#include <queue>
 
 namespace network
 {
-
 	class Networker
 	{
 	public:
@@ -17,15 +19,16 @@ namespace network
 		virtual bool initialize();
 		virtual void tick();
 	
-		bool isInitialized() const;
-		bool isConnected() const;
+		bool isInitialized()	const;
+		bool isConnected()		const;
 	
 	
 	private:
-		unsigned int m_numClients;
-		bool m_isInitialized;
-		bool m_isConnected;
+		std::queue<Packet>	m_outgoingPackets;
+		std::queue<Packet>	m_incomingPackets;
+		unsigned int		m_numClients;
+		bool				m_isInitialized;
+		bool				m_isConnected;
 	
-	};
-	
+	};	
 }; // namespace network

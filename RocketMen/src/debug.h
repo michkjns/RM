@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef ERROR
+#undef ERROR
+#endif
+
 class Debug
 {
 public:
