@@ -28,8 +28,7 @@ public:
 	int32_t readInt32() override;
 	int64_t readInt64() override;
 	bool readBool() override;
-
-
+	
 	const size_t getLength() const override;
 	const char* getBuffer() const override;
 

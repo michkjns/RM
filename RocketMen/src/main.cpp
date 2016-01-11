@@ -15,15 +15,14 @@ int main(int argc, char *argv[])
 	Debug::setVerbosity(Debug::EVerbosity::INFO);
 #endif
 
-	Core* engine = Core::get();
+	Core engine;
 	Game* game = new RocketMenGame();
 
-	engine->initialize(game, argc, argv);
-	engine->run();
-	engine->destroy();
+	engine.initialize(game, argc, argv);
+	engine.run();
+	engine.destroy();
 
 	delete game;
-	delete engine;
 
 	LOG_INFO("Application has ended succesfully, closing logfile..");
 	Debug::closeLog();

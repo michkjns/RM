@@ -22,7 +22,7 @@ public:
 
 private:
 	ResourceManager() {}
-	
+
 	static std::string loadShaderFromFile(const char* shaderFile);
 	
 	static std::map<std::string, Shader> m_shaders;

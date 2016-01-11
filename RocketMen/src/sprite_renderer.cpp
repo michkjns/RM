@@ -1,7 +1,8 @@
 
 #include "includes.h"
-
 #include "sprite_renderer.h"
+
+#include "check_gl_error.h"
 #include "resource_manager.h"
 
 SpriteRenderer::SpriteRenderer()
@@ -15,7 +16,7 @@ SpriteRenderer::~SpriteRenderer()
 	glDeleteVertexArrays(1, &m_VAO);
 }
 
-void SpriteRenderer::initialize()
+bool SpriteRenderer::initialize()
 {
 	/* Configure VAO/VBO */
 
@@ -43,21 +44,33 @@ void SpriteRenderer::initialize()
 	glBindVertexArray(0);
 
 	m_spriteShader = &ResourceManager::GetShader("spriteShader");
+
+	checkGL();
+
+	return true;
 }
 
-void SpriteRenderer::render(const glm::mat4& modelMatrix)
+void SpriteRenderer::render(const glm::mat4& modelMatrix, const glm::mat4& projectionMatrix)
 {
 	assert(m_spriteShader);
 	if (m_spriteShader != nullptr)
 	{
+		checkGL();
+
 		m_spriteShader->use();
 		m_spriteShader->setMatrix4("model", modelMatrix);
+		m_spriteShader->setMatrix4("projection", projectionMatrix);
+		m_spriteShader->setVec3f("spriteColor", glm::vec3(1.0f));
 
 		glActiveTexture(GL_TEXTURE0);
-		//texture.bind();
+		ResourceManager::GetTexture("demoTexture").bind();
+		m_spriteShader->setInt("image", 0);
+		checkGL();
 
 		glBindVertexArray(m_VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		glBindVertexArray(0);
+
+		checkGL();
 	}
 }

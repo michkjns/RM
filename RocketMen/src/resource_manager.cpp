@@ -2,13 +2,14 @@
 #include "includes.h"
 #include "resource_manager.h"
 
+#include "check_gl_error.h"
+
 #include <assert.h>
 #include <iostream>
 #include <fstream>
 
-#include <SOIL.h>
-
 #include <GLFW/glfw3.h>
+#include <SOIL.h>
 
 std::map<std::string, Shader> ResourceManager::m_shaders;
 std::map<std::string, Texture> ResourceManager::m_textures;
@@ -18,8 +19,25 @@ Shader dummyShader;
 Shader& ResourceManager::LoadShader(const char* vertexShaderFile, const char* fragmentShaderFile, const char* name)
 {
 	LOG_INFO("ResourceManager: Loading shader %s", name);
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+	}
+
 	std::string vertexShaderSource = loadShaderFromFile(vertexShaderFile);
+	error = glGetError();
+	if (error = glGetError() != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+	}
+
 	std::string fragmentShaderSource = loadShaderFromFile(fragmentShaderFile);
+	error = glGetError();
+	if (error = glGetError() != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+	}
 
 	Shader shader = Shader();
 	LOG_INFO("ResourceManager: Compiling shader %s", name);
@@ -28,9 +46,20 @@ Shader& ResourceManager::LoadShader(const char* vertexShaderFile, const char* fr
 		LOG_ERROR("ResourceManager: Shader compilation failed");
 		return dummyShader;
 	}
+	error = glGetError();
+	if (error = glGetError() != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+	}
 
 	m_shaders[name] = shader;
+	error = glGetError();
+	if (error = glGetError() != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+	}
 
+	shader.clear();
 	return m_shaders[name];
 }
 
@@ -43,13 +72,23 @@ Texture& ResourceManager::LoadTexture(const char* file, std::string name
 									 , bool alpha)
 {
 	LOG_INFO("ResourceManager: Loading texture %s", file);
-
+	checkGL();
 	int width, height;
-	unsigned char* imageData = SOIL_load_image(file, &width, &height, 0, SOIL_LOAD_RGB);
+	unsigned char* imageData = SOIL_load_image((std::string("../") + std::string(file)).c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+	assert(imageData);
 	Texture texture;
-	texture.generate(imageData, width, height);
-
-	m_textures[name] = texture;
+	if (imageData == nullptr)
+	{
+		LOG_ERROR("ResourceManager::LoadTexture: Failed to open texture %s", file);
+	}
+	else
+	{
+		checkGL();
+		texture.generate(imageData, width, height);
+		checkGL();
+		SOIL_free_image_data(imageData);
+		m_textures[name] = texture;
+	}
 	return m_textures[name];
 }
 

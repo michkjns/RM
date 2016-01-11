@@ -21,6 +21,11 @@ public:
 	bool compile( const std::string& vertexShader, 
 				 const std::string& fragmentShader);
 
+	/** Clears the isInitialized flag,
+		to prevent from the destructor deleting
+		the gl shaders. */
+	void clear();
+
 	void setFloat(const char* name, float value);
 	void setInt(const char* name, int value);
 	void setVec2f(const char* name, const glm::vec2& vector);
@@ -29,10 +34,9 @@ public:
 	void setMatrix4(const char* name, const glm::mat4& matrix);
 
 private:
-
 	bool m_isInitialized;
-	GLuint m_shaders[2];
 	GLuint m_programID;
+	GLuint m_shaders[2];
 
 	static Shader* s_currentShader;
 

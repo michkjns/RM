@@ -2,11 +2,11 @@
 #include "includes.h"
 #include "shader.h"
 
+#include "check_gl_error.h"
+
 #include <assert.h>
 #include <iostream>
 #include <fstream>
-
-//#define GLFW_INCLUDE_GLCOREARB
 
 #include <GLFW/glfw3.h>
 
@@ -16,7 +16,6 @@ Shader::Shader()
 	: m_isInitialized(false)
 	, m_programID(-1)
 {
-
 }
 
 Shader::~Shader()
@@ -132,10 +131,18 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 		glDetachShader(m_programID, shader);
 		glDeleteShader(shader);
 	}
+	checkGL();
 
+
+	m_isInitialized = true;
 	return true;
 }
 
+
+void Shader::clear()
+{
+	m_isInitialized = false;
+}
 
 // TODO Prevent rewriting identical values
 void Shader::setFloat(const char* name, float value)

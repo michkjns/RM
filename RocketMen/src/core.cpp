@@ -1,55 +1,32 @@
 
-#include "includes.h"
-
 #include "core.h"
+
+#include "check_gl_error.h"
 #include "client.h"
 #include "game.h"
-#include "window.h"
 #include "renderer.h"
 #include "resource_manager.h"
 #include "server.h"
 #include "time.h"
+#include "window.h"
 
 #include <assert.h>
 #include <stdint.h>
 
 using namespace network;
 
-Core* Core::g_singleton;
-
-class Core_impl : public Core
-{
-public:
-	Core_impl();
-	~Core_impl();
-	bool initialize(Game* game, int argc, char* argv[] ) override;
-	void run() override;
-	void destroy() override;
-
-private:
-	bool loadResources();
-
-	Renderer* m_renderer;
-	Window* m_window;
-	Game* m_game;
-	Server* m_server;
-	Client* m_client;
-	uint64_t m_timestep;
-
-};
-
-Core_impl::Core_impl()
-	: m_game(nullptr)
-	, m_client(nullptr)
+Core::Core()
+	: m_client(nullptr)
+	, m_game(nullptr)
 	, m_renderer(nullptr)
 	, m_server(nullptr)
-	, m_timestep(33333ULL)
 	, m_window(nullptr)
+	, m_timestep(33333ULL)
 {
 
 }
 
-Core_impl::~Core_impl()
+Core::~Core()
 {
 	if(m_client) delete m_client;
 	if(m_server) delete m_server;
@@ -59,16 +36,8 @@ Core_impl::~Core_impl()
 	delete m_window;
 }
 
-Core* Core::get()
-{
-	if (g_singleton == nullptr)
-	{
-		g_singleton = new Core_impl();
-	}
-	return g_singleton;
-}
 
-bool Core_impl::initialize(Game* game, int argc, char* argv[])
+bool Core::initialize(Game* game, int argc, char* argv[])
 {
 	assert(game != nullptr);
 	
@@ -117,26 +86,41 @@ bool Core_impl::initialize(Game* game, int argc, char* argv[])
 	return true;
 }
 
-bool Core_impl::loadResources()
+bool Core::loadResources()
 {
+	GLenum error = glGetError();
+	if (error != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+		return false;
+	}
 	ResourceManager::LoadShader("data/shaders/basicSpriteVertexShader.vert"
 								, "data/shaders/basicSpriteFragmentShader.frag"
 								, "spriteShader");
 
+	error = glGetError();
+	if (error != GL_NO_ERROR)
+	{
+		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+		return false;
+	}
 	return true;
 }
 
-void Core_impl::run()
+void Core::run()
 {
+	checkGL();
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
-
+	checkGL();
 	Time gameTime;
 	uint64_t updatedTime = 0ULL;
 
 	LOG_DEBUG("Core: Entering main loop..");
+	checkGL();
 	while (!m_window->pollEvents())
 	{
+		checkGL();
 		gameTime.update();
 
 		/****************
@@ -170,7 +154,7 @@ void Core_impl::run()
 	LOG_DEBUG("Core: main loop ended..");
 }
 
-void Core_impl::destroy()
+void Core::destroy()
 {
 	LOG_INFO("Core: Shutting down..");
 

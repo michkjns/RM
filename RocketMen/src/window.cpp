@@ -68,7 +68,7 @@ bool Window_impl::initialize(unsigned int width, unsigned int height)
 
 	// Make the window's context current
 	glfwMakeContextCurrent(m_glfwWindow);
-
+	
 	return true;
 }
 

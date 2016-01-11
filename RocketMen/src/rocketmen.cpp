@@ -5,7 +5,7 @@
 
 bool RocketMenGame::initialize()
 {
-	ResourceManager::LoadTexture("data/textures/mario.png", "demoTexture", true);
+	ResourceManager::LoadTexture("data/textures/awesomeface.png", "demoTexture", true);
 
 	return false;
 }

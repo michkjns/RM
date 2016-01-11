@@ -1,6 +1,8 @@
 
 #include "includes.h"
 #include "renderer.h"
+
+#include "check_gl_error.h"
 #include "sprite_renderer.h"
 #include "window.h"
 
@@ -57,12 +59,15 @@ bool Renderer_impl::initialize(EProjectionMode projection, Window* window)
 		exit(-1);
 	}
 
-	GLenum error = glGetError();
+	checkGL();
 
-	if (error != GL_NO_ERROR)
+	if (!m_spriteRenderer.initialize())
 	{
-		LOG_ERROR("Renderer: OpenGL Error: %d", error);
+		LOG_ERROR("Renderer: SpriteRenderer::initialize Error");
+		return false;
 	}
+
+	checkGL();
 
 	return true;
 }
@@ -80,7 +85,12 @@ void Renderer_impl::render()
 
 void Renderer_impl::renderSprites()
 {
-	m_spriteRenderer.render(glm::mat4());
+	glm::mat4 modelMatrix = glm::mat4();
+	glm::vec2 size(225.0f, 300.0f);
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(400.f, 300.0f, 0.0f));
+	modelMatrix = glm::scale(modelMatrix, glm::vec3(size, 1.0f));
+
+	m_spriteRenderer.render(modelMatrix, m_projectionMatrix);
 
 	return;
 }

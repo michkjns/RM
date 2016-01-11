@@ -7,9 +7,10 @@ public:
 	SpriteRenderer();
 	~SpriteRenderer();
 
-	void initialize();
+	bool initialize();
 
-	void render(const glm::mat4& modelMatrix);
+	void render(const glm::mat4& modelMatrix
+				, const glm::mat4& projectionMatrix);
 
 private:
 	GLuint m_VAO;
