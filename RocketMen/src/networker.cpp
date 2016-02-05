@@ -3,9 +3,10 @@
 
 using namespace network;
 
-Networker::Networker()
-	: m_isInitialized(false)
-	, m_isConnected(false)
+Networker::Networker() :
+	m_sequenceCounter(0),
+	m_isInitialized(false),
+	m_isConnected(false)
 {
 }
 
@@ -79,7 +80,12 @@ void Networker::sendPacket(const Packet& packet)
 		delete packet.data;
 	}
 
-	m_networkInterface.Send(completePacket, packetSize, packet.broadcast, packet.reliable);
+	m_networkInterface.send(completePacket, packetSize, packet.broadcast, packet.reliable);
 
 	delete completePacket;
+}
+
+void Networker::queuePacket(const Packet& packet)
+{
+	m_outgoingPackets.push(packet);
 }

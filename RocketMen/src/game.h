@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "time.h"
+#include "game_time.h"
 
 class Game
 {

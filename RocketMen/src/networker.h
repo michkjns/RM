@@ -32,6 +32,9 @@ namespace network
 		/** Transmit an outgoing packet */
 		void sendPacket(const Packet& packet);
 
+		/** Push packet to outgoing queue */
+		void queuePacket(const Packet& packet);
+
 		/** Handle an incoming packet */
 		virtual void handlePacket(const Packet& packet) = 0;
 
@@ -39,7 +42,7 @@ namespace network
 		NetworkInterface	m_networkInterface;
 		std::queue<Packet>	m_outgoingPackets;
 		std::queue<Packet>	m_incomingPackets;
-		unsigned int		m_numClients;
+		uint64_t			m_sequenceCounter;
 		bool				m_isInitialized;
 		bool				m_isConnected;
 	

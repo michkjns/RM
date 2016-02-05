@@ -5,7 +5,7 @@
 
 bool RocketMenGame::initialize()
 {
-	ResourceManager::loadTexture("data/textures/awesomeface.png", "demoTexture", Texture::EBlendMode::MODE_OPAQUE);
+	ResourceManager::loadTexture("data/textures/demoTexture.png", "demoTexture", Texture::EBlendMode::MODE_OPAQUE);
 
 	return false;
 }

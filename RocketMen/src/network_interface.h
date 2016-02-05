@@ -1,11 +1,12 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace network
 {
 	class Socket;
+	class Address;
 
 	enum EBroadcast
 	{
@@ -27,11 +28,17 @@ namespace network
 
 		void tick();
 
-		void Send(const void* data, int32_t dataLength,
-				  EBroadcast broadcast, int32_t recipientID,
-				  EReliable reliable = EReliable::RELIABLE,
-				  uint8_t channel = 0);
+		void connect(const Address& destination);
+		void host(uint32_t port);
+		void disconnect();
 
+	//	void Send(const Packet& packet, uint8_t channel = 0);
+
+		void send(const void* data, int32_t dataLength,
+				EBroadcast broadcast, int32_t recipientID,
+				EReliable reliable = EReliable::RELIABLE,
+				uint8_t channel = 0);
+		
 
 	private:
 		Socket* m_socket;

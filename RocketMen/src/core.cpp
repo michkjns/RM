@@ -51,7 +51,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		}
 		else if (strcmp(arg, "-debug") == 0)
 		{
-			Debug::setVerbosity(Debug::EVerbosity::DEBUG);
+			Debug::setVerbosity(Debug::EVerbosity::LEVEL_DEBUG);
 			LOG_INFO("Debug logging enabled");
 		}
 	}

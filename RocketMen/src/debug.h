@@ -1,18 +1,15 @@
-#pragma once
 
-#ifdef ERROR
-#undef ERROR
-#endif
+#pragma once
 
 class Debug
 {
 public:
 	enum EVerbosity : unsigned int
 	{
-		DEBUG = 5,
-		INFO = 10,
-		WARNING = 20,
-		ERROR = 30,
+		LEVEL_DEBUG = 5,
+		LEVEL_INFO = 10,
+		LEVEL_WARNING = 20,
+		LEVEL_ERROR = 30,
 	};
 
 public:
@@ -27,7 +24,7 @@ private:
 };
 
 
-#define LOG_DEBUG(...) Debug::log(Debug::EVerbosity::DEBUG,  __VA_ARGS__);
-#define LOG_INFO(...) Debug::log(Debug::EVerbosity::INFO,  __VA_ARGS__);
-#define LOG_ERROR(...) Debug::log(Debug::EVerbosity::ERROR, __VA_ARGS__);
-#define LOG_WARNING(...) Debug::log(Debug::EVerbosity::WARNING, __VA_ARGS__);
+#define LOG_DEBUG(...)		Debug::log(Debug::EVerbosity::LEVEL_DEBUG,		__VA_ARGS__);
+#define LOG_INFO(...)		Debug::log(Debug::EVerbosity::LEVEL_INFO,		__VA_ARGS__);
+#define LOG_ERROR(...)		Debug::log(Debug::EVerbosity::LEVEL_ERROR,		__VA_ARGS__);
+#define LOG_WARNING(...)	Debug::log(Debug::EVerbosity::LEVEL_WARNING,	__VA_ARGS__);

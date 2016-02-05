@@ -4,7 +4,7 @@
 #include <bitset>
 #include <assert.h>
 
-#define BUFFERLENGTH 65536
+static const uint32_t s_bufferSize = 65536;
 
 class BitStream_impl : public BitStream
 {
@@ -12,28 +12,32 @@ public:
 	BitStream_impl();
 	~BitStream_impl();
 
-	void writeBits(bool value, size_t repeat /* = 1 */) override;
-	void writeBytes(char value, size_t repeat /* = 1 */) override;
-	void writeFloat(float value) override;
-	void writeInt(int value) override;
-	void writeBool(bool value) override;
+	void	writeBit(bool value, size_t repeat /* = 1 */)	override;
+	void	writeByte(char value, size_t repeat /* = 1 */)	override;
+	void	writeFloat(float value)							override;
+	void	writeInt16(int16_t value)						override;
+	void	writeInt32(int32_t value)						override;
+	void	writeInt64(int64_t value)						override;
+	void	writeBool(bool value)							override;
 
-	void writeBuffer(char* data, size_t length) override;
-	void writeData(char* data, size_t length) override;
+	void	writeBuffer(char* data, size_t length)			override;
+	void	writeData(char* data, size_t length)			override;
 
-	void ReadBytes(char* output, size_t size /* = 1 */) override;
-	void readBit(bool* output) override;
-	float readFloat() override;
-	int8_t readInt8() override;
-	int32_t readInt32() override;
-	int64_t readInt64() override;
-	bool readBool() override;
+	void	readBytes(char* output, size_t size /* = 1 */)	override;
+	void	readBit(bool* output)							override;
+	float	readFloat()										override;
+	int16_t readInt16()										override;
+	int32_t readInt32()										override;
+	int64_t readInt64()										override;
+	bool	readBool()										override;
+
+	void resetReading()										override;
 	
-	const size_t getLength() const override;
-	const char* getBuffer() const override;
+	const size_t getLength()						const	override;
+	const char* getBuffer()							const	override;
 
 private:
-	char m_buffer[BUFFERLENGTH];
+	char m_buffer[s_bufferSize];
 
 	int	m_readTotalBytes;
 	int	m_readBit;
@@ -62,7 +66,7 @@ BitStream_impl::~BitStream_impl()
 {
 }
 
-void BitStream_impl::ReadBytes(char* output, size_t numBytes)
+void BitStream_impl::readBytes(char* output, size_t numBytes)
 {
 	if (m_writeTotalBytes <= 0 && m_writeBit <= 0) return /*false*/;
 	if (getLength() - m_readTotalBytes < (int)numBytes) return /*false*/;
@@ -110,28 +114,28 @@ void BitStream_impl::readBit(bool* output)
 float BitStream_impl::readFloat()
 {
 	float out;
-	ReadBytes(reinterpret_cast<char*>(&out), sizeof(float));
+	readBytes(reinterpret_cast<char*>(&out), sizeof(float));
 	return out;
 }
 
-int8_t BitStream_impl::readInt8()
+int16_t BitStream_impl::readInt16()
 {
 	int out;
-	ReadBytes(reinterpret_cast<char*>(&out), sizeof(int8_t));
+	readBytes(reinterpret_cast<char*>(&out), sizeof(int16_t));
 	return out;
 }
 
 int32_t BitStream_impl::readInt32()
 {
 	int out;
-	ReadBytes(reinterpret_cast<char*>(&out), sizeof(int32_t));
+	readBytes(reinterpret_cast<char*>(&out), sizeof(int32_t));
 	return out;
 }
 
 int64_t BitStream_impl::readInt64()
 {
 	int out;
-	ReadBytes(reinterpret_cast<char*>(&out), sizeof(int64_t));
+	readBytes(reinterpret_cast<char*>(&out), sizeof(int64_t));
 	return out;
 }
 
@@ -144,15 +148,15 @@ bool BitStream_impl::readBool()
 
 void BitStream_impl::writeBuffer(char* data, size_t length)
 {
-	assert(length < BUFFERLENGTH);
+	assert(length < s_bufferSize);
 	// Buffer overflow
-	if (length >= BUFFERLENGTH) return;
+	if (length >= s_bufferSize) return;
 
 	memcpy(m_buffer, data, length);
 	m_writeTotalBytes = static_cast<int>(length);
 }
 
-void BitStream_impl::writeBytes(char value, size_t repeat)
+void BitStream_impl::writeByte(char value, size_t repeat)
 {
 	for (int writeByte = 0; writeByte < (int)repeat; writeByte++)
 	{
@@ -170,28 +174,28 @@ void BitStream_impl::writeBytes(char value, size_t repeat)
 			std::bitset<8> bitValue(value);
 			for (int bit = 0; bit < 8; bit++)
 			{
-				writeBits(bitValue[bit], 1);
+				writeBit(bitValue[bit], 1);
 			}
 		}
 	}
 }
 
-void BitStream_impl::writeBits(bool value, size_t repeat /* = 1 */)
+void BitStream_impl::writeBit(bool value, size_t amount /* = 1 */)
 {
 	//Don't overflow the buffer
-	assert(m_writeTotalBytes < BUFFERLENGTH);
-	if (m_writeTotalBytes >= BUFFERLENGTH) return /*false*/;
+	assert(m_writeTotalBytes < s_bufferSize);
+	if (m_writeTotalBytes >= s_bufferSize) return /*false*/;
 
-	int32_t numBytes = (int32_t)floorf((float)repeat / 8);
+	int32_t numBytes = (int32_t)floorf((float)amount / 8);
 	if (numBytes >= 1)
 	{
-		writeBytes(value, numBytes);
-		repeat -= 8 * numBytes;
+		writeByte(value, numBytes);
+		amount -= 8 * numBytes;
 	}
 
 	std::bitset<8> bits(*m_writeData);
 
-	for (unsigned int i = 0; i < repeat; i++)
+	for (unsigned int i = 0; i < amount; i++)
 	{
 		if (m_writeBit == 8)
 		{
@@ -210,11 +214,10 @@ void BitStream_impl::writeBits(bool value, size_t repeat /* = 1 */)
 
 void BitStream_impl::writeData(char* data, size_t length)
 {
-	assert(length + m_writeTotalBytes < BUFFERLENGTH);
-	if (length + m_writeTotalBytes >= BUFFERLENGTH) return;
-	// Buffer overflow
+	assert(length + m_writeTotalBytes < s_bufferSize);
+	if (length + m_writeTotalBytes >= s_bufferSize) return;
 
-#if 0 //TODO(Michiel) Fix this implementation, it would be faster
+#if 0 //TODO Fix this
 	memcpy(m_writeData+1, static_cast<void*>(data), length);
 	if (m_writeBit > 0)
 	{
@@ -236,12 +239,10 @@ void BitStream_impl::writeData(char* data, size_t length)
 	{
 		for (size_t i = 0; i < length; i++)
 		{
-			writeBytes(data[i], 1);
+			writeByte(data[i], 1);
 		}
 	}
 #endif
-	
-
 }
 
 const size_t BitStream_impl::getLength() const
@@ -264,14 +265,31 @@ void BitStream_impl::writeFloat(float value)
 	writeData(reinterpret_cast<char*>(&value), sizeof(value));
 }
 
-void BitStream_impl::writeInt(int value)
+void BitStream_impl::writeInt16(int16_t value)
+{
+	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+}
+
+void BitStream_impl::writeInt32(int32_t value)
+{
+	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+}
+
+void BitStream_impl::writeInt64(int64_t value)
 {
 	writeData(reinterpret_cast<char*>(&value), sizeof(value));
 }
 
 void BitStream_impl::writeBool(bool value)
 {
-	writeBits(value, 1);
+	writeBit(value, 1);
+}
+
+void BitStream_impl::resetReading()
+{
+	m_readTotalBytes = 0;
+	m_readBit = 0;
+	m_readData = m_buffer;
 }
 
 BitStream* BitStream::create()

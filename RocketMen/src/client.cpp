@@ -10,24 +10,18 @@ class Client_impl : public Client, public Networker
 public:
 	Client_impl();
 	~Client_impl();
-
-
+	
 	bool initialize() override;
 	void tick() override;
-
-	unsigned int getNumClients() const override;
 
 private:
 	void onClientConnect();
 	void onClientDisconnect();
 
 	void handlePacket(const Packet& packet) override;
-
-	unsigned int m_numClients;
 };
 
 Client_impl::Client_impl()
-	: m_numClients(0)
 {
 }
 
@@ -51,20 +45,12 @@ void Client_impl::tick()
 	Networker::tick();
 }
 
-unsigned int Client_impl::getNumClients() const
-{
-	return m_numClients;
-}
-
 void Client_impl::onClientConnect()
 {
-	m_numClients++;
 }
 
 void Client_impl::onClientDisconnect()
 {
-	m_numClients--;
-	assert(m_numClients >= 0);
 }
 
 Client* Client::create()

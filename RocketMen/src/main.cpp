@@ -6,13 +6,18 @@
 #include <iostream>
 #include <cstring>
 
+#include "address.h"
+
 int main(int argc, char *argv[])
 {
+
+	network::Address("127.0.0.1", 1234);
+
 	Debug::openLog("rm.log");
 #ifdef _DEBUG
-	Debug::setVerbosity(Debug::EVerbosity::DEBUG);
+	Debug::setVerbosity(Debug::EVerbosity::LEVEL_DEBUG);
 #else
-	Debug::setVerbosity(Debug::EVerbosity::INFO);
+	Debug::setVerbosity(Debug::EVerbosity::LEVEL_INFO);
 #endif
 
 	Core engine;

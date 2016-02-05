@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <chrono>
 
 // Inspired by http://lspiroengine.com/?p=378
 
@@ -11,9 +12,7 @@ public:
 	Time();
 	~Time();
 
-	/** Update the time by polling the CPU ticks. Call this only once per
-	frame
-	*/
+	/** Update the game clock */
 	void update();
 
 	/** Returns the total elapsed time in seconds */
@@ -33,8 +32,18 @@ public:
 	*	seconds
 	*	@return	float	DeltaTime in seconds
 	*/
-	float getDeltaSeconds() const;
+	float	 getDeltaSeconds() const;
+	
+	/** Returns the elapsed time between the current and previous frame in
+	*	microseconds
+	*	@return	float	DeltaTime in microseconds
+	*/
 	uint64_t getDeltaMicroSeconds() const;
+
+	/** Returns the elapsed time between the current and previous frame in
+	*	milliseconds
+	*	@return	float	DeltaTime in milliseconds
+	*/
 	uint64_t getDeltaMilliSeconds() const;
 
 	/** Returns the total number of ticks
@@ -44,19 +53,13 @@ public:
 
 private:
 	void updateBy(uint64_t time);
-	uint64_t getRealTime();
 
-	float m_deltaSeconds;
+	std::chrono::steady_clock			  m_clock;
+	std::chrono::steady_clock::time_point m_lastTime;
+	std::chrono::steady_clock::time_point m_currentTime;
+
+	float	 m_deltaTimeSeconds;
+	uint64_t m_deltaTimeMicroSeconds;
+	uint64_t m_runTimeMicroSeconds;
 	uint64_t m_tickCount;
-	uint64_t m_lastRealTime;
-
-	/** Current time in microseconds */
-	uint64_t m_currentTime;
-
-	/** CPU Performance frequency */
-	uint64_t m_frequency;
-
-	/** Time difference in microseconds between last and current tick */
-	uint64_t m_deltaTime;
-
 };

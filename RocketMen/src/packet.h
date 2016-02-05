@@ -28,6 +28,7 @@ namespace network
 	{
 		EPacketType type;
 		uint16_t dataLength;
+		uint32_t sequenceNumber;
 	};
 
 	struct Packet

@@ -11,10 +11,13 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 using namespace network;
+using std::queue;
 
-static bool s_initializeWSA = true;
-static int s_numSockets = 0;
-static WSADATA s_wsa;
+
+static bool			s_initializeWSA = true;
+static int			s_numSockets	= 0;
+static const int	s_defaultPort	= 1234;
+static WSADATA		s_wsa;
 
 static bool initializeWSA();
 static bool closeWSA();
@@ -26,47 +29,46 @@ public:
 	Socket_impl(ENetProtocol type);
 	~Socket_impl();
 
-	bool initialize(uint32_t port, bool isHost) override;
-	bool isInitialized() override;
+	bool initialize(uint32_t port, bool isHost)	override;
+	bool isInitialized()				const	override;
 
-	int receive() override;
-	bool send(Adress adress, const char* buffer, int bufferLength) override;
+	int	receive() override;
+	bool send(Address adress, const void* buffer, int bufferLength)	override;
 
-	uint32_t	getPort()				const override;
-	uint64_t	getBytesSent()			const override;
-	uint64_t	getBytesReceived()		const override;
-	uint64_t	getPacketsReceived()	const override;
-	uint64_t	getPacketsSent()		const override;
+	uint32_t getPort()			  const	override;
+	uint64_t getBytesSent()		  const	override;
+	uint64_t getBytesReceived()	  const	override;
+	uint64_t getPacketsReceived() const	override;
+	uint64_t getPacketsSent()	  const	override;
 
 private:
-	bool initializeUDP(int port, bool isHost);
-	bool initializeTCP(int port, bool isHost);
+	bool initializeUDP(uint16_t port, bool isHost /* = false */);
+	bool initializeTCP(uint16_t port, bool isHost /* = false */);
 
-	bool sendUDP(Adress adress, const char* buffer, int bufferLength);
-	bool sendTCP(Adress adress, const char* buffer, int bufferLength);
+	bool sendUDP(Address adress, const void* buffer, int bufferLength);
+	bool sendTCP(Address adress, const void* buffer, int bufferLength);
 
-	int receiveUDP();
-	int receiveTCP();
+	int	receiveUDP();
+	int	receiveTCP();
 
-	bool					m_isInitialized;
-	int						m_port;
-	uint64_t				m_bytesReceived;
-	uint64_t				m_bytesSent;
-	uint64_t				m_packetsReceived;
-	uint64_t				m_packetsSent;
-	ENetProtocol			m_type;
+	bool		 m_isInitialized;
+	uint64_t	 m_bytesReceived;
+	uint64_t	 m_bytesSent;
+	uint64_t	 m_packetsReceived;
+	uint64_t	 m_packetsSent;
+	uint16_t	 m_port;
+	ENetProtocol m_type;
 
-	std::queue<BitStream*>	m_incomingPackets;
-	std::queue<BitStream*>	m_outgoingPackets;
+	queue<BitStream*>	m_incomingPackets;
+	queue<BitStream*>	m_outgoingPackets;
 
-	SOCKET					m_winSocket;
-
+	SOCKET m_winSocket;
 };
 
 Socket_impl::Socket_impl(ENetProtocol type)
 	: m_isInitialized(false)
 	, m_bytesReceived(0)
-	, m_port(DEFAULT_PORT)
+	, m_port(s_defaultPort)
 	, m_bytesSent(0)
 	, m_type(type)
 {
@@ -74,22 +76,24 @@ Socket_impl::Socket_impl(ENetProtocol type)
 
 Socket_impl::~Socket_impl()
 {
-	closesocket(m_winSocket);
-
-	s_numSockets--;
-	assert(s_numSockets >= 0);
-
-	if (s_numSockets == 0)
+	if (m_isInitialized)
 	{
-		if (WSACleanup() != 0)
+		closesocket(m_winSocket);
+
+		s_numSockets--;
+		assert(s_numSockets >= 0);
+
+		if (s_numSockets == 0)
 		{
-			LOG_ERROR("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
-			assert(false);
+			if (WSACleanup() != 0)
+			{
+				LOG_ERROR("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
+				assert(false);
+			}
+
+			s_initializeWSA = true;
 		}
-
-		s_initializeWSA = true;
 	}
-
 }
 
 bool Socket_impl::initialize(uint32_t port, bool isHost)
@@ -112,12 +116,12 @@ bool Socket_impl::initialize(uint32_t port, bool isHost)
 	return m_isInitialized;
 }
 
-bool Socket_impl::isInitialized()
+bool Socket_impl::isInitialized() const
 {
 	return m_isInitialized;
 }
 
-bool Socket_impl::send(Adress adress, const char* buffer, int bufferLength)
+bool Socket_impl::send(Address adress, const void* buffer, int bufferLength)
 {
 	if (m_type == ENetProtocol::PROTOCOL_UDP)
 	{
@@ -154,24 +158,23 @@ uint64_t Socket_impl::getPacketsSent() const
 	return m_packetsSent;
 }
 
-Socket* Socket::create(ENetProtocol type)
-{
-	return new Socket_impl(type);
-}
-
 int Socket_impl::receive()
 {
-	if (m_type == ENetProtocol::PROTOCOL_UDP)
+	if (m_isInitialized)
 	{
-		return receiveUDP();
+		if (m_type == ENetProtocol::PROTOCOL_UDP)
+		{
+			return receiveUDP();
+		}
+		else
+		{
+			return receiveTCP();
+		}
 	}
-	else
-	{
-		return receiveTCP();
-	}
+	return 0;
 }
 
-bool Socket_impl::initializeUDP(int port, bool isHost)
+bool Socket_impl::initializeUDP(uint16_t port, bool isHost)
 {
 	m_winSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	unsigned long nonBlocking = 1;
@@ -182,7 +185,7 @@ bool Socket_impl::initializeUDP(int port, bool isHost)
 	{
 		sockaddr_in localAddress;
 		localAddress.sin_family = AF_INET;
-		InetPton(AF_INET, LOCAL_HOST, &localAddress.sin_addr.s_addr); 	//localAddress.sin_addr.s_addr = InetPton(LOCAL_HOST);
+		InetPton(AF_INET, g_localHost, &localAddress.sin_addr.s_addr); 	//localAddress.sin_addr.s_addr = InetPton(LOCAL_HOST);
 		localAddress.sin_port = htons(m_port);
 
 		if (bind(m_winSocket, (sockaddr*)&localAddress, sizeof(localAddress)) != 0)
@@ -195,39 +198,33 @@ bool Socket_impl::initializeUDP(int port, bool isHost)
 	return true;
 }
 
-bool Socket_impl::initializeTCP(int port, bool isHost)
+bool Socket_impl::initializeTCP(uint16_t port, bool isHost)
 {
 	// TODO
 	assert(false);
 	return false;
 }
 
-bool Socket_impl::sendUDP(Adress adress, const char* buffer, int bufferLength)
+bool Socket_impl::sendUDP(Address adress, const void* buffer, int bufferLength)
 {
 	sockaddr_in remoteAddress;
 	remoteAddress.sin_family = AF_INET;
+	remoteAddress.sin_addr.s_addr	= htonl(adress.getAddress()	);
+	remoteAddress.sin_port			= htons(adress.getPort()	);
 
-	InetPton(AF_INET, adress.ip4, &remoteAddress.sin_addr.s_addr);
-
-	remoteAddress.sin_port = htons(adress.port);
-
-	char testBuffer[32] = "testbuffer";
-
-	LOG_DEBUG("Sending %s\n", testBuffer);
-	int dataSent = sendto(m_winSocket, testBuffer, sizeof(testBuffer), 0, reinterpret_cast<sockaddr*>(&remoteAddress), (int)sizeof(remoteAddress));
+	int dataSent = sendto(m_winSocket, static_cast<const char*>(buffer), bufferLength, 0, reinterpret_cast<sockaddr*>(&remoteAddress), (int)sizeof(remoteAddress));
 	if (dataSent == SOCKET_ERROR)
 	{
 		LOG_ERROR("Send failed. Error Code : %d\n", WSAGetLastError());
 		return false;
 	}
-
-	
+		
 	m_bytesSent += dataSent;
 
 	return true;
 }
 
-bool Socket_impl::sendTCP(Adress adress, const char* buffer, int bufferLength)
+bool Socket_impl::sendTCP(Address adress, const void* buffer, int bufferLength)
 {
 	// TODO
 	assert(false);
@@ -278,6 +275,11 @@ int Socket_impl::receiveTCP()
 	return 0;
 }
 
+Socket* Socket::create(ENetProtocol type)
+{
+	return new Socket_impl(type);
+}
+
 bool initializeWSA()
 {
 	if (WSAStartup(MAKEWORD(2, 2), &s_wsa) != 0)
@@ -299,3 +301,4 @@ bool closeWSA()
 	}
 	return true;
 }
+

@@ -1,13 +1,12 @@
 
 #pragma once
 
-#include "netadress.h"
+#include "address.h"
 
 #include <stdint.h>
-#include <winsock2.h>
 
-#define DEFAULT_PORT 4321
-#define LOCAL_HOST "127.0.0.1"
+static const uint32_t	g_defaultPort	= 4321;
+static const char*		g_localHost		= "127.0.0.1";
 
 namespace network 
 {
@@ -15,11 +14,11 @@ namespace network
 	{
 	public:
 		virtual ~Socket() {}
-		virtual bool initialize(uint32_t port = DEFAULT_PORT, bool isHost = false) = 0;
-		virtual bool isInitialized() = 0;
+		virtual bool initialize(uint32_t port = g_defaultPort, bool isHost = false) = 0;
+		virtual bool isInitialized()			const = 0;
 
 		virtual int receive() = 0;
-		virtual bool send(Adress adress, const char* buffer, int bufferLength) = 0;
+		virtual bool send(Address adress, const void* buffer, int bufferLength) = 0;
 	
 		virtual uint32_t getPort()				const = 0;
 		virtual uint64_t getBytesReceived()		const = 0;

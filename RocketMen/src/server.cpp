@@ -14,14 +14,14 @@ public:
 	bool initialize() override;
 	void tick(const Time& time) override;
 
-	unsigned int getNumClients() const override;
+	uint32_t getNumClients() const override;
 
 private:
-	void OnClientConnect();
-	void OnClientDisconnect();
+	void onClientConnect();
+	void onClientDisconnect();
 	void handlePacket(const Packet& packet) override;
 
-	unsigned int m_numClients;
+	uint32_t m_numClients;
 };
 
 Server_impl::Server_impl()
@@ -53,17 +53,17 @@ void Server_impl::tick(const Time& time)
 	Networker::tick();
 }
 
-unsigned int Server_impl::getNumClients() const
+uint32_t Server_impl::getNumClients() const
 {
 	return m_numClients;
 }
 
-void Server_impl::OnClientConnect()
+void Server_impl::onClientConnect()
 {
 	m_numClients++;
 }
 
-void Server_impl::OnClientDisconnect()
+void Server_impl::onClientDisconnect()
 {
 	m_numClients--;
 	assert(m_numClients >= 0);
@@ -73,7 +73,7 @@ void Server_impl::handlePacket(const Packet& packet)
 {
 	switch (packet.header.type)
 	{	
-		/** Client to server */
+		/* Client to server */
 		case EPacketType::PLAYER_INTRO:
 		{
 			break;
@@ -83,7 +83,7 @@ void Server_impl::handlePacket(const Packet& packet)
 			break;
 		}
 
-		/** Connection */
+		/* Connection */
 		case EPacketType::CONNECTION_CONNECT:
 		{
 			break;
