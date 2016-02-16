@@ -28,6 +28,6 @@ private:
 
 	static std::string loadShaderFromFile(const char* shaderFile);
 	
-	static std::map<std::string, Shader> m_shaders;
-	static std::map<std::string, Texture> m_textures;
+	static std::map<std::string, Shader>	m_shaders;
+	static std::map<std::string, Texture>	m_textures;
 };

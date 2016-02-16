@@ -51,14 +51,6 @@ bool Renderer_impl::initialize(EProjectionMode projection, Window* window)
 	m_EProjectionMode = projection;
 	m_projectionMatrix = BuildProjectionMatrix(m_EProjectionMode);
 
-	glewExperimental = GL_TRUE;
-	if (glewInit() != GLEW_OK)
-	{
-		LOG_ERROR("Renderer: Failed to initialize GLEW");
-		glfwTerminate();
-		exit(-1);
-	}
-
 	checkGL();
 
 	if (!m_spriteRenderer.initialize())

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "game_time.h"
 
 class Game

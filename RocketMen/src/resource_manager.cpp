@@ -11,8 +11,8 @@
 #include <GLFW/glfw3.h>
 #include <SOIL.h>
 
-std::map<std::string, Shader> ResourceManager::m_shaders;
-std::map<std::string, Texture> ResourceManager::m_textures;
+std::map<std::string, Shader>	ResourceManager::m_shaders;
+std::map<std::string, Texture>	ResourceManager::m_textures;
 
 Shader dummyShader;
 

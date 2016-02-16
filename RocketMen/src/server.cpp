@@ -1,6 +1,8 @@
 
 #include "server.h"
 
+#include"debug.h"
+
 #include <assert.h>
 
 using namespace network;
@@ -14,11 +16,13 @@ public:
 	bool initialize() override;
 	void tick(const Time& time) override;
 
+	void host(uint32_t port) override;
+
 	uint32_t getNumClients() const override;
 
 private:
-	void onClientConnect();
-	void onClientDisconnect();
+	void onClientConnect(const Packet& packet);
+	void onClientDisconnect(const Packet& packet);
 	void handlePacket(const Packet& packet) override;
 
 	uint32_t m_numClients;
@@ -50,7 +54,13 @@ bool Server_impl::initialize()
 
 void Server_impl::tick(const Time& time)
 {
-	Networker::tick();
+	Networker::tick(time.getDeltaSeconds());
+}
+
+void Server_impl::host(uint32_t port)
+{
+	m_networkInterface.host(port);
+	LOG_INFO("Server: Listening on port %d", port);
 }
 
 uint32_t Server_impl::getNumClients() const
@@ -58,12 +68,19 @@ uint32_t Server_impl::getNumClients() const
 	return m_numClients;
 }
 
-void Server_impl::onClientConnect()
+void Server_impl::onClientConnect(const Packet& packet)
 {
 	m_numClients++;
+	LOG_DEBUG("A client has joined with ID %d", packet.header.senderID);
+
+	// Accept client
+	Packet responsePacket = createPacket(ECommand::SERVER_HANDSHAKE, nullptr, packet.header.senderID, EBroadcast::BROADCAST_SINGLE);
+	responsePacket.data = BitStream::create();
+	responsePacket.data->writeInt32(packet.header.senderID);
+	queuePacket(responsePacket);
 }
 
-void Server_impl::onClientDisconnect()
+void Server_impl::onClientDisconnect(const Packet& packet)
 {
 	m_numClients--;
 	assert(m_numClients >= 0);
@@ -74,21 +91,22 @@ void Server_impl::handlePacket(const Packet& packet)
 	switch (packet.header.type)
 	{	
 		/* Client to server */
-		case EPacketType::PLAYER_INTRO:
+		case ECommand::PLAYER_INTRO:
 		{
 			break;
 		}
-		case EPacketType::PLAYER_INPUT:
+		case ECommand::PLAYER_INPUT:
 		{
 			break;
 		}
 
 		/* Connection */
-		case EPacketType::CONNECTION_CONNECT:
+		case ECommand::CLIENT_CONNECT:
 		{
+			onClientConnect(packet);
 			break;
 		}
-		case EPacketType::CONNECTION_DISCONNECT:
+		case ECommand::CLIENT_DISCONNECT:
 		{
 			break;
 		}

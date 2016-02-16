@@ -7,13 +7,13 @@
 
 namespace network
 {
-	enum class EPacketType : int8_t
+	enum ECommand : char
 	{
 		EVENT_CLEAR,
 
-		// Connection
-		CONNECTION_CONNECT,
-		CONNECTION_DISCONNECT,
+		// Client to server
+		CLIENT_CONNECT,
+		CLIENT_DISCONNECT,
 
 		// Server to client
 		SERVER_HANDSHAKE,
@@ -21,27 +21,48 @@ namespace network
 		
 		// Client to server
 		PLAYER_INTRO,
-		PLAYER_INPUT
+		PLAYER_INPUT,
+
+		/////////////
+		NUM_COMMANDS
+	};
+
+	enum class EBroadcast
+	{
+		BROADCAST_SINGLE,
+		BROADCAST_ALL,
+	};
+
+	enum class EReliable
+	{
+		UNRELIABLE,
+		RELIABLE,
 	};
 
 	struct PacketHeader
 	{
-		EPacketType type;
+		ECommand type;
 		uint16_t dataLength;
-		uint32_t sequenceNumber;
+		int32_t  sequenceNumber;
+		union
+		{
+			int8_t   recipientID;
+			int8_t   senderID;
+		};
 	};
 
 	struct Packet
 	{
 		PacketHeader header;
-		BitStream* data;
-		union
-		{
-			int8_t recipientID;
-			int8_t senderID;
-		};
-		EBroadcast broadcast;
-		EReliable reliable;
+		BitStream*   data;
+		EBroadcast   broadcast;
+		EReliable    reliable;
 	};
+
+	extern Packet createPacket(ECommand message,
+						BitStream* data,
+						int8_t recipient,
+						EBroadcast broadcast = EBroadcast::BROADCAST_ALL,
+						EReliable reliable = EReliable::RELIABLE);
 
 }; // namespace network

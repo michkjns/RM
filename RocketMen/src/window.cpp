@@ -13,11 +13,11 @@ public:
 	~Window_impl();
 
 	bool initialize(unsigned int width, unsigned int height) override;
-	void terminate() override;
+	void terminate()   override;
 	void swapBuffers() override;
-	bool pollEvents() override;
+	bool pollEvents()  override;
 
-	unsigned int getWidth() const override;
+	unsigned int getWidth()  const override;
 	unsigned int getHeight() const override;
 
 
@@ -68,7 +68,15 @@ bool Window_impl::initialize(unsigned int width, unsigned int height)
 
 	// Make the window's context current
 	glfwMakeContextCurrent(m_glfwWindow);
-	
+
+	glewExperimental = GL_TRUE;
+	if (glewInit() != GLEW_OK)
+	{
+		LOG_ERROR("Renderer: Failed to initialize GLEW");
+		glfwTerminate();
+		exit(-1);
+	}
+		
 	return true;
 }
 

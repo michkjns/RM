@@ -3,8 +3,12 @@
 
 #include "includes.h"
 
-#define DEF_WIDTH 640
-#define DEF_HEIGHT 480
+#include "game_time.h"
+
+static const uint32_t g_defaultWidth = 640;
+static const uint32_t g_defaultHeight = 480;
+static const uint32_t g_defaultPort = 4321;
+static const char*    g_localHost = "127.0.0.1";
 
 class Game;
 class Renderer;
@@ -24,10 +28,11 @@ public:
 private:
 	bool loadResources();
 
-	Client* m_client;
-	Game* m_game;
-	Renderer* m_renderer;
-	Server* m_server;
-	Window* m_window;
-	uint64_t m_timestep;
+	Client*		m_client;
+	Game*		m_game;
+	Renderer*	m_renderer;
+	Server*		m_server;
+	Window*		m_window;
+	Time		m_gameTime;
+	uint64_t	m_timestep;
 };

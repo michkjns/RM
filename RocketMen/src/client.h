@@ -3,6 +3,7 @@
 
 #include "networker.h"
 
+class Time;
 class Client
 {
 public:
@@ -10,6 +11,6 @@ public:
 
 	virtual bool initialize() = 0;
 	virtual void tick() = 0;
-
-	static Client* create();
+	virtual void connect(const network::Address& address) = 0;
+	static Client* create(Time& time);
 };

@@ -2,11 +2,9 @@
 #pragma once
 
 #include "address.h"
+#include "bitstream.h"
 
 #include <stdint.h>
-
-static const uint32_t	g_defaultPort	= 4321;
-static const char*		g_localHost		= "127.0.0.1";
 
 namespace network 
 {
@@ -14,12 +12,13 @@ namespace network
 	{
 	public:
 		virtual ~Socket() {}
-		virtual bool initialize(uint32_t port = g_defaultPort, bool isHost = false) = 0;
+		virtual bool initialize(uint32_t port, bool isHost = false) = 0;
 		virtual bool isInitialized()			const = 0;
 
 		virtual int receive() = 0;
-		virtual bool send(Address adress, const void* buffer, int bufferLength) = 0;
-	
+		virtual bool send(Address adress, const void* buffer, size_t bufferLength) = 0;
+		virtual BitStream* getPacket()				  = 0;
+
 		virtual uint32_t getPort()				const = 0;
 		virtual uint64_t getBytesReceived()		const = 0;
 		virtual uint64_t getBytesSent()			const = 0;

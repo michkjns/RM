@@ -1,6 +1,7 @@
 
 #include "core.h"
 
+#include "address.h"
 #include "check_gl_error.h"
 #include "client.h"
 #include "game.h"
@@ -45,11 +46,11 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	for (int i = 0; i < argc; i++)
 	{
 		const char* arg = argv[i];
-		if (strcmp(arg, "-d") == 0 || strcmp(arg, "-dedicated") == 0)
+		if (strcmp(arg, "-d") == 0 || strcmp(arg, "--dedicated") == 0)
 		{
 			runDedicated = true;
 		}
-		else if (strcmp(arg, "-debug") == 0)
+		if (strcmp(arg, "--debug") == 0)
 		{
 			Debug::setVerbosity(Debug::EVerbosity::LEVEL_DEBUG);
 			LOG_INFO("Debug logging enabled");
@@ -60,12 +61,18 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 
 	LOG_INFO("Core: Creating window..");
 	m_window = Window::create();
-	m_window->initialize(DEF_WIDTH, DEF_HEIGHT);
+	m_window->initialize(g_defaultWidth, g_defaultHeight);
 	
-	LOG_INFO("Core: Creating server..");
-	m_server = Server::create();
-	m_server->initialize();
-
+	if (runDedicated)
+	{
+		LOG_INFO("Core: Creating server..");
+		m_server = Server::create();
+		if (m_server->initialize())
+		{
+			LOG_INFO("Server: Server succesfully initialized");
+		}
+		m_server->host(g_defaultPort);
+	}
 	if (!runDedicated)
 	{
 		LOG_INFO("Core: Creating renderer..");
@@ -73,7 +80,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		m_renderer->initialize(Renderer::EProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
 
 		LOG_INFO("Core: Creating client..");
-		m_client = Client::create();
+		m_client = Client::create(m_gameTime);
 		m_client->initialize();
 	}
 
@@ -87,6 +94,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 
 bool Core::loadResources()
 {
+
 	ResourceManager::loadShader("data/shaders/basicSpriteVertexShader.vert"
 								, "data/shaders/basicSpriteFragmentShader.frag"
 								, "spriteShader");
@@ -100,22 +108,27 @@ void Core::run()
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
 	checkGL();
-	Time gameTime;
+
 	uint64_t updatedTime = 0ULL;
+
+	if (m_client)
+	{
+		m_client->connect(network::Address(g_localHost, g_defaultPort));
+	}
 
 	LOG_DEBUG("Core: Entering main loop..");
 	checkGL();
 	while (!m_window->pollEvents())
 	{
 		checkGL();
-		gameTime.update();
+		m_gameTime.update();
 
 		/****************
 		/** Server Update */
 		if (m_server)
 		{
-			m_server->tick(gameTime);
-			uint64_t currentTime = gameTime.getMicroSeconds();
+			m_server->tick(m_gameTime);
+			uint64_t currentTime = m_gameTime.getMicroSeconds();
 
 			/** Fixed timestep simulation */
 			while (currentTime - updatedTime > m_timestep)
@@ -125,7 +138,7 @@ void Core::run()
 			}
 		}
 		
-		m_game->update(gameTime);
+		m_game->update(m_gameTime);
 
 		/****************/
 		/** Client Update */

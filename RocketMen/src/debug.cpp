@@ -46,7 +46,6 @@ void Debug::setVerbosity(EVerbosity verbosity)
 {
 	s_verbosityLevel = verbosity;
 }
-	
 
 void Debug::log(EVerbosity verbosityLevel, const char* format, ...)
 {
@@ -75,4 +74,5 @@ void Debug::log(EVerbosity verbosityLevel, const char* format, ...)
 		s_logFile << stream.str();
 	}
 
+	s_logFile.flush();
 }

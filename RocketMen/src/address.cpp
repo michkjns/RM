@@ -1,16 +1,7 @@
 
 #include "address.h"
-#include <string>
-
-#ifdef _WIN32
-#include <WS2tcpip.h>
-#endif
 
 using namespace network;
-
-Address::Address()
-{
-}
 
 Address::Address(uint8_t a, uint8_t b, uint8_t c, uint8_t d, uint16_t port)
 {
@@ -57,6 +48,12 @@ Address::Address(const char* address, uint16_t port)
 
 }
 
+Address::Address(uint32_t address, uint16_t port)
+	: m_address(address)
+	, m_port(port)
+{
+}
+
 uint32_t Address::getAddress() const
 {
 	return m_address;
@@ -85,6 +82,11 @@ uint8_t Address::getD() const
 uint16_t Address::getPort() const
 {
 	return m_port;
+}
+
+std::string Address::getString() const
+{
+	return std::to_string(getA()) + "." + std::to_string(getB()) + "." + std::to_string(getC()) + "." + std::to_string(getD()) + ":" + std::to_string(getPort());
 }
 
 bool Address::operator==(const Address& other) const
