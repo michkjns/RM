@@ -14,10 +14,10 @@
 using namespace network;
 using std::queue;
 
-static bool			s_initializeWSA = true;
-static int			s_numSockets	= 0;
-static const int	s_defaultPort	= 1234;
-static WSADATA		s_wsa;
+static bool      s_initializeWSA = true;
+static int       s_numSockets    = 0;
+static const int s_defaultPort	 = 1234;
+static WSADATA   s_wsa;
 
 static bool initializeWSA();
 static bool closeWSA();
@@ -46,8 +46,8 @@ private:
 	bool initializeUDP(uint16_t port, bool isHost /* = false */);
 	bool initializeTCP(uint16_t port, bool isHost /* = false */);
 
-	bool sendUDP(Address adress, const void* buffer, size_t bufferLength);
-	bool sendTCP(Address adress, const void* buffer, size_t bufferLength);
+	bool sendUDP(Address address, const void* buffer, size_t bufferLength);
+	bool sendTCP(Address address, const void* buffer, size_t bufferLength);
 
 	int	receiveUDP();
 	int	receiveTCP();
@@ -247,7 +247,7 @@ int Socket_impl::receiveUDP()
 	sockaddr_in remoteAddress;
 	int remoteAddrSize = sizeof(remoteAddress);
 
-	char buffer[32];
+	char buffer[2048];
 	int error = 0;
 	int receivedLength = recvfrom(m_winSocket, buffer, 32, 0, (sockaddr*)&remoteAddress, &remoteAddrSize);
 	if (receivedLength == SOCKET_ERROR)
@@ -272,6 +272,7 @@ int Socket_impl::receiveUDP()
 	{
 		BitStream* stream = BitStream::create();
 		Address incomingAddress(ntohl(remoteAddress.sin_addr.s_addr), ntohs(remoteAddress.sin_port));
+		
 		stream->writeData(reinterpret_cast<char*>(&incomingAddress), sizeof(Address));
 		stream->writeData(buffer, receivedLength);
 		m_incomingPackets.push(stream);

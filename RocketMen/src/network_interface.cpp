@@ -11,10 +11,10 @@ static const uint32_t s_maxPeers = 8;
 static const uint32_t s_maxDuplicatePeers = 8; // Maximum peers allowed to have the same address
 static Peer s_invalidPeer;
 
-NetworkInterface::NetworkInterface()
-	: m_peerIDCounter(0)
-	, m_peerID(0)
-	, m_state(EState::STATE_DISCONNECTED)
+NetworkInterface::NetworkInterface(): 
+	m_peerIDCounter(0),
+	m_peerID(0),
+	m_state(EState::STATE_DISCONNECTED)
 {
 	m_socket = Socket::create(Socket::ENetProtocol::PROTOCOL_UDP);
 	m_peers.resize(s_maxPeers);
@@ -136,10 +136,11 @@ void NetworkInterface::handleIncomingPackets()
 				break;
 			}
 		}
+	//	delete packetData;
+		packetData = m_socket->getPacket();
 	}
-
-	packetData = m_socket->getPacket();
 }
+
 
 Peer& NetworkInterface::newPeer(const Address& address)
 {
@@ -182,11 +183,13 @@ void NetworkInterface::connect(const Address& destination, const Time& time)
 
 	LOG_INFO("Attempting to connect to %s", destination.getString().c_str());
 
-	BitStream* stream = BitStream::create();
-	stream->writeByte(ECommand::CLIENT_CONNECT);
+	PacketHeader header;
+	header.type = ECommand::CLIENT_CONNECT;
+	header.dataLength = 0;
+	header.recipientID = 0;
+	header.sequenceNumber = 0;
 
-	m_socket->send(destination, stream->getBuffer(), stream->getLength());
-	delete stream;
+	m_socket->send(destination, &header, sizeof(header));
 	m_state = EState::STATE_CONNECTING;
 }
 

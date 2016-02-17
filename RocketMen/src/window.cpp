@@ -12,7 +12,7 @@ public:
 	Window_impl();
 	~Window_impl();
 
-	bool initialize(unsigned int width, unsigned int height) override;
+	bool initialize(uint32_t width, uint32_t height) override;
 	void terminate()   override;
 	void swapBuffers() override;
 	bool pollEvents()  override;
@@ -22,15 +22,15 @@ public:
 
 
 private:
-	GLFWwindow* m_glfwWindow;
-	unsigned int m_width;
-	unsigned int m_height;
+	GLFWwindow*  m_glfwWindow;
+	uint32_t     m_width;
+	uint32_t     m_height;
 };
 
-Window_impl::Window_impl()
-	: m_glfwWindow(nullptr)
-	, m_width(600)
-	, m_height(480)
+Window_impl::Window_impl() :
+	m_glfwWindow(nullptr),
+	m_width(600),
+	m_height(480)
 {
 }
 
@@ -43,7 +43,7 @@ Window* Window::create()
 	return new Window_impl();
 }
 
-bool Window_impl::initialize(unsigned int width, unsigned int height)
+bool Window_impl::initialize(uint32_t width, uint32_t height)
 {
 	assert(width > 0);
 	assert(height > 0);
@@ -110,12 +110,12 @@ bool Window_impl::pollEvents()
 	return closeWindow;
 }
 
-unsigned int Window_impl::getWidth() const
+uint32_t Window_impl::getWidth() const
 {
 	return m_width;
 }
 
-unsigned int Window_impl::getHeight() const
+uint32_t Window_impl::getHeight() const
 {
 	return m_height;
 }

@@ -28,8 +28,8 @@ private:
 	uint32_t m_numClients;
 };
 
-Server_impl::Server_impl()
-	: m_numClients(0)
+Server_impl::Server_impl() :
+	m_numClients(0)
 {
 }
 

@@ -12,53 +12,51 @@ public:
 	BitStream_impl();
 	~BitStream_impl();
 
-	void	writeBit(bool value, size_t repeat /* = 1 */)	override;
-	void	writeByte(char value, size_t repeat /* = 1 */)	override;
-	void	writeFloat(float value)							override;
-	void	writeInt16(int16_t value)						override;
-	void	writeInt32(int32_t value)						override;
-	void	writeInt64(int64_t value)						override;
-	void	writeBool(bool value)							override;
+	void    writeBit(bool value, size_t repeat /* = 1 */)  override;
+	void    writeByte(char value, size_t repeat /* = 1 */) override;
+	void    writeFloat(float value)                        override;
+	void    writeInt16(int16_t value)                      override;
+	void    writeInt32(int32_t value)                      override;
+	void    writeInt64(int64_t value)                      override;
+	void    writeBool(bool value)                          override;
 
-	void	writeBuffer(char* data, size_t length)			override;
-	void	writeData(char* data, size_t length)			override;
+	void    writeBuffer(char* data, size_t length)         override;
+	void    writeData(char* data, size_t length)           override;
 
-	void	readBytes(char* output, size_t size /* = 1 */)	override;
-	void	readBit(bool* output)							override;
-	float	readFloat()										override;
-	int16_t readInt16()										override;
-	int32_t readInt32()										override;
-	int64_t readInt64()										override;
-	bool	readBool()										override;
+	void    readBytes(char* output, size_t size /* = 1 */) override;
+	void    readBit(bool* output)                          override;
+	float   readFloat()                                    override;
+	int16_t readInt16()                                    override;
+	int32_t readInt32()                                    override;
+	int64_t readInt64()                                    override;
+	bool    readBool()                                     override;
 
-	void resetReading()										override;
-	
-	const size_t getLength()						const	override;
-	const char* getBuffer()							const	override;
+	const size_t getLength() const override;
+	const char*  getBuffer() const override;
+
+	void resetReading() override;
 
 private:
-	char m_buffer[s_bufferSize];
-
-	int	m_readTotalBytes;
-	int	m_readBit;
+	char        m_buffer[s_bufferSize];
+	int         m_readTotalBytes;
+	int         m_readBit;
 	const char* m_readData;
 
-	int	m_writeTotalBytes;
-	int	m_writeLength;
-	int	m_writeByte;
-	int	m_writeBit;
+	int	  m_writeTotalBytes;
+	int	  m_writeLength;
+	int	  m_writeByte;
+	int	  m_writeBit;
 	char* m_writeData;
-
 };
 
-BitStream_impl::BitStream_impl()
-	: m_readTotalBytes(0)
-	, m_readBit(0)
-	, m_readData(m_buffer)
-	, m_writeTotalBytes(0)
-	, m_writeLength(0)
-	, m_writeBit(0)
-	, m_writeData(m_buffer)
+BitStream_impl::BitStream_impl() :
+	m_readTotalBytes(0),
+	m_readBit(0),
+	m_readData(m_buffer),
+	m_writeTotalBytes(0),
+	m_writeLength(0),
+	m_writeBit(0),
+	m_writeData(m_buffer)
 {
 }
 

@@ -36,12 +36,6 @@
     <ClCompile Include="src\socket.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ImmutableString.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\String.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -108,12 +102,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\ImmutableString.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\String.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\server.h">

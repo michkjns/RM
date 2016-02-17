@@ -27,9 +27,9 @@ private:
 	int32_t m_lastReceivedState;
 };
 
-Client_impl::Client_impl(Time& time)
-	: m_gameTime(time)
-	, m_lastReceivedState(0)
+Client_impl::Client_impl(Time& time) :
+	m_gameTime(time),
+	m_lastReceivedState(0)
 {
 }
 

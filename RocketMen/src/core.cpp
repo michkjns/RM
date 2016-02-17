@@ -16,22 +16,21 @@
 
 using namespace network;
 
-Core::Core()
-	: m_client(nullptr)
-	, m_game(nullptr)
-	, m_renderer(nullptr)
-	, m_server(nullptr)
-	, m_window(nullptr)
-	, m_timestep(33333ULL)
+Core::Core() :
+	m_client(nullptr),
+	m_game(nullptr),
+	m_renderer(nullptr),
+	m_server(nullptr),
+	m_window(nullptr),
+	m_timestep(33333ULL)
 {
 
 }
 
 Core::~Core()
 {
-	if(m_client) delete m_client;
-	if(m_server) delete m_server;
-
+	if(m_client)   delete m_client;
+	if(m_server)   delete m_server;
 	if(m_renderer) delete m_renderer;
 
 	delete m_window;
@@ -95,9 +94,9 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 bool Core::loadResources()
 {
 
-	ResourceManager::loadShader("data/shaders/basicSpriteVertexShader.vert"
-								, "data/shaders/basicSpriteFragmentShader.frag"
-								, "spriteShader");
+	ResourceManager::loadShader("data/shaders/basicSpriteVertexShader.vert",
+								"data/shaders/basicSpriteFragmentShader.frag",
+								"spriteShader");
 
 
 	return true;
