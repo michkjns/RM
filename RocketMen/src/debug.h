@@ -4,7 +4,7 @@
 class Debug
 {
 public:
-	enum EVerbosity : unsigned int
+	enum Verbosity : unsigned int
 	{
 		LEVEL_DEBUG = 5,
 		LEVEL_INFO = 10,
@@ -16,15 +16,15 @@ public:
 	static void openLog(const char* file);
 	static void closeLog();
 
-	static void log(EVerbosity verbosityLevel, const char* message , ... );
+	static void log(Verbosity verbosityLevel, const char* message , ... );
 
-	static void setVerbosity(EVerbosity verbosity);
+	static void setVerbosity(Verbosity verbosity);
 private:
 
 };
 
 
-#define LOG_DEBUG(...)		Debug::log(Debug::EVerbosity::LEVEL_DEBUG,		__VA_ARGS__);
-#define LOG_INFO(...)		Debug::log(Debug::EVerbosity::LEVEL_INFO,		__VA_ARGS__);
-#define LOG_ERROR(...)		Debug::log(Debug::EVerbosity::LEVEL_ERROR,		__VA_ARGS__);
-#define LOG_WARNING(...)	Debug::log(Debug::EVerbosity::LEVEL_WARNING,	__VA_ARGS__);
+#define LOG_INFO(...)    Debug::log(Debug::Verbosity::LEVEL_INFO,    __VA_ARGS__);
+#define LOG_ERROR(...)   Debug::log(Debug::Verbosity::LEVEL_ERROR,   __VA_ARGS__);
+#define LOG_WARNING(...) Debug::log(Debug::Verbosity::LEVEL_WARNING, __VA_ARGS__);
+#define LOG_DEBUG(...)   Debug::log(Debug::Verbosity::LEVEL_DEBUG,   __VA_ARGS__);

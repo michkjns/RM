@@ -13,8 +13,9 @@ public:
 	~BitStream_impl();
 
 	void    writeBit(bool value, size_t repeat /* = 1 */)  override;
-	void    writeByte(char value, size_t repeat /* = 1 */) override;
+	void    writeByte(char value, size_t repeat = 1)       override;
 	void    writeFloat(float value)                        override;
+	void    writeInt8(int8_t value)                        override;
 	void    writeInt16(int16_t value)                      override;
 	void    writeInt32(int32_t value)                      override;
 	void    writeInt64(int64_t value)                      override;
@@ -26,6 +27,7 @@ public:
 	void    readBytes(char* output, size_t size /* = 1 */) override;
 	void    readBit(bool* output)                          override;
 	float   readFloat()                                    override;
+	int8_t  readInt8()                                     override;
 	int16_t readInt16()                                    override;
 	int32_t readInt32()                                    override;
 	int64_t readInt64()                                    override;
@@ -116,23 +118,30 @@ float BitStream_impl::readFloat()
 	return out;
 }
 
+int8_t BitStream_impl::readInt8()
+{
+	int8_t out;
+	readBytes(reinterpret_cast<char*>(&out), sizeof(int8_t));
+	return out;
+}
+
 int16_t BitStream_impl::readInt16()
 {
-	int out;
+	int16_t out;
 	readBytes(reinterpret_cast<char*>(&out), sizeof(int16_t));
 	return out;
 }
 
 int32_t BitStream_impl::readInt32()
 {
-	int out;
+	int32_t out;
 	readBytes(reinterpret_cast<char*>(&out), sizeof(int32_t));
 	return out;
 }
 
 int64_t BitStream_impl::readInt64()
 {
-	int out;
+	int64_t out;
 	readBytes(reinterpret_cast<char*>(&out), sizeof(int64_t));
 	return out;
 }
@@ -172,7 +181,7 @@ void BitStream_impl::writeByte(char value, size_t repeat)
 			std::bitset<8> bitValue(value);
 			for (int bit = 0; bit < 8; bit++)
 			{
-				writeBit(bitValue[bit], 1);
+				writeInt8(bitValue[bit]);
 			}
 		}
 	}
@@ -237,7 +246,7 @@ void BitStream_impl::writeData(char* data, size_t length)
 	{
 		for (size_t i = 0; i < length; i++)
 		{
-			writeByte(data[i], 1);
+			writeInt8(data[i]);
 		}
 	}
 #endif
@@ -259,6 +268,11 @@ const char* BitStream_impl::getBuffer() const
 }
 
 void BitStream_impl::writeFloat(float value)
+{
+	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+}
+
+void BitStream_impl::writeInt8(int8_t value)
 {
 	writeData(reinterpret_cast<char*>(&value), sizeof(value));
 }

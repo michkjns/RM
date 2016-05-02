@@ -7,12 +7,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <WS2tcpip.h>
-#include <queue>
 
 #pragma comment(lib, "Ws2_32.lib")
 
 using namespace network;
-using std::queue;
 
 static bool      s_initializeWSA = true;
 static int       s_numSockets    = 0;
@@ -26,16 +24,15 @@ static bool closeWSA();
 class Socket_impl : public Socket
 {
 public:
-	Socket_impl(ENetProtocol type);
+	Socket_impl(NetProtocol type);
 	~Socket_impl();
 
 	bool initialize(uint32_t port, bool isHost)	override;
 	bool isInitialized()                  const override;
 
-	int	 receive() override;
-	bool send(Address adress, const void* buffer, size_t bufferLength)	override;
-	BitStream* getPacket() override;
-
+	bool receive(Address& adress, char* buffer, int32_t& length) override;
+	bool send(const Address adress, const void* buffer, const size_t bufferLength)	override;
+	
 	uint32_t getPort()            const	override;
 	uint64_t getBytesSent()       const override;
 	uint64_t getBytesReceived()	  const override;
@@ -46,11 +43,11 @@ private:
 	bool initializeUDP(uint16_t port, bool isHost /* = false */);
 	bool initializeTCP(uint16_t port, bool isHost /* = false */);
 
-	bool sendUDP(Address address, const void* buffer, size_t bufferLength);
-	bool sendTCP(Address address, const void* buffer, size_t bufferLength);
+	bool sendUDP(const Address address, const void* buffer, const size_t bufferLength);
+	bool sendTCP(const Address address, const void* buffer, const size_t bufferLength);
 
-	int	receiveUDP();
-	int	receiveTCP();
+	bool receiveUDP(Address& address, char* buffer, int32_t& length);
+	bool receiveTCP(Address& address, char* buffer, int32_t& length);
 
 	bool         m_isInitialized;
 	uint64_t     m_bytesReceived;
@@ -58,19 +55,19 @@ private:
 	uint64_t     m_packetsReceived;
 	uint64_t     m_packetsSent;
 	uint16_t     m_port;
-	ENetProtocol m_type;
-
-	queue<BitStream*> m_incomingPackets;
+	NetProtocol  m_type;
 
 	SOCKET m_winSocket;
 };
 
-Socket_impl::Socket_impl(ENetProtocol type)
-	: m_isInitialized(false)
-	, m_bytesReceived(0)
-	, m_port(s_defaultPort)
-	, m_bytesSent(0)
-	, m_type(type)
+Socket_impl::Socket_impl(NetProtocol type) : 
+	m_isInitialized(false),
+	m_bytesReceived(0),
+	m_bytesSent(0),
+	m_packetsReceived(0),
+	m_packetsSent(0),
+	m_port(s_defaultPort),
+	m_type(type)
 {
 }
 
@@ -103,7 +100,7 @@ bool Socket_impl::initialize(uint32_t port, bool isHost)
 		initializeWSA();
 	}
 
-	if (m_type == ENetProtocol::PROTOCOL_UDP)
+	if (m_type == NetProtocol::PROTOCOL_UDP)
 	{
 		m_isInitialized = initializeUDP(port, isHost);
 	}
@@ -123,7 +120,7 @@ bool Socket_impl::isInitialized() const
 
 bool Socket_impl::send(Address adress, const void* buffer, size_t bufferLength)
 {
-	if (m_type == ENetProtocol::PROTOCOL_UDP)
+	if (m_type == NetProtocol::PROTOCOL_UDP)
 	{
 		return sendUDP(adress, buffer, bufferLength);
 	}
@@ -131,17 +128,6 @@ bool Socket_impl::send(Address adress, const void* buffer, size_t bufferLength)
 	{
 		return sendTCP(adress, buffer, bufferLength);
 	}
-}
-
-BitStream* Socket_impl::getPacket()
-{
-	if (!m_incomingPackets.empty())
-	{
-		BitStream* packet = m_incomingPackets.front();
-		m_incomingPackets.pop();
-		return packet;
-	}
-	return nullptr;
 }
 
 uint32_t Socket_impl::getPort() const
@@ -169,20 +155,19 @@ uint64_t Socket_impl::getPacketsSent() const
 	return m_packetsSent;
 }
 
-int Socket_impl::receive()
+bool Socket_impl::receive(Address& address, char* buffer, int32_t& length)
 {
-	if (m_isInitialized)
+	assert(m_isInitialized);
+	
+	if (m_type == NetProtocol::PROTOCOL_UDP)
 	{
-		if (m_type == ENetProtocol::PROTOCOL_UDP)
-		{
-			return receiveUDP();
-		}
-		else
-		{
-			return receiveTCP();
-		}
+		return receiveUDP(address, buffer, length);
 	}
-	return 0;
+	else
+	{
+		return receiveTCP(address, buffer, length);
+	}
+	return false;
 }
 
 bool Socket_impl::initializeUDP(uint16_t port, bool isHost)
@@ -216,7 +201,7 @@ bool Socket_impl::initializeTCP(uint16_t port, bool isHost)
 	return false;
 }
 
-bool Socket_impl::sendUDP(Address adress, const void* buffer, size_t bufferLength)
+bool Socket_impl::sendUDP(const Address adress, const void* buffer, const size_t bufferLength)
 {
 	sockaddr_in remoteAddress;
 	remoteAddress.sin_family		= AF_INET;
@@ -227,30 +212,40 @@ bool Socket_impl::sendUDP(Address adress, const void* buffer, size_t bufferLengt
 	if (dataSent == SOCKET_ERROR)
 	{
 		LOG_ERROR("Send failed. Error Code : %d\n", WSAGetLastError());
+		__debugbreak();
 		return false;
 	}
-		
 	m_bytesSent += dataSent;
-
+	m_packetsSent++;
 	return true;
 }
 
-bool Socket_impl::sendTCP(Address adress, const void* buffer, size_t bufferLength)
+bool Socket_impl::sendTCP(const Address adress, const void* buffer, const size_t bufferLength)
 {
 	// TODO
 	assert(false);
 	return false;
 }
 
-int Socket_impl::receiveUDP()
+bool Socket_impl::receiveUDP(Address& address, char* buffer, int32_t& length)
 {
 	sockaddr_in remoteAddress;
 	int remoteAddrSize = sizeof(remoteAddress);
-
-	char buffer[2048];
 	int error = 0;
-	int receivedLength = recvfrom(m_winSocket, buffer, 32, 0, (sockaddr*)&remoteAddress, &remoteAddrSize);
-	if (receivedLength == SOCKET_ERROR)
+
+	int32_t receivedLength = recvfrom(m_winSocket, buffer, g_maxPacketSize, 0, 
+									  (sockaddr*)&remoteAddress, &remoteAddrSize);
+
+	if (receivedLength != SOCKET_ERROR)
+	{
+		address = Address(ntohl(remoteAddress.sin_addr.s_addr),
+						  ntohs(remoteAddress.sin_port));
+		m_bytesReceived += receivedLength;
+		length = receivedLength;
+
+		return true;
+	}
+	else
 	{
 		int error = WSAGetLastError();
 		switch (error)
@@ -258,37 +253,28 @@ int Socket_impl::receiveUDP()
 			case WSAEWOULDBLOCK:
 			case WSAECONNRESET:
 			{
-				return 0;
+				return false;
 			}
 
 			default:
 			{
 				LOG_ERROR("recvfrom failed. Error Code : %d\n", error);
-				return -1;
+				return false;
 			}
-		}
+		}		
 	}
-	else
-	{
-		BitStream* stream = BitStream::create();
-		Address incomingAddress(ntohl(remoteAddress.sin_addr.s_addr), ntohs(remoteAddress.sin_port));
-		
-		stream->writeData(reinterpret_cast<char*>(&incomingAddress), sizeof(Address));
-		stream->writeData(buffer, receivedLength);
-		m_incomingPackets.push(stream);
-	}
-
-	m_bytesReceived += receivedLength;
-	return receivedLength;
+	
+	return false;
 }
 
-int Socket_impl::receiveTCP()
+bool Socket_impl::receiveTCP(Address& address, char* buffer, int32_t& length)
 {
 	// TODO
-	return 0;
+	assert(false);
+	return false;
 }
 
-Socket* Socket::create(ENetProtocol type)
+Socket* Socket::create(NetProtocol type)
 {
 	return new Socket_impl(type);
 }

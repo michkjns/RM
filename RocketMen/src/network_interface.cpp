@@ -3,160 +3,25 @@
 
 #include "debug.h"
 #include "packet.h"
+#include "network_message.h" 
 #include "socket.h"
+
+#include <array>
+#include <assert.h>
+#include <algorithm>
 
 using namespace network;
 
-static const uint32_t s_maxPeers = 8;
+static const uint32_t s_maxPeers          = 8;
 static const uint32_t s_maxDuplicatePeers = 8; // Maximum peers allowed to have the same address
-static Peer s_invalidPeer;
+static const float    s_connectionTimeout = 30.0f; // Seconds to wait until timeout
+//==============================================================================
 
-NetworkInterface::NetworkInterface(): 
-	m_peerIDCounter(0),
-	m_peerID(0),
-	m_state(EState::STATE_DISCONNECTED)
+NetworkInterface::NetworkInterface() : 
+	m_stateTimer(0.0f),
+	m_state(State::STATE_DISCONNECTED)
 {
-	m_socket = Socket::create(Socket::ENetProtocol::PROTOCOL_UDP);
-	m_peers.resize(s_maxPeers);
-}
-
-Peer& NetworkInterface::getPeer(Address address)
-{
-	for (Peer& peer : m_peers)
-	{
-		if (peer.address == address)
-		{
-			return peer;
-		}
-	}
-
-	// Peer not found, return an invalid peer
-	return s_invalidPeer;
-}
-
-Peer& NetworkInterface::getPeer(int32_t peerID)
-{
-	for (Peer& peer : m_peers)
-	{
-		if (peer.peerID == peerID)
-		{
-			return peer;
-		}
-	}
-
-	// Peer not found, return an invalid peer
-	return s_invalidPeer;
-}
-
-int32_t NetworkInterface::getPeerID() const
-{
-	return m_peerID;
-}
-
-void NetworkInterface::handleIncomingPackets()
-{
-	BitStream* packetData = m_socket->getPacket();
-	while (packetData != nullptr)
-	{
-		char* incomingAddr = new char[sizeof(Address)];
-		packetData->readBytes(incomingAddr, sizeof(Address));
-		Address peerAddress(reinterpret_cast<Address*>(incomingAddr)->getAddress(), reinterpret_cast<Address*>(incomingAddr)->getPort());
-		delete[] incomingAddr;
-
-		Packet packet;
-		packetData->readBytes(reinterpret_cast<char*>(&packet.header), sizeof(PacketHeader));
-		packet.data = packetData;
-
-		switch (packet.header.type)
-		{
-			case ECommand::CLIENT_CONNECT:
-			{
-				if (m_state == EState::STATE_HOSTING)
-				{
-					Peer& peer = getPeer(peerAddress);
-					if (peer)
-					{
-						if (peer.duplicatePeers < s_maxDuplicatePeers)
-						{
-							peer.duplicatePeers++;
-							peer = newPeer(peerAddress);
-						}
-					}
-					else
-					{
-						peer = newPeer(peerAddress);
-					}
-					packet.header.senderID = peer.peerID;
-					m_incomingPackets.push(packet);
-				}
-				break;
-			}
-			case ECommand::CLIENT_DISCONNECT:
-			{
-				// A client disconnects from this server
-				if (m_state == EState::STATE_HOSTING)
-				{
-					Peer& peer = getPeer(packet.header.senderID);
-					if (peer)
-					{
-						for (Peer& dupPeer : m_peers)
-						{
-							if (dupPeer.address == peer.address)
-							{
-								dupPeer.duplicatePeers--;
-							}
-						}
-						peer.address = Address((uint32_t)0, 0);
-						peer.peerID = -1;
-						peer.numPlayers = 0;
-						peer.duplicatePeers = 0;
-					}
-				}
-				else
-				{
-					// I am a client and my disconnect has been acknowledged by the server
-					m_state = EState::STATE_DISCONNECTED;
-					m_incomingPackets.push(packet);
-				}
-				break;
-			}
-			case ECommand::SERVER_HANDSHAKE:
-			{
-				if (m_state == EState::STATE_CONNECTING)
-				{
-					m_state = EState::STATE_CONNECTED;
-					m_peerID = packet.data->readInt32();
-					m_incomingPackets.push(packet);
-				}
-				break;
-			}
-			default:
-			{
-				m_incomingPackets.push(packet);
-				break;
-			}
-		}
-	//	delete packetData;
-		packetData = m_socket->getPacket();
-	}
-}
-
-
-Peer& NetworkInterface::newPeer(const Address& address)
-{
-	uint32_t slot = 0;
-	for (slot; slot < s_maxPeers; slot++)
-	{
-		if (!m_peers[slot])
-		{
-			m_peers[slot].address = address;
-			m_peers[slot].peerID = m_peerIDCounter++;
-			return m_peers[slot];
-		}
-	}
-
-	// No available slots, return an invalid peer
-	return s_invalidPeer;
+	m_socket = Socket::create(Socket::NetProtocol::PROTOCOL_UDP);
 }
 
 NetworkInterface::~NetworkInterface()
@@ -164,14 +29,100 @@ NetworkInterface::~NetworkInterface()
 	if (m_socket) delete m_socket;
 }
 
-void NetworkInterface::tick()
+void NetworkInterface::clearBuffers()
 {
-	if (m_socket->isInitialized())
+	m_outgoingPackets.clear();
+}
+
+void NetworkInterface::receivePackets()
+{
+	if (!m_socket->isInitialized())
+		return assert(false);
+
+	Address address;
+	char    buffer[g_maxPacketSize];
+	int32_t length = 0;
+
+	std::array<IncomingMessage, s_maxPendingMessages> orderedMsgs;
+	uint32_t orderedMsgCount = 0;
+
+	while (m_socket->receive(address, buffer, length))
 	{
-		m_socket->receive();
+		assert(length <= g_maxPacketSize);
+
+		Packet* packet = new Packet;
+		// Reconstruct packet
+		BitStream* stream = BitStream::create();
+			stream->writeBuffer(buffer, length);
+			stream->readBytes((char*)&packet->header, sizeof(PacketHeader));
+			stream->readBytes(packet->getData(), packet->header.dataLength);
+		delete stream;
+		
+		// Dissect packet
+		for (int32_t i = 0; i < packet->header.messageCount; i++)
+		{
+			IncomingMessage msg = packet->readMessage();
+			msg.address = address;
+			if (msg.isOrdered)
+			{
+				orderedMsgs[orderedMsgCount++] = msg;
+			}
+			else
+			{
+				m_incomingMessages.push(msg);
+			}
+		}
+		
+		delete packet;
 	}
-	
-	handleIncomingPackets();
+
+	std::sort(orderedMsgs.begin(), orderedMsgs.begin() + orderedMsgCount,
+			  [](IncomingMessage a, IncomingMessage b) {
+		return (a.sequenceNr < b.sequenceNr);
+	});
+
+	for (uint32_t i = 0; i < orderedMsgCount; i++)
+	{
+		m_incomingMessagesOrdered.push(orderedMsgs[i]);
+	}
+}
+
+void NetworkInterface::sendPacket(const Address& destination, Packet* packet)
+{
+	assert(packet != nullptr);
+
+	BitStream* stream = BitStream::create();
+		stream->writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
+		stream->writeData(packet->getData(), packet->header.dataLength);
+		m_socket->send(destination, stream->getBuffer(), stream->getLength());
+//		LOG_DEBUG("Send packet: %i port", packet->header.messageCount, destination.getPort());
+	delete stream;
+}
+
+void NetworkInterface::setState(State state)
+{
+	m_state = state;
+	m_stateTimer = 0.0f;
+}
+
+void NetworkInterface::update(float deltaTime)
+{
+	m_stateTimer += deltaTime;
+
+	receivePackets();
+
+	switch (m_state)
+	{
+		case State::STATE_CONNECTING:
+		{
+			if (m_stateTimer >= s_connectionTimeout)
+			{
+				return setState(State::STATE_DISCONNECTED);
+			}
+			break;
+		}
+		default: break;
+	}
 }
 
 void NetworkInterface::connect(const Address& destination, const Time& time)
@@ -181,16 +132,16 @@ void NetworkInterface::connect(const Address& destination, const Time& time)
 		m_socket->initialize(destination.getPort());
 	}
 
-	LOG_INFO("Attempting to connect to %s", destination.getString().c_str());
+	NetworkMessage message = {};
+	message.type           = MessageType::CLIENT_CONNECT_REQUEST;
 
-	PacketHeader header;
-	header.type = ECommand::CLIENT_CONNECT;
-	header.dataLength = 0;
-	header.recipientID = 0;
-	header.sequenceNumber = 0;
+	Packet* packet = new Packet;
+		packet->header = {};
+		packet->writeMessage(message);
+		sendPacket(destination, packet);
+	delete packet;
 
-	m_socket->send(destination, &header, sizeof(header));
-	m_state = EState::STATE_CONNECTING;
+	setState(State::STATE_CONNECTING);
 }
 
 void NetworkInterface::host(uint32_t port)
@@ -202,82 +153,60 @@ void NetworkInterface::host(uint32_t port)
 	
 	if (m_socket->initialize(port, true))
 	{
-		m_state = EState::STATE_HOSTING;
+		setState(State::STATE_HOSTING);
 	}
 }
 
-void NetworkInterface::disconnect()
+//void NetworkInterface::disconnect()
+//{
+//	if (m_state != State::STATE_HOSTING)
+//	{
+//		NetworkMessage message = {};
+//		message.type = MessageType::CLIENT_DISCONNECT;
+//		message.isReliable = true;
+//
+//		sendMessage(m_serverAddress, message);
+//
+//		setState(State::STATE_DISCONNECTING);
+//	}
+//}
+
+void NetworkInterface::sendMessage(const Address& destination, NetworkMessage& message)
 {
-	if (m_state != EState::STATE_HOSTING)
-	{
-		BitStream* stream = BitStream::create();
-		stream->writeByte(ECommand::CLIENT_DISCONNECT);
-		m_socket->send(m_peers[0].address, stream->getBuffer(), stream->getLength());
-		delete stream;
-		m_state = EState::STATE_DISCONNECTING;
-	}
+	Packet* packet = new Packet;
+	    packet->header = {};
+	    packet->writeMessage(message);
+	    sendPacket(destination, packet);
+	delete packet;
 }
 
-void NetworkInterface::send(Packet& packet, int32_t sequenceNumber, uint8_t channel /* = 0 */)
+void NetworkInterface::sendMessages(const Address& destination, 
+									std::vector<NetworkMessage>& messages)
 {
-	const uint32_t dataLength = (packet.data) ?	static_cast<uint32_t>(packet.data->getLength())	: 0;
-	const int32_t  recipientID = packet.header.recipientID;
-	packet.header.sequenceNumber = (packet.reliable == EReliable::RELIABLE) ? -sequenceNumber : sequenceNumber;
-	const size_t packetSize = sizeof(PacketHeader) + dataLength;
-	char* completePacket = new char[packetSize];
-	char* packetContentPtr = completePacket + sizeof(PacketHeader);
-	packet.header.senderID = m_peerID;
-	memcpy(completePacket, &packet.header, sizeof(PacketHeader));
-
-	if (packet.data != nullptr)
-	{
-		if (packet.data->getLength() > 0)
+	Packet* packet = new Packet;
+		packet->header = {};
+		packet->header.sequenceNumber = static_cast<int32_t>(m_socket->getPacketsSent());
+		for (auto msg : messages)
 		{
-			memcpy(packetContentPtr, packet.data->getBuffer(), packet.data->getLength());
+			packet->writeMessage(msg);
+			if (!msg.isReliable) 
+				destroyMessage(msg);
 		}
-		delete packet.data;
-	}
-	
-	if (packet.broadcast == EBroadcast::BROADCAST_ALL)
-	{
-		for (Peer& peer : m_peers)
-		{
-			if (peer.peerID == recipientID)
-			{
-				continue;
-			}
-			if (peer)
-			{
-				m_socket->send(peer.address, completePacket, packetSize);
-			}
-		}
-	}
-	else /*if (packet.broadcast == EBroadcast::BROADCAST_SINGLE)*/
-	{
-		const Peer& peer = getPeer((uint32_t)recipientID);
-		if (peer)
-		{
-			m_socket->send(peer.address, completePacket, packetSize);
-		}
-	}
-
-	delete[] completePacket;
+		sendPacket(destination, packet);
+	delete packet;
 }
 
-Packet& NetworkInterface::getPacket()
+bool NetworkInterface::isConnecting() const
 {
-	if (m_incomingPackets.size() > 0)
-	{
-		if (m_incomingPackets.front().header.type == ECommand::EVENT_CLEAR && m_incomingPackets.size() > 1)
-		{
-			m_incomingPackets.pop();
-		}
-		return m_incomingPackets.front();
-	}
-	else
-	{
-		static Packet clearPacket;
-		clearPacket.header.type = ECommand::EVENT_CLEAR;
-		return clearPacket;
-	}
+	return (m_state == State::STATE_CONNECTING);
+}
+
+std::queue<IncomingMessage>& NetworkInterface::getMessages()
+{
+	return m_incomingMessages;
+}
+
+std::queue<IncomingMessage>& NetworkInterface::getOrderedMessages()
+{
+	return m_incomingMessagesOrdered;
 }

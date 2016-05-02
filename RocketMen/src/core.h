@@ -13,8 +13,11 @@ static const char*    g_localHost = "127.0.0.1";
 class Game;
 class Renderer;
 class Window;
-class Server;
-class Client;
+
+namespace network {
+	class Server;
+	class Client;
+}; // namespace network
 
 class Core
 {
@@ -28,11 +31,11 @@ public:
 private:
 	bool loadResources();
 
-	Client*		m_client;
-	Game*		m_game;
-	Renderer*	m_renderer;
-	Server*		m_server;
-	Window*		m_window;
-	Time		m_gameTime;
-	uint64_t	m_timestep;
+	Game*		     m_game;
+	Renderer*	     m_renderer;
+	Window*          m_window;
+	network::Client* m_client;
+	network::Server* m_server;
+	Time             m_gameTime;
+	uint64_t         m_timestep;
 };

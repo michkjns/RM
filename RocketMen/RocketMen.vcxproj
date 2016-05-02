@@ -160,9 +160,10 @@
     <ClCompile Include="src\core.cpp" />
     <ClCompile Include="src\debug.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\networker.cpp" />
     <ClCompile Include="src\network_interface.cpp" />
+    <ClCompile Include="src\network_message.cpp" />
     <ClCompile Include="src\packet.cpp" />
+    <ClCompile Include="src\remote_client.cpp" />
     <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\resource_manager.cpp" />
     <ClCompile Include="src\rocketmen.cpp" />
@@ -186,10 +187,10 @@
     <ClInclude Include="src\game.h" />
     <ClInclude Include="src\includes.h" />
     <ClInclude Include="src\address.h" />
-    <ClInclude Include="src\networker.h" />
     <ClInclude Include="src\network_interface.h" />
+    <ClInclude Include="src\network_message.h" />
     <ClInclude Include="src\packet.h" />
-    <ClInclude Include="src\peer.h" />
+    <ClInclude Include="src\remote_client.h" />
     <ClInclude Include="src\renderer.h" />
     <ClInclude Include="src\resource_manager.h" />
     <ClInclude Include="src\rocketmen.h" />

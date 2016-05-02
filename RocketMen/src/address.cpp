@@ -11,6 +11,23 @@ Address::Address(uint8_t a, uint8_t b, uint8_t c, uint8_t d, uint16_t port)
 
 Address::Address(const char* address, uint16_t port)
 {
+	set(address, port);
+}
+
+Address::Address(uint32_t address, uint16_t port) :
+	m_address(address),
+	m_port(port)
+{
+}
+
+void Address::set(uint32_t address, uint16_t port)
+{
+	m_address = address;
+	m_port    = port;
+}
+
+void Address::set(const char* address, uint16_t port)
+{
 	uint8_t a = 0;
 	uint8_t b = 0;
 	uint8_t c = 0;
@@ -42,16 +59,9 @@ Address::Address(const char* address, uint16_t port)
 		c = std::stoi(parts[2]);
 		d = std::stoi(parts[3]);
 	}
-	
+
 	m_address = (a << 24) | (b << 16) | (c << 8) | d;
 	m_port = port;
-
-}
-
-Address::Address(uint32_t address, uint16_t port)
-	: m_address(address)
-	, m_port(port)
-{
 }
 
 uint32_t Address::getAddress() const
@@ -84,7 +94,7 @@ uint16_t Address::getPort() const
 	return m_port;
 }
 
-std::string Address::getString() const
+std::string Address::toString() const
 {
 	return std::to_string(getA()) + "." + std::to_string(getB()) + "." + std::to_string(getC()) + "." + std::to_string(getD()) + ":" + std::to_string(getPort());
 }

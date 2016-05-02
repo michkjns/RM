@@ -16,7 +16,7 @@ public:
 	Renderer_impl();
 	~Renderer_impl();
 
-	bool initialize(EProjectionMode projection, Window* window) override;
+	bool initialize(ProjectionMode projection, Window* window) override;
 	void destroy() override;
 
 	void render() override;
@@ -28,9 +28,9 @@ private:
 
 	SpriteRenderer m_spriteRenderer;
 	Window* m_window;
-	glm::mat4 BuildProjectionMatrix(EProjectionMode projection) const;
+	glm::mat4 BuildProjectionMatrix(ProjectionMode projection) const;
 	glm::mat4 m_projectionMatrix;
-	EProjectionMode m_EProjectionMode;
+	ProjectionMode m_EProjectionMode;
 
 };
 
@@ -43,7 +43,7 @@ Renderer_impl::~Renderer_impl()
 {
 }
 
-bool Renderer_impl::initialize(EProjectionMode projection, Window* window)
+bool Renderer_impl::initialize(ProjectionMode projection, Window* window)
 {
 	assert(window != nullptr);
 
@@ -91,17 +91,17 @@ void Renderer_impl::renderUI()
 {
 }
 
-glm::mat4 Renderer_impl::BuildProjectionMatrix(EProjectionMode projection) const
+glm::mat4 Renderer_impl::BuildProjectionMatrix(ProjectionMode projection) const
 {
 	glm::mat4 matrix;
 	switch (projection)
 	{
-		case EProjectionMode::ORTOGRAPHIC_PROJECTION:
+		case ProjectionMode::ORTOGRAPHIC_PROJECTION:
 		{
 			matrix = glm::ortho(0.0f, 800.0f, 600.0f, 0.0f, -1.0f, 1.0f);
 			break;
 		}
-		case EProjectionMode::PERSPECTIVE_PROJECTION:
+		case ProjectionMode::PERSPECTIVE_PROJECTION:
 		{
 			// TODO(Support perspective projection)
 			assert(false);

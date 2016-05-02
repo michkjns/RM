@@ -51,7 +51,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		}
 		if (strcmp(arg, "--debug") == 0)
 		{
-			Debug::setVerbosity(Debug::EVerbosity::LEVEL_DEBUG);
+			Debug::setVerbosity(Debug::Verbosity::LEVEL_DEBUG);
 			LOG_INFO("Debug logging enabled");
 		}
 	}
@@ -65,21 +65,21 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	if (runDedicated)
 	{
 		LOG_INFO("Core: Creating server..");
-		m_server = Server::create();
+		m_server = new Server(m_gameTime);
 		if (m_server->initialize())
 		{
 			LOG_INFO("Server: Server succesfully initialized");
 		}
 		m_server->host(g_defaultPort);
 	}
-	if (!runDedicated)
+	else
 	{
 		LOG_INFO("Core: Creating renderer..");
 		m_renderer = Renderer::get();
-		m_renderer->initialize(Renderer::EProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
+		m_renderer->initialize(Renderer::ProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
 
 		LOG_INFO("Core: Creating client..");
-		m_client = Client::create(m_gameTime);
+		m_client = new Client(m_gameTime);
 		m_client->initialize();
 	}
 
@@ -121,30 +121,30 @@ void Core::run()
 	{
 		checkGL();
 		m_gameTime.update();
+		const uint64_t currentTime = m_gameTime.getMicroSeconds();
+		const float deltaTime = m_gameTime.getDeltaSeconds();
 
 		/****************
 		/** Server Update */
 		if (m_server)
 		{
-			m_server->tick(m_gameTime);
-			uint64_t currentTime = m_gameTime.getMicroSeconds();
-
-			/** Fixed timestep simulation */
-			while (currentTime - updatedTime > m_timestep)
-			{
-				m_game->fixedUpdate(m_timestep);
-				updatedTime += m_timestep;
-			}
+			m_server->update();
 		}
-		
 		m_game->update(m_gameTime);
 
 		/****************/
 		/** Client Update */
 		if (m_client)
 		{
-			m_client->tick();
+			m_client->update();
 			m_renderer->render();
+		}
+
+		/** Fixed timestep simulation */
+		while (currentTime - updatedTime > m_timestep)
+		{
+			m_game->fixedUpdate(m_timestep);
+			updatedTime += m_timestep;
 		}
 
 		m_window->swapBuffers();

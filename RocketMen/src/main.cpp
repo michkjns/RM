@@ -12,9 +12,9 @@ int main(int argc, char *argv[])
 {
 	Debug::openLog("rm.log");
 #ifdef _DEBUG
-	Debug::setVerbosity(Debug::EVerbosity::LEVEL_DEBUG);
+	Debug::setVerbosity(Debug::Verbosity::LEVEL_DEBUG);
 #else
-	Debug::setVerbosity(Debug::EVerbosity::LEVEL_INFO);
+	Debug::setVerbosity(Debug::Verbosity::LEVEL_INFO);
 #endif
 
 	Core engine;

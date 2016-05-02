@@ -9,9 +9,10 @@
 #include <sstream>
 #include <stdarg.h>
 
-static bool					s_fileOpened = false;
-static std::ofstream		s_logFile;
-static Debug::EVerbosity	s_verbosityLevel = Debug::EVerbosity::LEVEL_INFO;
+static bool             s_fileOpened = false;
+static std::ofstream    s_logFile;
+static Debug::Verbosity	s_verbosityLevel = Debug::Verbosity::LEVEL_INFO;
+//==============================================================================
 
 void Debug::openLog(const char* file)
 {
@@ -42,21 +43,21 @@ void Debug::closeLog()
 	s_fileOpened = false;
 }
 
-void Debug::setVerbosity(EVerbosity verbosity)
+void Debug::setVerbosity(Verbosity verbosity)
 {
 	s_verbosityLevel = verbosity;
 }
 
-void Debug::log(EVerbosity verbosityLevel, const char* format, ...)
+void Debug::log(Verbosity verbosityLevel, const char* format, ...)
 {
 
 	if (verbosityLevel < s_verbosityLevel) return;
 
 	std::string verbosity =
-		(verbosityLevel <= Debug::EVerbosity::LEVEL_DEBUG)		? "DEBUG"	:
-		(verbosityLevel <= Debug::EVerbosity::LEVEL_INFO)		? "INFO"	:
-		(verbosityLevel <= Debug::EVerbosity::LEVEL_WARNING)	? "WARNING" :
-		(verbosityLevel <= Debug::EVerbosity::LEVEL_ERROR)		? "ERROR"	: 
+		(verbosityLevel <= Debug::Verbosity::LEVEL_DEBUG)   ? "DEBUG"   :
+		(verbosityLevel <= Debug::Verbosity::LEVEL_INFO)    ? "INFO"    :
+		(verbosityLevel <= Debug::Verbosity::LEVEL_WARNING) ? "WARNING" :
+		(verbosityLevel <= Debug::Verbosity::LEVEL_ERROR)   ? "ERROR"   : 
 		"";
 
 	char buffer[1024];
