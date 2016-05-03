@@ -20,6 +20,7 @@ public:
 	unsigned int getWidth()  const override;
 	unsigned int getHeight() const override;
 
+	void* getGLFWwindow()    const override;
 
 private:
 	GLFWwindow*  m_glfwWindow;
@@ -36,6 +37,11 @@ Window_impl::Window_impl() :
 
 Window_impl::~Window_impl()
 {
+}
+
+void* Window_impl::getGLFWwindow() const
+{
+	return (void*)m_glfwWindow;
 }
 
 Window* Window::create()
@@ -84,6 +90,8 @@ void Window_impl::terminate()
 {
 	LOG_INFO("Window: Terminating GLFW..");
 	glfwTerminate();
+
+	// Optional: glfwDestroyWindow(window);
 }
 
 void Window_impl::swapBuffers()

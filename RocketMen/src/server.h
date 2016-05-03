@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "game_time.h" 
-#include "network_interface.h"
-#include "remote_client.h"
+#include <game_time.h>
+#include <network/network_interface.h>
+#include <network/remote_client.h>
 
 #include <array>
 #include <stdint.h>

@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "address.h"
-#include "bitstream.h"
-#include "packet.h"
+#include <bitstream.h>
+#include <network/address.h>
+#include <network/packet.h>
 
 #include <stdint.h>
 

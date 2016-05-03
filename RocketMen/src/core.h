@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "includes.h"
-
-#include "game_time.h"
+#include <includes.h>
+#include <input.h>
+#include <game_time.h>
 
 static const uint32_t g_defaultWidth = 640;
 static const uint32_t g_defaultHeight = 480;
@@ -37,5 +37,6 @@ private:
 	network::Client* m_client;
 	network::Server* m_server;
 	Time             m_gameTime;
+	Input*           m_input;
 	uint64_t         m_timestep;
 };

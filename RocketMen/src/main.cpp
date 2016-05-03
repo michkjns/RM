@@ -1,12 +1,12 @@
 
-#include "core.h"
-#include "debug.h"
-#include "rocketmen.h"
+#include <core.h>
+#include <debug.h>
+#include <game/rocketmen.h>
 
 #include <iostream>
 #include <cstring>
 
-#include "address.h"
+#include <network/address.h>
 
 int main(int argc, char *argv[])
 {

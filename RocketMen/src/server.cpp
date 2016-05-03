@@ -1,8 +1,8 @@
 
-#include "server.h"
+#include <server.h>
 
-#include "debug.h"
-#include "remote_client.h"
+#include <debug.h>
+#include <network/remote_client.h>
 
 #include <assert.h>
 
@@ -193,7 +193,7 @@ void Server::processIncomingMessages(float deltaTime)
 	while (!orderedMessages.empty())
 	{
 		IncomingMessage& incomingMessage = orderedMessages.front();
-		if (incomingMessage.sequenceNr > m_lastOrderedMessaged)
+		if (incomingMessage.sequenceNr > (int32_t)m_lastOrderedMessaged)
 		{
 			m_lastOrderedMessaged = incomingMessage.sequenceNr;
 			processMessage(incomingMessage);

@@ -1,15 +1,15 @@
 
 #include "core.h"
 
-#include "address.h"
-#include "check_gl_error.h"
-#include "client.h"
-#include "game.h"
-#include "renderer.h"
-#include "resource_manager.h"
-#include "server.h"
-#include "time.h"
-#include "window.h"
+#include <network/address.h>
+#include <check_gl_error.h>
+#include <client.h>
+#include <game.h>
+#include <renderer.h>
+#include <resource_manager.h>
+#include <server.h>
+#include <time.h>
+#include <window.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -22,6 +22,7 @@ Core::Core() :
 	m_renderer(nullptr),
 	m_server(nullptr),
 	m_window(nullptr),
+	m_input(nullptr),
 	m_timestep(33333ULL)
 {
 
@@ -88,6 +89,9 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		LOG_ERROR("Core: Loading resources has failed");
 	}
 
+	m_input = Input::create();
+	m_input->initialize(m_window);
+
 	return true;
 }
 
@@ -116,10 +120,8 @@ void Core::run()
 	}
 
 	LOG_DEBUG("Core: Entering main loop..");
-	checkGL();
 	while (!m_window->pollEvents())
 	{
-		checkGL();
 		m_gameTime.update();
 		const uint64_t currentTime = m_gameTime.getMicroSeconds();
 		const float deltaTime = m_gameTime.getDeltaSeconds();
@@ -148,6 +150,7 @@ void Core::run()
 		}
 
 		m_window->swapBuffers();
+		m_input->update();
 	}
 
 	LOG_DEBUG("Core: main loop ended..");
@@ -166,6 +169,7 @@ void Core::destroy()
 		m_renderer->destroy();
 	}
 
+	m_input->destroy();
 	LOG_INFO("Core: Terminating window..");
 	m_window->terminate();
 

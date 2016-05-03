@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "network_interface.h"
-#include "network_message.h"
+#include <network/network_interface.h>
+#include <network/network_message.h>
 
 #include <array>
 #include <cstdint>

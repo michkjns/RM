@@ -80,7 +80,7 @@
     <OutDir>$(SolutionDir)/bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;C:\Users\Mic\Documents\GitHub\RM\RocketMen\dep\glfw-3.1.2.bin.WIN64\lib-vc2015;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -151,25 +151,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\address.cpp" />
+    <ClCompile Include="src\input.cpp" />
+    <ClCompile Include="src\network\address.cpp" />
     <ClCompile Include="src\bitstream.cpp" />
     <ClCompile Include="src\camera.cpp" />
     <ClCompile Include="src\check_gl_error.cpp" />
     <ClCompile Include="src\client.cpp" />
-    <ClCompile Include="src\client_history.cpp" />
+    <ClCompile Include="src\network\client_history.cpp" />
     <ClCompile Include="src\core.cpp" />
     <ClCompile Include="src\debug.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\network_interface.cpp" />
-    <ClCompile Include="src\network_message.cpp" />
-    <ClCompile Include="src\packet.cpp" />
-    <ClCompile Include="src\remote_client.cpp" />
+    <ClCompile Include="src\network\network_interface.cpp" />
+    <ClCompile Include="src\network\network_message.cpp" />
+    <ClCompile Include="src\network\packet.cpp" />
+    <ClCompile Include="src\network\remote_client.cpp" />
     <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\resource_manager.cpp" />
-    <ClCompile Include="src\rocketmen.cpp" />
+    <ClCompile Include="src\game\rocketmen.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\shader.cpp" />
-    <ClCompile Include="src\socket.cpp" />
+    <ClCompile Include="src\network\socket.cpp" />
     <ClCompile Include="src\sprite_renderer.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\game_time.cpp" />
@@ -181,22 +182,24 @@
     <ClInclude Include="src\camera.h" />
     <ClInclude Include="src\check_gl_error.h" />
     <ClInclude Include="src\client.h" />
-    <ClInclude Include="src\client_history.h" />
+    <ClInclude Include="src\input.h" />
+    <ClInclude Include="src\keys.h" />
+    <ClInclude Include="src\network\client_history.h" />
     <ClInclude Include="src\core.h" />
     <ClInclude Include="src\debug.h" />
     <ClInclude Include="src\game.h" />
     <ClInclude Include="src\includes.h" />
-    <ClInclude Include="src\address.h" />
-    <ClInclude Include="src\network_interface.h" />
-    <ClInclude Include="src\network_message.h" />
-    <ClInclude Include="src\packet.h" />
-    <ClInclude Include="src\remote_client.h" />
+    <ClInclude Include="src\network\address.h" />
+    <ClInclude Include="src\network\network_interface.h" />
+    <ClInclude Include="src\network\network_message.h" />
+    <ClInclude Include="src\network\packet.h" />
+    <ClInclude Include="src\network\remote_client.h" />
     <ClInclude Include="src\renderer.h" />
     <ClInclude Include="src\resource_manager.h" />
-    <ClInclude Include="src\rocketmen.h" />
+    <ClInclude Include="src\game\rocketmen.h" />
     <ClInclude Include="src\server.h" />
     <ClInclude Include="src\shader.h" />
-    <ClInclude Include="src\socket.h" />
+    <ClInclude Include="src\network\socket.h" />
     <ClInclude Include="src\sprite_renderer.h" />
     <ClInclude Include="src\texture.h" />
     <ClInclude Include="src\game_time.h" />

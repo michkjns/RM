@@ -30,12 +30,6 @@
     <ClCompile Include="src\window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\rocketmen.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\socket.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -57,9 +51,6 @@
     <ClCompile Include="src\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network_interface.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\resource_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,32 +60,38 @@
     <ClCompile Include="src\check_gl_error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\client_history.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\game_time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\address.cpp">
+    <ClCompile Include="src\network\address.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\packet.cpp">
+    <ClCompile Include="src\network\network_interface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network_message.cpp">
+    <ClCompile Include="src\network\network_message.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\remote_client.cpp">
+    <ClCompile Include="src\network\packet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\remote_client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\rocketmen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\client_history.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\socket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\socket.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\rocketmen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -134,9 +131,6 @@
     <ClInclude Include="src\texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network_interface.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\resource_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -146,22 +140,37 @@
     <ClInclude Include="src\check_gl_error.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\packet.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\game_time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\address.h">
+    <ClInclude Include="src\network\address.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\client_history.h">
+    <ClInclude Include="src\network\network_interface.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network_message.h">
+    <ClInclude Include="src\network\network_message.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\remote_client.h">
+    <ClInclude Include="src\network\packet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\remote_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\rocketmen.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\client_history.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\keys.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

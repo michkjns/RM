@@ -1,9 +1,9 @@
 
-#include "client.h"
+#include <client.h>
 
-#include "address.h"
-#include "debug.h"
-#include "game_time.h"
+#include <network/address.h>
+#include <debug.h>
+#include <game_time.h>
 
 #include <assert.h>
 
@@ -36,13 +36,23 @@ bool Client::initialize()
 	m_isInitialized = true;
 	return true;
 }
-
+#include <input.h>
 void Client::update()
 {
 	const float deltaTime = m_gameTime.getDeltaSeconds();
 
 	processIncomingMessages(deltaTime);
 	processOutgoingMessages(deltaTime);
+
+	if (Input::getKey(Input::Key::A))
+	{
+		LOG_DEBUG("getKey A");
+	}
+
+	if (Input::getKeyDown(Input::Key::S))
+	{
+		LOG_DEBUG("getKeyDown S");
+	}
 
 	m_stateTimer += deltaTime;
 	switch (m_state)
@@ -184,7 +194,7 @@ void Client::processIncomingMessages(float deltaTime)
 	while (!orderedMessages.empty())
 	{
 		IncomingMessage& incomingMessage = orderedMessages.front();
-		if (incomingMessage.sequenceNr > m_lastOrderedMessaged)
+		if (incomingMessage.sequenceNr > (int32_t)m_lastOrderedMessaged)
 		{
 			m_lastOrderedMessaged = incomingMessage.sequenceNr;
 			processMessage(incomingMessage);
