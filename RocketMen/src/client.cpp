@@ -44,16 +44,6 @@ void Client::update()
 	processIncomingMessages(deltaTime);
 	processOutgoingMessages(deltaTime);
 
-	if (Input::getKey(Input::Key::A))
-	{
-		LOG_DEBUG("getKey A");
-	}
-
-	if (Input::getKeyDown(Input::Key::S))
-	{
-		LOG_DEBUG("getKeyDown S");
-	}
-
 	m_stateTimer += deltaTime;
 	switch (m_state)
 	{
