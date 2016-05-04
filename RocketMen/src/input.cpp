@@ -80,12 +80,12 @@ void Input::update()
 	std::fill(std::begin(s_mouseStateDown), std::end(s_mouseStateDown), false);
 }
 
-bool Input::getKey(Input::Key key)
+bool Input::getKey(Key key)
 {
 	return s_keyState[(int)key];
 }
 
-bool Input::getKeyDown(Input::Key key)
+bool Input::getKeyDown(Key key)
 {
 	return s_keyStateDown[(int)key];
 }

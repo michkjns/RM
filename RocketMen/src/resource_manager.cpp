@@ -44,7 +44,7 @@ Shader& ResourceManager::getShader(std::string name)
 }
 
 Texture& ResourceManager::loadTexture(const char* file, std::string name
-									 , Texture::EBlendMode blendMode /* = Texture::EBlendMode::MODE_OPAQUE */)
+									 , Texture::BlendMode blendMode /* = Texture::BlendMode::MODE_OPAQUE */)
 {
 	LOG_INFO("ResourceManager: Loading texture %s", file);
 	int width, height;

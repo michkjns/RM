@@ -4,12 +4,12 @@
 #include <game/rocketmen.h>
 #include <resource_manager.h>
 
-
 using namespace input;
 
 bool RocketMenGame::initialize()
 {
-	ResourceManager::loadTexture("data/textures/demoTexture.png", "demoTexture", Texture::EBlendMode::MODE_OPAQUE);
+	ResourceManager::loadTexture("data/textures/demoTexture.png", "demoTexture", 
+								 Texture::BlendMode::MODE_OPAQUE);
 
 	return false;
 }
