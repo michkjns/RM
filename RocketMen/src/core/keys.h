@@ -4,6 +4,13 @@
 
 namespace input
 {
+	enum class CursorState
+	{
+		STATE_ENABLED,
+		STATE_HIDDEN,
+		STATE_DISABLED
+	};
+
 	enum class MouseButton
 	{
 		MOUSE_1 = 0,

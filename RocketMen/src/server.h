@@ -8,14 +8,18 @@
 #include <array>
 #include <stdint.h>
 
+class Game;
+
 namespace network
 {
 	static const uint32_t s_maxConnectedClients = 32;
 
+	//==========================================================================
+
 	class Server
 	{
 	public:
-		Server(Time& gameTime);
+		Server(Time& time, Game* game);
 		~Server();
 
 		bool initialize();
@@ -47,11 +51,13 @@ namespace network
 		RemoteClient* getClient(const Address& address);
 
 		NetworkInterface m_networkInterface;
+		Game*            m_game;
 		bool             m_isInitialized;
 		Time&            m_gameTime;
 		uint32_t         m_clientIDCounter;
 		uint32_t         m_numConnectedClients;
 		uint32_t         m_lastOrderedMessaged;
+		uint64_t         m_simulatedTime;
 
 		/* Time since last snapshot */
 		float m_snapshotTime;

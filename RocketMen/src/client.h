@@ -7,7 +7,9 @@
 #include <array>
 #include <cstdint>
 
+class Game;
 class Time;
+
 namespace network 
 {
 	class Address;
@@ -30,7 +32,7 @@ namespace network
 	class Client
 	{
 	public:
-		Client(Time& time);
+		Client(Time& time, Game* game);
 		~Client();
 
 		enum class State
@@ -62,6 +64,7 @@ namespace network
 		void sendMessages();
 
 		NetworkInterface m_networkInterface;
+		Game*            m_game;
 		Time&            m_gameTime;
 		int32_t          m_lastReceivedState;
 		uint32_t         m_lastOrderedMessaged;
@@ -71,6 +74,7 @@ namespace network
 		float            m_messageSentTime;
 		float            m_maxMessageSentTime;
 		uint32_t         m_connectionAttempt;
+		uint64_t         m_simulatedTime;
 		bool             m_isInitialized;
 
 		std::vector<int32_t> m_reliableAckList;

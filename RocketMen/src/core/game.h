@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include "game_time.h"
-
+class ActionBuffer;
 class Game
 {
 public:
@@ -22,4 +22,14 @@ public:
 	virtual void update(const Time& time) = 0;
 
 	virtual void terminate() = 0;
+
+public:
+	uint64_t getTimestep();
+	void     setTimestep(uint64_t timestep);
+
+	/** Processes the actionbuffer and performs action callbacks */
+	void     processActions(ActionBuffer& actions);
+	
+private:
+	uint64_t m_timestep;
 };

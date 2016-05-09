@@ -1,5 +1,5 @@
 
-#include <core.h>
+#include <core/core.h>
 #include <debug.h>
 #include <game/rocketmen.h>
 
@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 #endif
 
 	Core engine;
-	Game* game = new RocketMenGame();
+	Game* game = new rm::RocketMenGame();
 
 	engine.initialize(game, argc, argv);
 	engine.run();

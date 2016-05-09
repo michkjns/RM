@@ -1,7 +1,7 @@
 
-#include "includes.h"
+#include <includes.h>
 
-#include "check_gl_error.h"
+#include <graphics/check_gl_error.h>
 
 void checkOpenGLError( const char* msg, const char* file, int line )
 {

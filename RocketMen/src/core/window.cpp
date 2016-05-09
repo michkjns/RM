@@ -1,6 +1,6 @@
 
 #include "includes.h"
-#include "window.h"
+#include <core/window.h>
 
 #include <assert.h>
 #include <stdio.h>

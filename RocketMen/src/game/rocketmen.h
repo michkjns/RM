@@ -1,18 +1,22 @@
 
 #pragma once
 
-#define GAMEVER 0
+#define GAME_VERSION 0
 
-#include "game.h"
+#include <core/game.h>
 
-class RocketMenGame : public Game
+namespace rm
 {
-public:
-	bool initialize() override;
-	void fixedUpdate(uint64_t timestep) override;
-	void update(const Time& time) override;
-	void terminate() override;
+	class RocketMenGame : public Game
+	{
+	public:
+		bool initialize() override;
+		void fixedUpdate(uint64_t timestep) override;
+		void update(const Time& time) override;
+		void terminate() override;
 
-private:
+	private:
 
-};
+	};
+
+}; // namespace rm

@@ -1,8 +1,8 @@
 
-#include "includes.h"
-#include "resource_manager.h"
+#include <includes.h>
+#include <core/resource_manager.h>
 
-#include "check_gl_error.h"
+#include <graphics/check_gl_error.h>
 
 #include <assert.h>
 #include <iostream>

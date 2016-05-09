@@ -1,15 +1,20 @@
 
 #include <includes.h>
-#include <input.h>
+#include <core/input.h>
 #include <game/rocketmen.h>
-#include <resource_manager.h>
+#include <core/resource_manager.h>
 
 using namespace input;
+using namespace rm;
 
 bool RocketMenGame::initialize()
 {
 	ResourceManager::loadTexture("data/textures/demoTexture.png", "demoTexture", 
 								 Texture::BlendMode::MODE_OPAQUE);
+
+	setTimestep(66666ULL);
+
+	Input::mapAction("PrintSomething", Key::D);
 
 	return false;
 }

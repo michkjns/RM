@@ -1,9 +1,12 @@
 
 #include <client.h>
 
+#include <core/action_buffer.h>
 #include <network/address.h>
 #include <debug.h>
+#include <core/game.h>
 #include <game_time.h>
+#include <core/input.h>
 
 #include <assert.h>
 
@@ -13,8 +16,9 @@ static const uint32_t s_maxConnectionAttempts = 3;
 static const uint32_t s_connectionRetryTime   = 5;
 //==============================================================================
 
-Client::Client(Time& time) :
+Client::Client(Time& time, Game* game) :
 	m_gameTime(time),
+	m_game(game),
 	m_lastReceivedState(0),
 	m_lastOrderedMessaged(0),
 	m_state(State::STATE_DISCONNECTED),
@@ -36,15 +40,28 @@ bool Client::initialize()
 	m_isInitialized = true;
 	return true;
 }
-#include <input.h>
+
 void Client::update()
 {
-	const float deltaTime = m_gameTime.getDeltaSeconds();
+	const float    deltaTime   = m_gameTime.getDeltaSeconds();
+	const uint64_t currentTime = m_gameTime.getMicroSeconds();
+	const uint64_t timestep    = m_game->getTimestep();
+	ActionBuffer&  actions     = Input::getActions();
 
+	//ActionBuffer actionBuffer = Input::getActions();
 	processIncomingMessages(deltaTime);
+	/** Fixed timestep simulation */
+	while (currentTime - m_simulatedTime > timestep)
+	{
+		// Process input
+		m_game->processActions(actions);
+		m_simulatedTime += timestep;
+	}
+
 	processOutgoingMessages(deltaTime);
 
 	m_stateTimer += deltaTime;
+
 	switch (m_state)
 	{
 		case State::STATE_CONNECTING:

@@ -1,10 +1,10 @@
 
-#include "includes.h"
-#include "renderer.h"
+#include <includes.h>
+#include <graphics/renderer.h>
 
-#include "check_gl_error.h"
-#include "sprite_renderer.h"
-#include "window.h"
+#include <graphics/check_gl_error.h>
+#include <graphics/sprite_renderer.h>
+#include <core/window.h>
 
 #include <GLFW/glfw3.h>
 

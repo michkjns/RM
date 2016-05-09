@@ -1,34 +1,23 @@
 
-#include "client_history.h"
+#include "action_history.h"
 
 using namespace network;
 
-ClientHistory::ClientHistory(uint32_t size)
+ActionHistory::ActionHistory(uint32_t size)
 {
 	m_historyBuffer.resize(static_cast<size_t>(size));
 	m_newestFrame = m_historyBuffer.begin();
 	m_oldestFrame = m_historyBuffer.begin();
 }
 
-ClientHistory::~ClientHistory()
+ActionHistory::~ActionHistory()
 {
-	for (auto frame : m_historyBuffer)
-	{
-		if (frame.actions != nullptr)
-		{
-			delete frame.actions;
-		}
-	}
 }
 
-void ClientHistory::add(const ClientFrame& frame)
+void ActionHistory::add(const ClientFrame& frame)
 {
 	/** Delete old frame */
 	std::list<ClientFrame>::iterator newFrame = next(m_newestFrame);
-	if ((*newFrame).actions != nullptr)
-	{
-		delete (*newFrame).actions;
-	}
 
 	/** Insert new frame */
 	(*newFrame) = frame;
@@ -37,10 +26,9 @@ void ClientHistory::add(const ClientFrame& frame)
 		m_oldestFrame = next(m_oldestFrame);
 	}
 	m_newestFrame = newFrame;
-
 }
 
-std::list<ClientFrame>::iterator ClientHistory::next(std::list<ClientFrame>::iterator iter)
+std::list<ClientFrame>::iterator ActionHistory::next(std::list<ClientFrame>::iterator iter)
 {
 	if (iter != m_historyBuffer.end() && &*iter == &m_historyBuffer.back())
 	{
@@ -52,7 +40,7 @@ std::list<ClientFrame>::iterator ClientHistory::next(std::list<ClientFrame>::ite
 	}
 }
 
-void ClientHistory::replayFrom(uint64_t sequenceNr)
+void ActionHistory::replayFrom(uint64_t sequenceNr)
 {
 	std::list<ClientFrame>::iterator replayFrame = m_oldestFrame;
 	while (replayFrame != m_newestFrame)
@@ -65,11 +53,8 @@ void ClientHistory::replayFrom(uint64_t sequenceNr)
 		else
 		{
 			ClientFrame& frame = *(replayFrame);
-			if (frame.actions != nullptr)
-			{
-				//InputMapper::ApplyInput(frame.actions);
-				frame.actions->resetReading();
-			}
+			//InputMapper::ApplyInput(frame.actions);
+			//frame.actions->resetReading();
 
 			replayFrame = next(replayFrame);
 		}

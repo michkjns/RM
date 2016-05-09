@@ -1,15 +1,15 @@
 
 #include "core.h"
 
-#include <network/address.h>
-#include <check_gl_error.h>
+#include <graphics/check_gl_error.h>
 #include <client.h>
-#include <game.h>
-#include <renderer.h>
-#include <resource_manager.h>
+#include <core/game.h>
+#include <core/resource_manager.h>
+#include <core/window.h>
+#include <graphics/renderer.h>
+#include <network/address.h>
 #include <server.h>
 #include <time.h>
-#include <window.h>
 
 #include <assert.h>
 #include <stdint.h>
@@ -36,7 +36,6 @@ Core::~Core()
 
 	delete m_window;
 }
-
 
 bool Core::initialize(Game* game, int argc, char* argv[])
 {
@@ -66,7 +65,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	if (runDedicated)
 	{
 		LOG_INFO("Core: Creating server..");
-		m_server = new Server(m_gameTime);
+		m_server = new Server(m_gameTime, m_game);
 		if (m_server->initialize())
 		{
 			LOG_INFO("Server: Server succesfully initialized");
@@ -80,7 +79,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		m_renderer->initialize(Renderer::ProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
 
 		LOG_INFO("Core: Creating client..");
-		m_client = new Client(m_gameTime);
+		m_client = new Client(m_gameTime, m_game);
 		m_client->initialize();
 	}
 
@@ -112,8 +111,6 @@ void Core::run()
 	m_game->initialize();
 	checkGL();
 
-	uint64_t updatedTime = 0ULL;
-
 	if (m_client)
 	{
 		m_client->connect(network::Address(g_localHost, g_defaultPort));
@@ -123,7 +120,6 @@ void Core::run()
 	while (!m_window->pollEvents())
 	{
 		m_gameTime.update();
-		const uint64_t currentTime = m_gameTime.getMicroSeconds();
 		const float deltaTime = m_gameTime.getDeltaSeconds();
 
 		/****************
@@ -132,6 +128,7 @@ void Core::run()
 		{
 			m_server->update();
 		}
+
 		m_game->update(m_gameTime);
 
 		/****************/
@@ -141,13 +138,7 @@ void Core::run()
 			m_client->update();
 			m_renderer->render();
 		}
-
-		/** Fixed timestep simulation */
-		while (currentTime - updatedTime > m_timestep)
-		{
-			m_game->fixedUpdate(m_timestep);
-			updatedTime += m_timestep;
-		}
+		
 
 		m_window->swapBuffers();
 		m_input->update();

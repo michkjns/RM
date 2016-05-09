@@ -1,9 +1,9 @@
 
-#include "includes.h"
-#include "sprite_renderer.h"
+#include <includes.h>
+#include <graphics/sprite_renderer.h>
 
-#include "check_gl_error.h"
-#include "resource_manager.h"
+#include <graphics/check_gl_error.h>
+#include <core/resource_manager.h>
 
 SpriteRenderer::SpriteRenderer()
 : m_spriteShader(nullptr)

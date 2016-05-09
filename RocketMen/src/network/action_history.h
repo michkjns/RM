@@ -1,7 +1,8 @@
 
 #pragma once
 
-#include "bitstream.h"
+#include <bitstream.h>
+#include <core/action_buffer.h>
 
 #include <cstdint>
 #include <list>
@@ -10,18 +11,18 @@ namespace network
 {
 	struct ClientFrame
 	{
-		uint64_t	sequenceNr;
-		BitStream*	actions;
+		uint64_t	 sequenceNr;
+		ActionBuffer actions;
 	};
 
-	class ClientHistory
+	class ActionHistory
 	{
 	public:
 		/** ClientHistory(uint32_t size)
 		* @param uint32_t	size	Size of the history buffer in number of frame entries.
 		*/
-		ClientHistory(uint32_t size);
-		~ClientHistory();
+		ActionHistory(uint32_t size);
+		~ActionHistory();
 
 		/** Adds a ClientFrame to the historybuffer */
 		void add(const ClientFrame& frame);

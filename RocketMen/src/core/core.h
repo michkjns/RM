@@ -2,7 +2,7 @@
 #pragma once
 
 #include <includes.h>
-#include <input.h>
+#include <core/input.h>
 #include <game_time.h>
 
 static const uint32_t g_defaultWidth = 640;

@@ -1,8 +1,8 @@
 
-#include "includes.h"
-#include "shader.h"
+#include <includes.h>
+#include <graphics/shader.h>
 
-#include "check_gl_error.h"
+#include <graphics/check_gl_error.h>
 
 #include <assert.h>
 #include <iostream>
