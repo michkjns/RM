@@ -2,13 +2,19 @@
 #include <includes.h>
 #include <graphics/renderer.h>
 
+#include <entity.h>
+#include <graphics/camera.h>
 #include <graphics/check_gl_error.h>
 #include <graphics/sprite_renderer.h>
+#include <graphics/tile_renderer.h>
+#include <core/resource_manager.h>
 #include <core/window.h>
+#include <fstream>
 
 #include <GLFW/glfw3.h>
 
 Renderer* Renderer::g_singleton;
+extern Entity* testEnt;
 
 class Renderer_impl : public Renderer
 {
@@ -16,7 +22,7 @@ public:
 	Renderer_impl();
 	~Renderer_impl();
 
-	bool initialize(ProjectionMode projection, Window* window) override;
+	bool initialize(Window* window) override;
 	void destroy() override;
 
 	void render() override;
@@ -24,14 +30,12 @@ public:
 private:
 
 	void renderSprites();
+	void renderTiles();
 	void renderUI();
 
 	SpriteRenderer m_spriteRenderer;
-	Window* m_window;
-	glm::mat4 BuildProjectionMatrix(ProjectionMode projection) const;
-	glm::mat4 m_projectionMatrix;
-	ProjectionMode m_EProjectionMode;
-
+	TileRenderer   m_tileRenderer;
+	Window*        m_window;
 };
 
 Renderer_impl::Renderer_impl()
@@ -43,15 +47,17 @@ Renderer_impl::~Renderer_impl()
 {
 }
 
-bool Renderer_impl::initialize(ProjectionMode projection, Window* window)
+bool Renderer_impl::initialize(Window* window)
 {
 	assert(window != nullptr);
 
 	m_window = window;
-	m_EProjectionMode = projection;
-	m_projectionMatrix = BuildProjectionMatrix(m_EProjectionMode);
 
-	checkGL();
+	if (!m_tileRenderer.initialize())
+	{
+		LOG_ERROR("Renderer: Tilemap::initialize Error");
+		return false;
+	}
 
 	if (!m_spriteRenderer.initialize())
 	{
@@ -59,18 +65,29 @@ bool Renderer_impl::initialize(ProjectionMode projection, Window* window)
 		return false;
 	}
 
-	checkGL();
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	checkGL();
+	
 	return true;
 }
 
 void Renderer_impl::destroy()
 {
-
 }
 
 void Renderer_impl::render()
 {
+	if (Camera::mainCamera) {
+		Camera::mainCamera->updateViewMatrix();
+	}
+	if (true)
+	{
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+	renderTiles();
 	renderSprites();
 	renderUI();
 }
@@ -78,37 +95,29 @@ void Renderer_impl::render()
 void Renderer_impl::renderSprites()
 {
 	glm::mat4 modelMatrix = glm::mat4();
-	glm::vec2 size(225.0f, 300.0f);
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(400.f, 300.0f, 0.0f));
+	glm::vec2 size(ResourceManager::getTexture("demoTexture").getWidth(), 
+				   ResourceManager::getTexture("demoTexture").getHeight());
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(testEnt->getPosition(), 0));
 	modelMatrix = glm::scale(modelMatrix, glm::vec3(size, 1.0f));
 
-	m_spriteRenderer.render(modelMatrix, m_projectionMatrix);
+	if (Camera::mainCamera) 
+	{
+		m_spriteRenderer.render(modelMatrix, Camera::mainCamera->getProjectionMatrix()
+								* Camera::mainCamera->getViewMatrix());
+	}
+}
 
-	return;
+void Renderer_impl::renderTiles()
+{
+	if (Camera::mainCamera) 
+	{
+		m_tileRenderer.render(&ResourceManager::getTileMap("testmap"), Camera::mainCamera->getProjectionMatrix()
+						 * Camera::mainCamera->getViewMatrix());
+	}
 }
 
 void Renderer_impl::renderUI()
 {
-}
-
-glm::mat4 Renderer_impl::BuildProjectionMatrix(ProjectionMode projection) const
-{
-	glm::mat4 matrix;
-	switch (projection)
-	{
-		case ProjectionMode::ORTOGRAPHIC_PROJECTION:
-		{
-			matrix = glm::ortho(0.0f, 800.0f, 600.0f, 0.0f, -1.0f, 1.0f);
-			break;
-		}
-		case ProjectionMode::PERSPECTIVE_PROJECTION:
-		{
-			// TODO(Support perspective projection)
-			assert(false);
-			break;
-		}
-	}
-	return matrix;
 }
 
 Renderer* Renderer::get()

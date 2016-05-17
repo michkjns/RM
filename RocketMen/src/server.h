@@ -6,7 +6,7 @@
 #include <network/remote_client.h>
 
 #include <array>
-#include <stdint.h>
+#include <cstdint>
 
 class Game;
 

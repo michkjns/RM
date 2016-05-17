@@ -4,7 +4,7 @@
 #include "bitstream.h"
 #include "network_message.h" 
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace network
 {

@@ -69,7 +69,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)/dep/glfw-3.1.2-build/$(Configuration);$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -80,8 +80,8 @@
     <OutDir>$(SolutionDir)/bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;C:\Users\Mic\Documents\GitHub\RM\RocketMen\dep\glfw-3.1.2.bin.WIN64\lib-vc2015;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glfw-3.1.2.bin.WIN64/lib-vc2015;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/Box2D/x64/Debug;$(SolutionDir)/dep/Box2D/x64/Release</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
@@ -113,7 +113,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>SOILd.lib;opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;</AdditionalDependencies>
+      <AdditionalDependencies>SOILd.lib;opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;Box2D.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -147,7 +147,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>SOIL.lib;opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;glew32s.lib;;glew32s.lib;;glew32s.lib;</AdditionalDependencies>
+      <AdditionalDependencies>SOIL.lib;opengl32.lib;glew32s.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);glfw3.lib;glew32s.lib;glew32s.lib;;glew32s.lib;glew32s.lib;Box2D.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -155,6 +155,9 @@
     <ClCompile Include="src\core\action_buffer.cpp" />
     <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
+    <ClCompile Include="src\entity.cpp" />
+    <ClCompile Include="src\graphics\tile_map.cpp" />
+    <ClCompile Include="src\graphics\tile_renderer.cpp" />
     <ClCompile Include="src\network\address.cpp" />
     <ClCompile Include="src\bitstream.cpp" />
     <ClCompile Include="src\graphics\camera.cpp" />
@@ -172,6 +175,8 @@
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\core\resource_manager.cpp" />
     <ClCompile Include="src\game\rocketmen.cpp" />
+    <ClCompile Include="src\physics.cpp" />
+    <ClCompile Include="src\physics\rigidbody.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\network\socket.cpp" />
@@ -181,15 +186,17 @@
     <ClCompile Include="src\core\window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="data\shaders\basicSpriteFragmentShader.frag" />
     <ClInclude Include="src\core\action.h" />
     <ClInclude Include="src\core\action_buffer.h" />
     <ClInclude Include="src\bitstream.h" />
+    <ClInclude Include="src\entity.h" />
     <ClInclude Include="src\graphics\camera.h" />
     <ClInclude Include="src\graphics\check_gl_error.h" />
     <ClInclude Include="src\client.h" />
     <ClInclude Include="src\core\input.h" />
     <ClInclude Include="src\core\keys.h" />
+    <ClInclude Include="src\graphics\tile_map.h" />
+    <ClInclude Include="src\graphics\tile_renderer.h" />
     <ClInclude Include="src\network\action_history.h" />
     <ClInclude Include="src\core\core.h" />
     <ClInclude Include="src\debug.h" />
@@ -204,6 +211,9 @@
     <ClInclude Include="src\graphics\renderer.h" />
     <ClInclude Include="src\core\resource_manager.h" />
     <ClInclude Include="src\game\rocketmen.h" />
+    <ClInclude Include="src\physics.h" />
+    <ClInclude Include="src\physics\rigidbody.h" />
+    <ClInclude Include="src\physics\rigidbody_data.h" />
     <ClInclude Include="src\server.h" />
     <ClInclude Include="src\graphics\shader.h" />
     <ClInclude Include="src\network\socket.h" />
@@ -211,9 +221,13 @@
     <ClInclude Include="src\graphics\texture.h" />
     <ClInclude Include="src\game_time.h" />
     <ClInclude Include="src\core\window.h" />
+    <ClInclude Include="src\utility.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="data\shaders\basicSpriteVertexShader.vert" />
+    <None Include="data\shaders\sprite_shader.frag" />
+    <None Include="data\shaders\sprite_shader.vert" />
+    <None Include="data\shaders\tile_shader.frag" />
+    <None Include="data\shaders\tile_shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

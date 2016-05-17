@@ -12,6 +12,7 @@ static const char*    g_localHost = "127.0.0.1";
 
 class Game;
 class Renderer;
+class Physics;
 class Window;
 
 namespace network {
@@ -38,5 +39,6 @@ private:
 	network::Server* m_server;
 	Time             m_gameTime;
 	Input*           m_input;
+	Physics*         m_physics;
 	uint64_t         m_timestep;
 };

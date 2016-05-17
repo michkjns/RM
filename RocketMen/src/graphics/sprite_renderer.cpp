@@ -19,7 +19,6 @@ SpriteRenderer::~SpriteRenderer()
 bool SpriteRenderer::initialize()
 {
 	/* Configure VAO/VBO */
-
 	GLfloat vertices[] = {
 		// Pos      // Tex
 		0.0f, 1.0f, 0.0f, 1.0f,
@@ -43,7 +42,7 @@ bool SpriteRenderer::initialize()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	m_spriteShader = &ResourceManager::getShader("spriteShader");
+	m_spriteShader = &ResourceManager::getShader("sprite_shader");
 
 	checkGL();
 

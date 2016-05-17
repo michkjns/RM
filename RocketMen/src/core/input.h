@@ -26,6 +26,9 @@ public:
 	/** @return float2 position of the mouse cursor */
 	static float2 getMousePosition();
 	
+	/** @return float2 relative position of the mouse cursor */
+	static float2 getMouseMovement();
+
 	/** @return true if button is held down */
 	static bool getMouse(input::MouseButton button);
 

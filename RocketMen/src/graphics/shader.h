@@ -24,7 +24,7 @@ public:
 	/** Clears the isInitialized flag,
 		to prevent from the destructor deleting
 		the gl shaders. */
-	void clear();
+	void destroy();
 
 	void setFloat(const char* name, float value);
 	void setInt(const char* name, int value);

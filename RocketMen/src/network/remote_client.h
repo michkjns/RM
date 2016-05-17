@@ -29,7 +29,6 @@ namespace network
 		uint32_t m_duplicatePeers;
 		int32_t  m_sequenceCounter;
 
-	//	std::array<NetworkMessage, s_maxReliableMessages> m_reliableMessageBuffer;
 		std::array<NetworkMessage, s_maxPendingMessages> m_messageBuffer;
 
 		/** List tracking received and unacknowledged sequenceNrs */

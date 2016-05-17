@@ -19,6 +19,8 @@ static bool s_mouseState[8];
 static bool s_mouseStateDown[8];
 static double s_mousePosx;
 static double s_mousePosy;
+static double s_mousePosxRel;
+static double s_mousePosyRel;
 
 
 static int32_t s_actionCount;
@@ -61,6 +63,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
+	s_mousePosxRel = xpos - s_mousePosx;
+	s_mousePosyRel = ypos - s_mousePosy;
 	s_mousePosx = xpos;
 	s_mousePosy = ypos;
 }
@@ -96,7 +100,7 @@ void Input::update()
 {
 	std::fill(std::begin(s_keyStateDown),   std::end(s_keyStateDown),   false);
 	std::fill(std::begin(s_mouseStateDown), std::end(s_mouseStateDown), false);
-
+	s_mousePosxRel = s_mousePosyRel = 0;
 }
 
 bool Input::getKey(Key key)
@@ -125,6 +129,11 @@ bool Input::getKeyDown(Key key)
 float2 Input::getMousePosition()
 {
 	return float2(s_mousePosx, s_mousePosy);
+}
+
+float2 Input::getMouseMovement()
+{
+	return float2(s_mousePosxRel, s_mousePosyRel);
 }
 
 bool Input::getMouse(MouseButton button)

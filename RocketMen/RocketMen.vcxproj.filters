@@ -102,6 +102,21 @@
     <ClCompile Include="src\graphics\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\tile_renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\tile_map.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\physics\rigidbody.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\server.h">
@@ -115,9 +130,6 @@
     </ClInclude>
     <ClInclude Include="src\includes.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="data\shaders\basicSpriteFragmentShader.frag">
-      <Filter>Shaders</Filter>
     </ClInclude>
     <ClInclude Include="src\debug.h">
       <Filter>Header Files</Filter>
@@ -194,10 +206,32 @@
     <ClInclude Include="src\graphics\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\tile_renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\tile_map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\physics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\physics\rigidbody.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\physics\rigidbody_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\entity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="data\shaders\basicSpriteVertexShader.vert">
-      <Filter>Shaders</Filter>
-    </None>
+    <None Include="data\shaders\sprite_shader.frag" />
+    <None Include="data\shaders\sprite_shader.vert" />
+    <None Include="data\shaders\tile_shader.frag" />
+    <None Include="data\shaders\tile_shader.vert" />
   </ItemGroup>
 </Project>

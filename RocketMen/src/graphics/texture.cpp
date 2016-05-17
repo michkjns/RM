@@ -4,7 +4,8 @@
 
 Texture* Texture::s_currentTexture = nullptr;
 
-Texture::Texture()
+Texture::Texture() :
+	m_id(0)
 {
 }
 
@@ -32,11 +33,11 @@ bool Texture::isBound() const
 	return (s_currentTexture == this);
 }
 
-bool Texture::generate(unsigned char* imageData, uint32_t width, uint32_t height)
+bool Texture::generate(const void* imageData, uint32_t width, uint32_t height)
 {
 	glGenTextures(1, &m_id);
 	glBindTexture(GL_TEXTURE_2D, m_id);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// Clamping
@@ -48,7 +49,7 @@ bool Texture::generate(unsigned char* imageData, uint32_t width, uint32_t height
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
-	m_width = width;
+	m_width  = width;
 	m_height = height;
 	return true;
 }
@@ -61,4 +62,13 @@ uint32_t Texture::getWidth() const
 uint32_t Texture::getHeight() const
 {
 	return m_height;
+}
+
+void Texture::destroy()
+{
+	if (m_id != 0)
+	{
+		glDeleteTextures(1, &m_id);
+		m_id = 0;
+	}
 }

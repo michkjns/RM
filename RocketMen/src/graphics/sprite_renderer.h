@@ -1,3 +1,4 @@
+
 #pragma once
 
 class Shader;
@@ -9,8 +10,8 @@ public:
 
 	bool initialize();
 
-	void render(const glm::mat4& modelMatrix
-				, const glm::mat4& projectionMatrix);
+	void render(const glm::mat4& modelMatrix,
+				const glm::mat4& projectionMatrix);
 
 private:
 	GLuint m_VAO;

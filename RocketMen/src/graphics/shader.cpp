@@ -12,19 +12,16 @@
 
 Shader* Shader::s_currentShader = nullptr;
 
-Shader::Shader()
-	: m_isInitialized(false)
-	, m_programID(-1)
+Shader::Shader() :
+	m_isInitialized(false),
+	m_programID(0)
 {
+	m_shaders[0] = 0;
+	m_shaders[1] = 0;
 }
 
 Shader::~Shader()
 {
-	if (m_isInitialized)
-	{
-		glDeleteShader(m_shaders[0]);
-		glDeleteShader(m_shaders[1]);
-	}
 }
 
 void Shader::use()
@@ -139,9 +136,16 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 }
 
 
-void Shader::clear()
+void Shader::destroy()
 {
+	if (m_isInitialized)
+	{
+		glDeleteShader(m_shaders[0]);
+		glDeleteShader(m_shaders[1]);
+	}
 	m_isInitialized = false;
+	m_shaders[0] = 0;
+	m_shaders[1] = 0; 
 }
 
 // TODO Prevent rewriting identical values

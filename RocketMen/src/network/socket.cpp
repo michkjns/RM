@@ -31,7 +31,7 @@ public:
 	bool isInitialized()                  const override;
 
 	bool receive(Address& adress, char* buffer, int32_t& length) override;
-	bool send(const Address adress, const void* buffer, const size_t bufferLength)	override;
+	bool send(const Address& adress, const void* buffer, const size_t bufferLength)	override;
 	
 	uint32_t getPort()            const	override;
 	uint64_t getBytesSent()       const override;
@@ -43,8 +43,8 @@ private:
 	bool initializeUDP(uint16_t port, bool isHost /* = false */);
 	bool initializeTCP(uint16_t port, bool isHost /* = false */);
 
-	bool sendUDP(const Address address, const void* buffer, const size_t bufferLength);
-	bool sendTCP(const Address address, const void* buffer, const size_t bufferLength);
+	bool sendUDP(const Address& address, const void* buffer, const size_t bufferLength);
+	bool sendTCP(const Address& address, const void* buffer, const size_t bufferLength);
 
 	bool receiveUDP(Address& address, char* buffer, int32_t& length);
 	bool receiveTCP(Address& address, char* buffer, int32_t& length);
@@ -118,7 +118,7 @@ bool Socket_impl::isInitialized() const
 	return m_isInitialized;
 }
 
-bool Socket_impl::send(Address adress, const void* buffer, size_t bufferLength)
+bool Socket_impl::send(const Address& adress, const void* buffer, size_t bufferLength)
 {
 	if (m_type == NetProtocol::PROTOCOL_UDP)
 	{
@@ -201,14 +201,25 @@ bool Socket_impl::initializeTCP(uint16_t port, bool isHost)
 	return false;
 }
 
-bool Socket_impl::sendUDP(const Address adress, const void* buffer, const size_t bufferLength)
+bool Socket_impl::sendTCP(const Address& adress, const void* buffer, const size_t bufferLength)
+{
+	// TODO
+	assert(false);
+	return false;
+}
+
+bool Socket_impl::sendUDP(const Address& adress, const void* buffer, const size_t bufferLength)
 {
 	sockaddr_in remoteAddress;
 	remoteAddress.sin_family		= AF_INET;
 	remoteAddress.sin_addr.s_addr	= htonl(adress.getAddress()	);
 	remoteAddress.sin_port			= htons(adress.getPort()	);
 
-	int dataSent = sendto(m_winSocket, static_cast<const char*>(buffer), (int)bufferLength, 0, reinterpret_cast<sockaddr*>(&remoteAddress), (int)sizeof(remoteAddress));
+	int dataSent = sendto(m_winSocket, static_cast<const char*>(buffer),
+						  static_cast<int>(bufferLength), 0,
+						  reinterpret_cast<sockaddr*>(&remoteAddress), 
+						  static_cast<int>(sizeof(remoteAddress)));
+
 	if (dataSent == SOCKET_ERROR)
 	{
 		LOG_ERROR("Send failed. Error Code : %d\n", WSAGetLastError());
@@ -220,21 +231,14 @@ bool Socket_impl::sendUDP(const Address adress, const void* buffer, const size_t
 	return true;
 }
 
-bool Socket_impl::sendTCP(const Address adress, const void* buffer, const size_t bufferLength)
-{
-	// TODO
-	assert(false);
-	return false;
-}
 
 bool Socket_impl::receiveUDP(Address& address, char* buffer, int32_t& length)
 {
 	sockaddr_in remoteAddress;
-	int remoteAddrSize = sizeof(remoteAddress);
-	int error = 0;
-
+	int32_t remoteAddrSize = sizeof(remoteAddress);
 	int32_t receivedLength = recvfrom(m_winSocket, buffer, g_maxPacketSize, 0, 
-									  (sockaddr*)&remoteAddress, &remoteAddrSize);
+									  reinterpret_cast<sockaddr*>(&remoteAddress),
+									  &remoteAddrSize);
 
 	if (receivedLength != SOCKET_ERROR)
 	{
@@ -247,7 +251,7 @@ bool Socket_impl::receiveUDP(Address& address, char* buffer, int32_t& length)
 	}
 	else
 	{
-		int error = WSAGetLastError();
+		int32_t error = WSAGetLastError();
 		switch (error)
 		{
 			case WSAEWOULDBLOCK:

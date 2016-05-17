@@ -1,18 +1,20 @@
 
-#include "core.h"
+#include <core/core.h>
 
 #include <graphics/check_gl_error.h>
 #include <client.h>
 #include <core/game.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
+#include <entity.h>
 #include <graphics/renderer.h>
 #include <network/address.h>
+#include <physics.h>
 #include <server.h>
 #include <time.h>
 
 #include <assert.h>
-#include <stdint.h>
+#include <cstdint>
 
 using namespace network;
 
@@ -23,7 +25,8 @@ Core::Core() :
 	m_server(nullptr),
 	m_window(nullptr),
 	m_input(nullptr),
-	m_timestep(33333ULL)
+	m_physics(nullptr),
+	m_timestep(33333ULL * 2)
 {
 
 }
@@ -76,7 +79,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	{
 		LOG_INFO("Core: Creating renderer..");
 		m_renderer = Renderer::get();
-		m_renderer->initialize(Renderer::ProjectionMode::ORTOGRAPHIC_PROJECTION, m_window);
+		m_renderer->initialize(m_window);
 
 		LOG_INFO("Core: Creating client..");
 		m_client = new Client(m_gameTime, m_game);
@@ -88,20 +91,26 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		LOG_ERROR("Core: Loading resources has failed");
 	}
 
+	LOG_INFO("Core: Initializing input");
 	m_input = Input::create();
 	m_input->initialize(m_window);
+
+	LOG_INFO("Core: Initializing physics");
+	m_physics = new Physics();
+	m_physics->initialize();
 
 	return true;
 }
 
 bool Core::loadResources()
 {
+	ResourceManager::loadShader("data/shaders/sprite_shader.vert",
+								"data/shaders/sprite_shader.frag",
+								"sprite_shader");
 
-	ResourceManager::loadShader("data/shaders/basicSpriteVertexShader.vert",
-								"data/shaders/basicSpriteFragmentShader.frag",
-								"spriteShader");
-
-
+	ResourceManager::loadShader("data/shaders/tile_shader.vert",
+								"data/shaders/tile_shader.frag",
+								"tile_shader");
 	return true;
 }
 
@@ -109,7 +118,6 @@ void Core::run()
 {
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
-	checkGL();
 
 	if (m_client)
 	{
@@ -129,8 +137,6 @@ void Core::run()
 			m_server->update();
 		}
 
-		m_game->update(m_gameTime);
-
 		/****************/
 		/** Client Update */
 		if (m_client)
@@ -139,9 +145,12 @@ void Core::run()
 			m_renderer->render();
 		}
 		
+		m_game->update(m_gameTime);
+		m_physics->step(m_timestep * 0.00001f);
 
 		m_window->swapBuffers();
 		m_input->update();
+		Entity::flushEntities();
 	}
 
 	LOG_DEBUG("Core: main loop ended..");
@@ -160,6 +169,7 @@ void Core::destroy()
 		m_renderer->destroy();
 	}
 
+	delete m_physics;
 	m_input->destroy();
 	LOG_INFO("Core: Terminating window..");
 	m_window->terminate();

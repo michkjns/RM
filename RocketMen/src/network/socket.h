@@ -5,7 +5,7 @@
 #include <network/address.h>
 #include <network/packet.h>
 
-#include <stdint.h>
+#include <cstdint>
 
 namespace network 
 {
@@ -30,7 +30,7 @@ namespace network
 		* @param const size_t length   Length of data to read from buffer
 		* @return true when no error occurred
 		*/
-		virtual bool send(const Address address, const void* buffer, 
+		virtual bool send(const Address& address, const void* buffer, 
 						  const size_t length) = 0;
 
 		virtual uint32_t getPort()				const = 0;
