@@ -114,7 +114,13 @@
     <ClCompile Include="src\physics\rigidbody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\entity.cpp">
+    <ClCompile Include="src\core\entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\character.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -224,7 +230,13 @@
     <ClInclude Include="src\physics\rigidbody_data.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\entity.h">
+    <ClInclude Include="src\core\entity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\character.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -17,9 +17,11 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-using float2 = glm::vec2;
-using Color  = glm::vec4;
-using iColor = glm::ivec4;
+using Vector2 = glm::vec2;
+using Vector3 = glm::vec3;
+using float2  = glm::vec2;
+using Color   = glm::vec4;
+using iColor  = glm::ivec4;
 
 inline std::string toLower(const std::string& str)
 {

@@ -6,7 +6,7 @@
 #include <core/game.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
-#include <entity.h>
+#include <core/entity.h>
 #include <graphics/renderer.h>
 #include <network/address.h>
 #include <physics.h>

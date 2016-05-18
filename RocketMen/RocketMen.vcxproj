@@ -151,11 +151,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\game\character.cpp" />
     <ClCompile Include="src\core\action.cpp" />
     <ClCompile Include="src\core\action_buffer.cpp" />
     <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
-    <ClCompile Include="src\entity.cpp" />
+    <ClCompile Include="src\core\entity.cpp" />
     <ClCompile Include="src\graphics\tile_map.cpp" />
     <ClCompile Include="src\graphics\tile_renderer.cpp" />
     <ClCompile Include="src\network\address.cpp" />
@@ -184,12 +185,14 @@
     <ClCompile Include="src\graphics\texture.cpp" />
     <ClCompile Include="src\game_time.cpp" />
     <ClCompile Include="src\core\window.cpp" />
+    <ClCompile Include="src\core\transform.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\game\character.h" />
     <ClInclude Include="src\core\action.h" />
     <ClInclude Include="src\core\action_buffer.h" />
     <ClInclude Include="src\bitstream.h" />
-    <ClInclude Include="src\entity.h" />
+    <ClInclude Include="src\core\entity.h" />
     <ClInclude Include="src\graphics\camera.h" />
     <ClInclude Include="src\graphics\check_gl_error.h" />
     <ClInclude Include="src\client.h" />
@@ -222,6 +225,7 @@
     <ClInclude Include="src\game_time.h" />
     <ClInclude Include="src\core\window.h" />
     <ClInclude Include="src\utility.h" />
+    <ClInclude Include="src\core\transform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\shaders\sprite_shader.frag" />

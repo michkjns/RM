@@ -13,7 +13,6 @@ namespace graphics {
 
 class Camera
 {
-
 public:
 	Camera(graphics::ProjectionMode projection, float width, float height);
 	~Camera();

@@ -1,16 +1,15 @@
 
 #include <includes.h>
+#include <core/entity.h>
 #include <core/input.h>
 #include <core/resource_manager.h>
-#include <entity.h>
+#include <game/character.h>
 #include <game/rocketmen.h>
 #include <graphics/camera.h>
 #include <physics.h>
 
 using namespace input;
 using namespace rm;
-
-Entity* testEnt;
 
 bool RocketMenGame::initialize()
 {
@@ -27,10 +26,6 @@ bool RocketMenGame::initialize()
 	Camera::mainCamera = new Camera(graphics::ProjectionMode::ORTOGRAPHIC_PROJECTION,
 									640.0f, 480.0f);
 //	Input::mapAction("PrintSomething", Key::D);
-
-	testEnt = Entity::create();
-	testEnt->setRigidbody(Physics::createRigidbody());
-	testEnt->getRigidbody()->setPosition(glm::vec2(0, 0));
 
 	return false;
 }
@@ -68,7 +63,7 @@ void RocketMenGame::update(const Time& time)
 		Camera::mainCamera->translate(glm::vec3(0.0f, -1.0f, 0.0f) * 5.0f);
 	}
 
-	glm::vec2 vel = testEnt->getRigidbody()->getLinearVelocity();
+	/*glm::vec2 vel = testEnt->getRigidbody()->getLinearVelocity();
 
 	if (Input::getKey(Key::A))
 	{
@@ -80,10 +75,10 @@ void RocketMenGame::update(const Time& time)
 		vel.x = 5.0f;
 	}
 
-	testEnt->getRigidbody()->setLinearVelocity(vel);
+	testEnt->getRigidbody()->setLinearVelocity(vel);*/
 }
 
 void RocketMenGame::terminate()
 {
-	testEnt->destroy();
+
 }

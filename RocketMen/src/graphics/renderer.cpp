@@ -2,7 +2,7 @@
 #include <includes.h>
 #include <graphics/renderer.h>
 
-#include <entity.h>
+#include <core/entity.h>
 #include <graphics/camera.h>
 #include <graphics/check_gl_error.h>
 #include <graphics/sprite_renderer.h>
@@ -14,7 +14,6 @@
 #include <GLFW/glfw3.h>
 
 Renderer* Renderer::g_singleton;
-extern Entity* testEnt;
 
 class Renderer_impl : public Renderer
 {
@@ -97,7 +96,7 @@ void Renderer_impl::renderSprites()
 	glm::mat4 modelMatrix = glm::mat4();
 	glm::vec2 size(ResourceManager::getTexture("demoTexture").getWidth(), 
 				   ResourceManager::getTexture("demoTexture").getHeight());
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(testEnt->getPosition(), 0));
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(0));
 	modelMatrix = glm::scale(modelMatrix, glm::vec3(size, 1.0f));
 
 	if (Camera::mainCamera) 
