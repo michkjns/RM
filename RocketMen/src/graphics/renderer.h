@@ -13,6 +13,13 @@ public:
 
 	virtual void render() = 0;
 
+	void drawPolygon(const Vector2* vertices,
+					 int32_t vertexCount,
+					 const Color& color,
+					 bool screenSpace = false);
+
+	virtual	Vector2 getScreenSize() const = 0;
+
 	static Renderer* get();
 
 private:

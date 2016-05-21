@@ -5,8 +5,8 @@
 #include <graphics/check_gl_error.h>
 #include <core/resource_manager.h>
 
-SpriteRenderer::SpriteRenderer()
-: m_spriteShader(nullptr)
+SpriteRenderer::SpriteRenderer() : 
+	m_spriteShader(nullptr)
 {
 
 }
@@ -19,7 +19,7 @@ SpriteRenderer::~SpriteRenderer()
 bool SpriteRenderer::initialize()
 {
 	/* Configure VAO/VBO */
-	GLfloat vertices[] = {
+	const GLfloat vertices[] = {
 		// Pos      // Tex
 		0.0f, 1.0f, 0.0f, 1.0f,
 		1.0f, 0.0f, 1.0f, 0.0f,
@@ -49,7 +49,7 @@ bool SpriteRenderer::initialize()
 	return true;
 }
 
-void SpriteRenderer::render(const glm::mat4& modelMatrix, const glm::mat4& projectionMatrix)
+void SpriteRenderer::render(const glm::mat4& modelMatrix, const glm::mat4& projectionMatrix, std::string texture)
 {
 	assert(m_spriteShader);
 	if (m_spriteShader != nullptr)
@@ -62,7 +62,7 @@ void SpriteRenderer::render(const glm::mat4& modelMatrix, const glm::mat4& proje
 		m_spriteShader->setVec3f("spriteColor", glm::vec3(1.0f));
 
 		glActiveTexture(GL_TEXTURE0);
-		ResourceManager::getTexture("demoTexture").bind();
+		ResourceManager::getTexture(texture).bind();
 		m_spriteShader->setInt("image", 0);
 		checkGL();
 

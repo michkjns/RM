@@ -5,10 +5,10 @@
 #include <core/input.h>
 #include <game_time.h>
 
-static const uint32_t g_defaultWidth = 640;
+static const uint32_t g_defaultWidth  = 640;
 static const uint32_t g_defaultHeight = 480;
-static const uint32_t g_defaultPort = 4321;
-static const char*    g_localHost = "127.0.0.1";
+static const uint32_t g_defaultPort   = 4321;
+static const char*    g_localHost     = "127.0.0.1";
 
 class Game;
 class Renderer;

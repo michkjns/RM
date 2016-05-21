@@ -8,6 +8,10 @@
 
 #include <network/address.h>
 
+#if 1
+#include <C:\Program Files (x86)\Visual Leak Detector\include\vld.h>
+#endif
+
 int main(int argc, char *argv[])
 {
 	Debug::openLog("rm.log");

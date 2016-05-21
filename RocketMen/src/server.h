@@ -57,7 +57,6 @@ namespace network
 		uint32_t         m_clientIDCounter;
 		uint32_t         m_numConnectedClients;
 		uint32_t         m_lastOrderedMessaged;
-		uint64_t         m_simulatedTime;
 
 		/* Time since last snapshot */
 		float m_snapshotTime;

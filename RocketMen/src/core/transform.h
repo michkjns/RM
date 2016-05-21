@@ -3,6 +3,10 @@
 
 #include <includes.h>
 
+//namespace physics {
+	class Rigidbody;
+//};
+
 class Transform
 {
 public:
@@ -18,6 +22,9 @@ public:
 	Vector2 getWorldPosition();
 	float   getWorldRotation();
 
+	void setScale(Vector2 scale);
+	Vector2 getScale();
+
 	void       parentTo(Transform* parent);
 	Transform* getParent() const;
 
@@ -25,6 +32,8 @@ public:
 	glm::mat4 getWorldMatrix();
 
 	bool isDirty() const;
+
+	void setRigidbody(/*physics::*/Rigidbody* rb);
 
 private:
 	void updateLocalMatrix();
@@ -35,5 +44,7 @@ private:
 	float      m_localAngle;
 	bool       m_isDirty;
 	Transform* m_parent;
+
+	/*physics::*/Rigidbody* m_rigidbody;
 };
 

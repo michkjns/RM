@@ -26,7 +26,7 @@ Core::Core() :
 	m_window(nullptr),
 	m_input(nullptr),
 	m_physics(nullptr),
-	m_timestep(33333ULL * 2)
+	m_timestep(33333ULL / 2)
 {
 
 }
@@ -116,19 +116,29 @@ bool Core::loadResources()
 
 void Core::run()
 {
+	uint64_t simulatedTime = 0;
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
+	ActionBuffer* actions = nullptr;
 
 	if (m_client)
 	{
 		m_client->connect(network::Address(g_localHost, g_defaultPort));
 	}
 
+	float currTime = m_gameTime.getSeconds();
+	float accumulator = 0.0f;
+	float fixedDeltaTime = 1.0f / 30.0f;
+	float t = 0.0f;
+
 	LOG_DEBUG("Core: Entering main loop..");
 	while (!m_window->pollEvents())
 	{
 		m_gameTime.update();
-		const float deltaTime = m_gameTime.getDeltaSeconds();
+		const float    deltaTime   = m_gameTime.getDeltaSeconds();
+		//const uint64_t currentTime = m_gameTime.getMicroSeconds();
+		//const double   currTime      = (double)m_gameTime.getSeconds();
+		//const uint64_t timestep    = m_game->getTimestep();
 
 		/****************
 		/** Server Update */
@@ -142,15 +152,50 @@ void Core::run()
 		if (m_client)
 		{
 			m_client->update();
-			m_renderer->render();
+			actions = &Input::getActions();
 		}
 		
 		m_game->update(m_gameTime);
-		m_physics->step(m_timestep * 0.00001f);
+		for (auto it : Entity::getList())
+		{
+			it->update(deltaTime);
+		}
 
-		m_window->swapBuffers();
+		float newTime = m_gameTime.getSeconds();
+		float frameTime = newTime - currTime;
+		if (frameTime > 0.25f)
+			frameTime = 0.25f;
+		currTime = newTime;
+		accumulator += frameTime;
+
+		while (accumulator >= fixedDeltaTime)
+		{
+			if (m_client && actions) 
+			{
+				m_client->fixedUpdate(*actions);
+				m_game->processActions(*actions);
+			}
+			{
+				m_game->fixedUpdate(fixedDeltaTime);
+				for (auto it : Entity::getList())
+				{
+					it->fixedUpdate(fixedDeltaTime);
+				}
+			}
+
+			m_physics->step(fixedDeltaTime);
+			t += fixedDeltaTime;
+			accumulator -= fixedDeltaTime;
+		}
+
 		m_input->update();
 		Entity::flushEntities();
+
+		/****************/
+		/** Render */
+		m_renderer->render();
+		m_physics->drawDebug();
+		m_window->swapBuffers();
 	}
 
 	LOG_DEBUG("Core: main loop ended..");
@@ -163,15 +208,26 @@ void Core::destroy()
 	LOG_INFO("Core: Terminating game..");
 	m_game->terminate();
 
+	LOG_INFO("Core: Killing entities..");
+	Entity::killEntities();
+	Entity::flushEntities();
+
 	if (m_renderer != nullptr)
 	{
 		LOG_INFO("Core: Terminating renderer..");
 		m_renderer->destroy();
 	}
 
+	LOG_INFO("Core: Cleaning up resources..");
+	ResourceManager::clear();
+
+	LOG_INFO("Core: Terminating physics..");
+	Physics::destroyBodies();
 	delete m_physics;
+
+	LOG_INFO("Core: Terminating input system..");
 	m_input->destroy();
+
 	LOG_INFO("Core: Terminating window..");
 	m_window->terminate();
-
 }

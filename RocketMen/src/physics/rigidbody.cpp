@@ -1,84 +1,86 @@
 
+
 #include <physics/rigidbody.h>
 
-#include <physics/rigidbody_data.h>
+#include <physics/physics_box2d.h>
+
+//using namespace physics;
 
 #ifdef PHYSICS_BOX2D
 
-extern b2World g_world;
+extern b2World g_boxWorld;
 
-inline glm::vec2 toglm(const b2Vec2& a) {
-	return glm::vec2(a.x, a.y);
-}
-
-inline b2Vec2 tob2(const glm::vec2& a) {
-	return b2Vec2(a.x, a.y);
-}
+extern Vector2 toglm(const b2Vec2& a);
+extern b2Vec2  tob2(const Vector2& a);
 
 Rigidbody::Rigidbody()
 {
 	b2BodyDef dynamicBodyDef;
-	dynamicBodyDef.position.Set(0.0f, 10.0f);
+	dynamicBodyDef.position.Set(0.0f, 0.0f);
 	dynamicBodyDef.type = b2_dynamicBody;
 
-	b2Body* body = g_world.CreateBody(&dynamicBodyDef);
-
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(1.0f, 1.0f);
-
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;
-	fixtureDef.density = 1.0f;
-	fixtureDef.friction = 0.3f;
-
-	body->CreateFixture(&fixtureDef);
-
-
-	m_body = static_cast<RigidbodyData*>(body);
+	b2Body* body = g_boxWorld.CreateBody(&dynamicBodyDef);
+	
+	m_impl = static_cast<RigidbodyImpl*>(body);
 }
 
 Rigidbody::~Rigidbody()
 {
 }
 
-void Rigidbody::setPosition(const glm::vec2& position)
+void Rigidbody::setPosition(const Vector2& position)
 {
-	m_body->SetTransform(tob2(position), m_body->GetAngle());
+	m_impl->SetTransform(tob2(position), m_impl->GetAngle());
 }
 
-glm::vec2 Rigidbody::getPosition() const
+Vector2 Rigidbody::getPosition() const
 {
-	return toglm(m_body->GetPosition());
+	return toglm(m_impl->GetPosition());
 }
 
 void Rigidbody::setAngle(float angle)
 {
-	m_body->SetTransform(m_body->GetPosition(), angle);
+	m_impl->SetTransform(m_impl->GetPosition(), angle);
 }
 
 float Rigidbody::getAngle() const
 {
-	return m_body->GetAngle();
+	return m_impl->GetAngle();
 }
 
-void Rigidbody::setTransform(const glm::vec2& position, float angle)
+void Rigidbody::setTransform(const Vector2& position, float angle)
 {
-	m_body->SetTransform(tob2(position), angle);
+	m_impl->SetTransform(tob2(position), angle);
 }
 
-void Rigidbody::setLinearVelocity(glm::vec2& vel)
+void Rigidbody::setLinearVelocity(Vector2& vel)
 {
-	m_body->SetLinearVelocity(tob2(vel));
+	m_impl->SetLinearVelocity(tob2(vel));
 }
 
-glm::vec2 Rigidbody::getLinearVelocity() const
+Vector2 Rigidbody::getLinearVelocity() const
 {
-	return toglm(m_body->GetLinearVelocity());
+	return toglm(m_impl->GetLinearVelocity());
 }
 
-RigidbodyData* Rigidbody::getData() const
+void Rigidbody::applyLinearImpulse(const Vector2& force, const Vector2& position)
 {
-	return m_body;
+	m_impl->ApplyLinearImpulse(tob2(force), tob2(position), true);
+}
+
+Vector2 Rigidbody::getWorldCenter() const
+{
+	return toglm(m_impl->GetWorldCenter());
+}
+
+float Rigidbody::getMass() const
+{
+	return m_impl->GetMass();
+}
+
+RigidbodyImpl* Rigidbody::getImpl() const
+{
+	return m_impl;
 }
 
 #endif // PHYSICS_BOX2D

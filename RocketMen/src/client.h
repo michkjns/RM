@@ -9,6 +9,7 @@
 
 class Game;
 class Time;
+class ActionBuffer;
 
 namespace network 
 {
@@ -46,7 +47,7 @@ namespace network
 	public:
 		bool initialize();
 		void update();
-		void fixedUpdate();
+		void fixedUpdate(ActionBuffer& actions);
 		void connect(const Address& address);
 		void queueMessage(const NetworkMessage& message);
 
@@ -74,7 +75,6 @@ namespace network
 		float            m_messageSentTime;
 		float            m_maxMessageSentTime;
 		uint32_t         m_connectionAttempt;
-		uint64_t         m_simulatedTime;
 		bool             m_isInitialized;
 
 		std::vector<int32_t> m_reliableAckList;

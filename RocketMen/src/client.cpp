@@ -2,11 +2,12 @@
 #include <client.h>
 
 #include <core/action_buffer.h>
-#include <network/address.h>
-#include <debug.h>
+#include <core/entity.h>
 #include <core/game.h>
-#include <game_time.h>
 #include <core/input.h>
+#include <debug.h>
+#include <game_time.h>
+#include <network/address.h>
 
 #include <assert.h>
 
@@ -41,23 +42,16 @@ bool Client::initialize()
 	return true;
 }
 
+void Client::fixedUpdate(ActionBuffer& actions)
+{
+
+}
+
 void Client::update()
 {
-	const float    deltaTime   = m_gameTime.getDeltaSeconds();
-	const uint64_t currentTime = m_gameTime.getMicroSeconds();
-	const uint64_t timestep    = m_game->getTimestep();
-	ActionBuffer&  actions     = Input::getActions();
+	const float deltaTime = m_gameTime.getDeltaSeconds();
 
-	//ActionBuffer actionBuffer = Input::getActions();
 	processIncomingMessages(deltaTime);
-	/** Fixed timestep simulation */
-	while (currentTime - m_simulatedTime > timestep)
-	{
-		// Process input
-		m_game->processActions(actions);
-		m_simulatedTime += timestep;
-	}
-
 	processOutgoingMessages(deltaTime);
 
 	m_stateTimer += deltaTime;
@@ -91,10 +85,6 @@ void Client::update()
 		}
 		default: break;
 	}
-}
-
-void Client::fixedUpdate()
-{
 }
 
 void Client::connect(const Address& address)

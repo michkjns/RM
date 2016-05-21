@@ -14,11 +14,12 @@ public:
 	virtual void swapBuffers() = 0;
 	virtual bool pollEvents() = 0;
 
-	virtual unsigned int getWidth() const = 0;
-	virtual unsigned int getHeight() const = 0;
+	virtual uint32_t getWidth() const = 0;
+	virtual uint32_t getHeight() const = 0;
 
 	virtual void* getGLFWwindow() const = 0;
 
-	static Window* create();
+	//virtual int32_t getFrameWidth()  const = 0;
 
+	static Window* create();
 };

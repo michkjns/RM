@@ -47,13 +47,13 @@ Shader& ResourceManager::getShader(std::string name)
 }
 
 Texture& ResourceManager::createTexture(const void*        imageData, 
-										uint32_t           width,
-										uint32_t           height,
-										std::string        name, 
-										Texture::BlendMode blendMode
-										/* = Texture::BlendMode::MODE_OPAQUE */)
+	                                    uint32_t           width,
+	                                    uint32_t           height,
+	                                    const char*        name,
+	                                    Texture::BlendMode blendMode
+	                                    /* = Texture::BlendMode::MODE_OPAQUE */)
 {
-	LOG_INFO("ResourceManager: Creating texture %s", name.c_str());
+	LOG_INFO("ResourceManager: Creating texture %s", name);
 	Texture texture;
 	texture.generate(imageData, width, height);
 	m_textures[name] = texture;
@@ -61,7 +61,7 @@ Texture& ResourceManager::createTexture(const void*        imageData,
 }
 
 Texture& ResourceManager::loadTexture(const char*        file, 
-									  std::string        name,
+									  const char*        name,
 									  Texture::BlendMode blendMode 
 									  /* = Texture::BlendMode::MODE_OPAQUE */)
 {
@@ -129,8 +129,8 @@ TileMap& ResourceManager::loadTilemap(const char* file,
 	assert(mapInput.size() > 0);
 
 	std::string widthHeight(file);
-	int32_t dotFirst = widthHeight.find_first_of('.', 0);
-	int32_t dotLast = widthHeight.find_first_of('.', dotFirst+1);
+	int32_t dotFirst = static_cast<int32_t>(widthHeight.find_first_of('.', 0));
+	int32_t dotLast  = static_cast<int32_t>(widthHeight.find_first_of('.', dotFirst+1));
 	widthHeight = widthHeight.substr(dotFirst, dotLast);
 	std::string widthStr  = widthHeight.substr(1, widthHeight.find('x')-1);
 	std::string heightStr = widthHeight.substr(widthHeight.find('x')+1, widthHeight.find_last_of('.')-3);

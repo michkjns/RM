@@ -11,28 +11,28 @@ class ResourceManager
 {
 public:
 	static Shader& loadShader(const char* vertexShaderFile,
-							  const char* fragmentShaderFile,
-							  const char* name);
+	                          const char* fragmentShaderFile,
+	                          const char* name);
 
 	static Shader& getShader(std::string name);
 
 	static Texture& createTexture(const void*        imageData,
-								  uint32_t           width, 
-								  uint32_t           height,
-								  std::string        name,
-								  Texture::BlendMode blendMode
-								   = Texture::BlendMode::MODE_OPAQUE);
+	                              uint32_t           width, 
+	                              uint32_t           height,
+	                              const char*        name,
+	                              Texture::BlendMode blendMode
+	                               = Texture::BlendMode::MODE_OPAQUE);
 
 	static Texture& loadTexture(const char* file, 
-								std::string name,
+								const char* name,
 								Texture::BlendMode blendMode
 								 = Texture::BlendMode::MODE_OPAQUE);
 
 	static Texture& getTexture(std::string name);
 
 	static TileMap& loadTilemap(const char* file,
-								const char* sheetName,
-								const char* name);
+	                            const char* sheetName,
+	                            const char* name);
 
 	static TileMap& getTileMap(const char* name);
 

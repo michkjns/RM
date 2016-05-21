@@ -20,7 +20,7 @@ TileRenderer::~TileRenderer()
 
 bool TileRenderer::initialize()
 {
-	GLfloat vertices[] = {
+	const GLfloat vertices[] = {
 		// Pos      // Tex
 		-1.0f, 1.0f, 0.0f, 1.0f,
 		1.0f, -1.0f, 1.0f, 0.0f,
@@ -47,7 +47,7 @@ bool TileRenderer::initialize()
 	return true;
 }
 
-void TileRenderer::render(TileMap* tileMap, const glm::mat4& projectionMatrix)
+void TileRenderer::render(TileMap* tileMap, const glm::mat4& projectionViewMatrix)
 {
 	assert(m_tileShader);
 	assert(tileMap);
@@ -58,18 +58,18 @@ void TileRenderer::render(TileMap* tileMap, const glm::mat4& projectionMatrix)
 	{
 		checkGL();
 		glm::mat4 modelMatrix = glm::mat4();
-		glm::vec2 size(tileMap->getTileSize() * tileMap->getMapWidth(),
-					   tileMap->getTileSize() * tileMap->getMapHeight());
+		glm::vec2 size(tileMap->getMapWidth() / 2.f,
+					   tileMap->getMapHeight()/ 2.f );
 		
 		modelMatrix = glm::scale(modelMatrix, glm::vec3(size, -1.0f));
 
 		m_tileShader->use();
 		m_tileShader->setMatrix4("model", modelMatrix);
-		m_tileShader->setMatrix4("projection", projectionMatrix);
+		m_tileShader->setMatrix4("projection", projectionViewMatrix);
 
 		m_tileShader->setVec4f("map_info", glm::vec4(tileMap->getTileSize(),
 													 tileMap->getMapWidth(),
-													 0,
+													 tileMap->getMapHeight(),
 													 0));
 
 		glActiveTexture(GL_TEXTURE0);

@@ -3,12 +3,13 @@
 #include <graphics/renderer.h>
 
 #include <core/entity.h>
+#include <core/resource_manager.h>
+#include <core/window.h>
 #include <graphics/camera.h>
 #include <graphics/check_gl_error.h>
 #include <graphics/sprite_renderer.h>
 #include <graphics/tile_renderer.h>
-#include <core/resource_manager.h>
-#include <core/window.h>
+#include <physics.h>
 #include <fstream>
 
 #include <GLFW/glfw3.h>
@@ -25,6 +26,7 @@ public:
 	void destroy() override;
 
 	void render() override;
+	Vector2 Renderer_impl::getScreenSize() const;
 
 private:
 
@@ -88,21 +90,27 @@ void Renderer_impl::render()
 	}
 	renderTiles();
 	renderSprites();
-	renderUI();
+	//renderUI();
 }
 
 void Renderer_impl::renderSprites()
 {
-	glm::mat4 modelMatrix = glm::mat4();
-	glm::vec2 size(ResourceManager::getTexture("demoTexture").getWidth(), 
-				   ResourceManager::getTexture("demoTexture").getHeight());
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(0));
-	modelMatrix = glm::scale(modelMatrix, glm::vec3(size, 1.0f));
-
-	if (Camera::mainCamera) 
+	for (const auto& it : Entity::getList())
 	{
-		m_spriteRenderer.render(modelMatrix, Camera::mainCamera->getProjectionMatrix()
-								* Camera::mainCamera->getViewMatrix());
+		if (it->getSpriteName().empty())
+			continue;
+
+		if (Camera::mainCamera)
+		{
+			Texture& texture = ResourceManager::getTexture(it->getSpriteName());
+
+			glm::mat4 origin = glm::translate(it->getTransform().getWorldMatrix(), Vector3(-.5f, -.50f, 0.0f));
+
+			m_spriteRenderer.render(origin,
+									Camera::mainCamera->getProjectionMatrix()
+									* Camera::mainCamera->getViewMatrix(),
+									it->getSpriteName());
+		}
 	}
 }
 
@@ -117,6 +125,38 @@ void Renderer_impl::renderTiles()
 
 void Renderer_impl::renderUI()
 {
+}
+
+void Renderer::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, bool screenSpace)
+{
+	Shader::unbindShader();
+	GLfloat glverts[16];
+	glVertexPointer(2, GL_FLOAT, 0, glverts);
+	glEnableClientState(GL_VERTEX_ARRAY);
+
+	for (int i = 0; i < vertexCount; i++) 
+	{
+		Vector2 view = Renderer::get()->getScreenSize();
+		Vector4 xy = (screenSpace) ? Vector4(vertices[i], 0.0f, 0.0f)
+			: Camera::mainCamera->getProjectionMatrix() * Camera::mainCamera->getViewMatrix() *
+			Vector4(vertices[i], 1.0f, 1.0f);
+
+		glverts[i * 2]     = xy.x;
+		glverts[i * 2 + 1] = xy.y;
+	}
+
+	glColor4f(color.r, color.g, color.b, 0.3f);
+	glDrawArrays(GL_TRIANGLE_FAN, 0, vertexCount);
+
+	glLineWidth(1);
+	glColor4f(1, 0, 1, 1);
+	glDrawArrays(GL_LINE_LOOP, 0, vertexCount);
+	glDisableClientState(GL_VERTEX_ARRAY);
+}
+
+Vector2 Renderer_impl::getScreenSize() const
+{ 
+	return Vector2(m_window->getWidth(), m_window->getHeight());
 }
 
 Renderer* Renderer::get()

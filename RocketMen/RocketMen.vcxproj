@@ -86,8 +86,8 @@
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
-    <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/glfw-3.1.2.bin.WIN64/lib-vc2015</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
+    <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/glfw-3.1.2.bin.WIN64/lib-vc2015;$(SolutionDir)/dep/Box2D/Build/vs2015/bin/x64/Release</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -157,6 +157,7 @@
     <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\entity.cpp" />
+    <ClCompile Include="src\game\rocket.cpp" />
     <ClCompile Include="src\graphics\tile_map.cpp" />
     <ClCompile Include="src\graphics\tile_renderer.cpp" />
     <ClCompile Include="src\network\address.cpp" />
@@ -178,6 +179,7 @@
     <ClCompile Include="src\game\rocketmen.cpp" />
     <ClCompile Include="src\physics.cpp" />
     <ClCompile Include="src\physics\rigidbody.cpp" />
+    <ClCompile Include="src\physics\staticbody.cpp" />
     <ClCompile Include="src\server.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\network\socket.cpp" />
@@ -193,6 +195,7 @@
     <ClInclude Include="src\core\action_buffer.h" />
     <ClInclude Include="src\bitstream.h" />
     <ClInclude Include="src\core\entity.h" />
+    <ClInclude Include="src\game\rocket.h" />
     <ClInclude Include="src\graphics\camera.h" />
     <ClInclude Include="src\graphics\check_gl_error.h" />
     <ClInclude Include="src\client.h" />
@@ -216,7 +219,8 @@
     <ClInclude Include="src\game\rocketmen.h" />
     <ClInclude Include="src\physics.h" />
     <ClInclude Include="src\physics\rigidbody.h" />
-    <ClInclude Include="src\physics\rigidbody_data.h" />
+    <ClInclude Include="src\physics\physics_box2d.h" />
+    <ClInclude Include="src\physics\staticbody.h" />
     <ClInclude Include="src\server.h" />
     <ClInclude Include="src\graphics\shader.h" />
     <ClInclude Include="src\network\socket.h" />

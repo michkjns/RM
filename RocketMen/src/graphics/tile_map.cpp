@@ -67,6 +67,7 @@ bool TileMap::initialize(std::string tileSheet,
 
 TileMap::~TileMap()
 {
+
 }
 
 std::string TileMap::getName() const

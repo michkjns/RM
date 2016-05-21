@@ -1,8 +1,9 @@
 
 #include <server.h>
 
-#include <debug.h>
+#include <core/entity.h>
 #include <core/game.h>
+#include <debug.h>
 #include <network/remote_client.h>
 
 #include <assert.h>
@@ -16,7 +17,6 @@ Server::Server(Time& gameTime, Game* game) :
 	m_clientIDCounter(0),
 	m_numConnectedClients(0),
 	m_lastOrderedMessaged(0),
-	m_simulatedTime(0ULL),
 	m_snapshotTime(0.0f),
 	m_reliableMessageTime(0.0f),
 	m_maxReliableMessageTime(0.20f)
@@ -35,19 +35,8 @@ bool Server::initialize()
 
 void Server::update()
 {
-	const float    deltaTime   = m_gameTime.getDeltaSeconds();
-	const uint64_t currentTime = m_gameTime.getMicroSeconds();
-	const uint64_t timestep    = m_game->getTimestep();
-
+	const float deltaTime = m_gameTime.getDeltaSeconds();
 	processIncomingMessages(deltaTime);
-
-	/** Fixed timestep simulation */
-	while (currentTime - m_simulatedTime > timestep)
-	{
-		m_game->fixedUpdate(timestep);
-		m_simulatedTime += timestep;
-	}
-
 	processOutgoingMessages(deltaTime);
 }
 

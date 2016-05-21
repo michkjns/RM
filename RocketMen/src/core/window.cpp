@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <GLFW/glfw3.h>
 
+void onResize(GLFWwindow* window, int32_t width, int32_t height);
+
 class Window_impl : public Window
 {
 public:
@@ -19,6 +21,9 @@ public:
 
 	unsigned int getWidth()  const override;
 	unsigned int getHeight() const override;
+
+
+	//int32_t getFrameWidth()  const override;
 
 	void* getGLFWwindow()    const override;
 
@@ -43,6 +48,16 @@ void* Window_impl::getGLFWwindow() const
 {
 	return (void*)m_glfwWindow;
 }
+
+//int32_t Window::getFrameWidth() const
+//{
+//	return int32_t();
+//}
+//
+//int32_t Window::getFrameHeight() const
+//{
+//	return int32_t();
+//}
 
 Window* Window::create()
 {
@@ -82,6 +97,8 @@ bool Window_impl::initialize(uint32_t width, uint32_t height)
 		glfwTerminate();
 		exit(-1);
 	}
+
+	glfwSetFramebufferSizeCallback(m_glfwWindow, onResize);
 		
 	return true;
 }
@@ -126,4 +143,9 @@ uint32_t Window_impl::getWidth() const
 uint32_t Window_impl::getHeight() const
 {
 	return m_height;
+}
+
+void onResize(GLFWwindow* window, int32_t width, int32_t height)
+{
+	glViewport(0, 0, width, height);
 }

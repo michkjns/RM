@@ -11,9 +11,9 @@ public:
 	
 	/** Fixed timestep update
 	*	Use for game logic affecting physics
-	* @param	uint64_t timestep	the timestep in microseconds
+	* @param	float dt	the delta time in microseconds
 	*/
-	virtual void fixedUpdate(uint64_t timestep) = 0;
+	virtual void fixedUpdate(float dt) = 0;
 
 	/** Normal update
 	*	Use for everything that does not affect physics

@@ -3,7 +3,17 @@
 
 #include <includes.h>
 
-class RigidbodyData;
+class RigidbodyImpl;
+//
+//namespace physics {
+//	enum class BodyType
+//	{
+//		STATIC_BODY= 0,
+//		KINEMATIC_BODY,
+//		DYNAMIC_BODY
+//	};
+//};
+
 
 class Rigidbody
 {
@@ -11,24 +21,30 @@ public:
 	Rigidbody();
 	~Rigidbody();
 
-	void setPosition(const glm::vec2& position);
-	glm::vec2 getPosition() const;
+	void    setPosition(const Vector2& position);
+	Vector2 getPosition() const;
 
 	void  setAngle(float angle);
 	float getAngle() const;
 
-	void setTransform(const glm::vec2& position, float angle);
+	void setTransform(const Vector2& position, float angle);
 
-	void setLinearVelocity(glm::vec2& vel);
-	glm::vec2 getLinearVelocity() const;
+	void    setLinearVelocity(Vector2& vel);
+	Vector2 getLinearVelocity() const;
 
-	RigidbodyData* getData() const;
+	void applyLinearImpulse(const Vector2& force, const Vector2& position);
+	
+	Vector2 getWorldCenter() const;
+	
+	float getMass() const;
+
+	RigidbodyImpl* getImpl() const;
 
 private:
-	RigidbodyData* m_body;
+	RigidbodyImpl* m_impl;
 };
 
 inline bool operator==(const Rigidbody&a, const Rigidbody& b)
 {
-	return (a.getData() == b.getData());
+	return (a.getImpl() == b.getImpl());
 }

@@ -3,17 +3,26 @@
 
 #include <core/entity.h>
 
-class Character : public Entity
+namespace rm
 {
-public:
-	Character();
-	virtual ~Character();
 
-	virtual void initialize();
-	virtual void update(float deltaTime) override;
-	virtual void fixedUpdate()           override;
+	class Character : public Entity
+	{
+	public:
+		Character();
+		virtual ~Character();
 
-private:
-	Rigidbody* m_rigidbody;
-};
+		virtual void initialize();
+		virtual void update(float deltaTime)      override;
+		virtual void fixedUpdate(float deltaTime) override;
 
+		virtual void startContact(Entity* other) override;
+		virtual void endContact(Entity* other)   override;
+
+		Rigidbody* getRigidbody() const;
+
+	private:
+		Rigidbody* m_rigidbody;
+	};
+
+}; // namespace rm

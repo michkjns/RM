@@ -1,28 +1,36 @@
 
 #include <graphics/camera.h>
+#include <graphics/renderer.h>
 
 using namespace graphics;
 
 Camera* Camera::mainCamera;
 
-Camera::Camera(ProjectionMode projection, float width, float height) :
-	m_viewport(0, 0, width, height),
+Camera::Camera(ProjectionMode projection, float width, float height, int32_t pixelsPerMeter) :
 	m_position(0),
+	m_scale(1.f),
 	m_rotation(),
 	m_viewMatrix(1),
 	m_isDirty(false),
-	m_focalDepth(1.f)
+	m_pixelsPerMeter(pixelsPerMeter),
+	m_projSize(width/ pixelsPerMeter, height/ pixelsPerMeter)
 {
 	switch (projection)
 	{
 		case ProjectionMode::ORTOGRAPHIC_PROJECTION:
 		{
-			m_projectionMatrix = glm::ortho(0.0f, width, 0.0f, height, -1.0f, 1.0f);
+			width /= pixelsPerMeter;
+			height /= pixelsPerMeter;
+			m_projectionMatrix = glm::ortho(-width  / 2.0f, 
+											width   / 2.0f, 
+											-height / 2.0f, 
+											height  / 2.0f, 
+											-1.0f, 1.0f);
 			break;
 		}
 		case ProjectionMode::PERSPECTIVE_PROJECTION:
 		{
-			// TODO(Support perspective projection)
+			// TODO(Support perspective projection?)
 			assert(false);
 			break;
 		}
@@ -50,13 +58,14 @@ void Camera::updateViewMatrix()
 	{
 		glm::mat4 translate = glm::translate(-m_position);
 		glm::mat4 rotate    = glm::transpose(glm::toMat4(m_rotation));
+		glm::mat4 scale     = glm::scale(m_scale);
 
-		m_viewMatrix = rotate * translate;
+		m_viewMatrix = rotate * translate * scale;
 		m_isDirty = false;
 	}
 }
 
-void Camera::translate(glm::vec3 translation)
+void Camera::translate(Vector3 translation)
 {
 	m_position += translation;
 	m_isDirty = true;
@@ -68,13 +77,19 @@ void Camera::rotate(const glm::quat& rotation)
 	m_isDirty = true;
 }
 
-void Camera::rotate(const glm::vec3& rotation)
+void Camera::scale(const Vector3& scale)
+{
+	m_scale   += scale;
+	m_isDirty = true;
+}
+
+void Camera::rotate(const Vector3& rotation)
 {
 	rotate(glm::quat(rotation));
 	m_isDirty = true;
 }
 
-void Camera::setPosition(const glm::vec3& pos)
+void Camera::setPosition(const Vector3& pos)
 {
 	m_position = pos;
 	m_isDirty = true;
@@ -86,25 +101,24 @@ void Camera::setRotation(const glm::quat& rot)
 	m_isDirty = true;
 }
 
-void Camera::setEulerAngles(const glm::vec3& eulerAngles)
+void Camera::setEulerAngles(const Vector3& eulerAngles)
 {
 	m_rotation = glm::quat(glm::radians(eulerAngles));
 	m_isDirty = true;
 }
 
-void Camera::setViewport(int32_t x, int32_t y, int32_t width, int32_t height)
+void Camera::setScale(const Vector3& scale)
 {
-	m_viewport = glm::vec4(x, y, width, height);
-	glViewport(x, y, width, height);
+	m_scale = scale;
 	m_isDirty = true;
 }
 
-float Camera::getFocalDepth() const
+int32_t Camera::getPixelsPerMeter() const
 {
-	return m_focalDepth;
+	return m_pixelsPerMeter;
 }
 
-glm::vec3 Camera::getPosition() const
+Vector3 Camera::getPosition() const
 {
 	return m_position;
 }
@@ -114,12 +128,8 @@ glm::quat Camera::getRotation() const
 	return m_rotation;
 }
 
-glm::vec3 Camera::getEulerAngles() const
+Vector3 Camera::getEulerAngles() const
 {
 	return glm::degrees(glm::eulerAngles(m_rotation));
 }
 
-glm::vec4 Camera::getViewport() const
-{
-	return m_viewport;
-}
