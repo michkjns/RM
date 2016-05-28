@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "debug.h"
+#include <core/debug.h>
 
 #include <algorithm>
 #include <stdio.h>

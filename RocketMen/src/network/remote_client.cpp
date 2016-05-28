@@ -1,5 +1,6 @@
 
-#include "remote_client.h"
+#include <network/remote_client.h>
+#include <core/debug.h>
 
 using namespace network;
 
@@ -19,7 +20,11 @@ void RemoteClient::queueMessage(const NetworkMessage& message)
 			msg.isReliable = message.isReliable;
 			msg.isOrdered  = message.isOrdered;
 			msg.sequenceNr = ++m_sequenceCounter;
-			break;
+			return;
 		}
 	}
+
+	LOG_WARNING("Message Queue is full! Message discarded.");
+	delete message.data;
+
 }

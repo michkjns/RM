@@ -16,13 +16,12 @@ public:
 	static void openLog(const char* file);
 	static void closeLog();
 
-	static void log(Verbosity verbosityLevel, const char* message , ... );
-
+	static void log(Verbosity verbosityLevel, const char* message, ... );
+	static void print(const char* message, ...);
 	static void setVerbosity(Verbosity verbosity);
 private:
 
 };
-
 
 #define LOG_INFO(...)    Debug::log(Debug::Verbosity::LEVEL_INFO,    __VA_ARGS__);
 #define LOG_ERROR(...)   Debug::log(Debug::Verbosity::LEVEL_ERROR,   __VA_ARGS__);

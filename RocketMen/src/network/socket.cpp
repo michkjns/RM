@@ -1,8 +1,8 @@
 
-#include "socket.h"
+#include <network/socket.h>
 
-#include "bitstream.h"
-#include "debug.h"
+#include <bitstream.h>
+#include <core/debug.h>
 
 #include <assert.h>
 #include <stdio.h>

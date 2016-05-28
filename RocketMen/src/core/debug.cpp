@@ -1,5 +1,5 @@
 
-#include "debug.h"
+#include <core/debug.h>
 
 #include <ctime>
 #include <iomanip>
@@ -18,6 +18,10 @@ void Debug::openLog(const char* file)
 {
 	std::time_t t = std::time(NULL);
 	s_logFile.open(file, std::fstream::out);
+	if (s_logFile.fail())
+	{
+		printf("Error opening %s", file);
+	}
 	s_fileOpened = true;
 
 	time_t rawtime;
@@ -50,7 +54,6 @@ void Debug::setVerbosity(Verbosity verbosity)
 
 void Debug::log(Verbosity verbosityLevel, const char* format, ...)
 {
-
 	if (verbosityLevel < s_verbosityLevel) return;
 
 	std::string verbosity =
@@ -67,6 +70,25 @@ void Debug::log(Verbosity verbosityLevel, const char* format, ...)
 	vsnprintf(buffer, 1024, format, args);
 	std::stringstream stream;
 	stream << verbosity << " : " << buffer << std::endl;
+	std::cout << stream.str();
+	va_end(args);
+
+	if (s_fileOpened)
+	{
+		s_logFile << stream.str();
+	}
+
+	s_logFile.flush();
+}
+
+void Debug::print(const char* message, ...)
+{
+	char buffer[1024];
+	va_list args;
+	va_start(args, message);
+	vsnprintf(buffer, 1024, message, args);
+	std::stringstream stream;
+	stream << buffer;
 	std::cout << stream.str();
 	va_end(args);
 

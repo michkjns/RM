@@ -1,6 +1,6 @@
 
 #include <core/core.h>
-#include <debug.h>
+#include <core/debug.h>
 #include <game/rocketmen.h>
 
 #include <iostream>
@@ -8,13 +8,14 @@
 
 #include <network/address.h>
 
-#if 1
+#if 0
 #include <C:\Program Files (x86)\Visual Leak Detector\include\vld.h>
 #endif
 
 int main(int argc, char *argv[])
 {
 	Debug::openLog("rm.log");
+	Debug::print("GAME : %s v%f\n", GAME_NAME, GAME_VERSION);
 #ifdef _DEBUG
 	Debug::setVerbosity(Debug::Verbosity::LEVEL_DEBUG);
 #else

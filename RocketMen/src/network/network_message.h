@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "address.h"
-#include "bitstream.h"
+#include <network/address.h>
+#include <bitstream.h>
 
 namespace network
 {
@@ -19,11 +19,15 @@ namespace network
 
 		// Server to client
 		CLIENT_CONNECT_ACCEPT,
+		PLAYER_JOIN_ACCEPT,
 		SERVER_GAMESTATE,
+		SPAWN_ENTITY,
+		APPROVE_ENTITY,
 
 		// Client to server
 		PLAYER_INTRO,
 		PLAYER_INPUT,
+		ENTITY_REQUEST,
 
 		NUM_COMMANDS
 	};

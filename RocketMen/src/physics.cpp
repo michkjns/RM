@@ -5,6 +5,7 @@
 #include <core/resource_manager.h>
 #include <graphics/camera.h>
 #include <graphics/renderer.h>
+#include <network.h>
 #include <physics/physics_box2d.h>
 
 #include <array>
@@ -34,7 +35,7 @@ public:
 	void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
 	void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) {}
 	void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) {}
-	void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {}
+	void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
 	void DrawTransform(const b2Transform& xf) {}
 };
 
@@ -271,26 +272,17 @@ void Physics::destroyBodies()
 
 void PhysicsDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
-	Vector2* verts = new Vector2[vertexCount];
-	for (int i = 0; i < vertexCount; i++)
-		verts[i] = Vector2(vertices[i].x, vertices[i].y);
-
 	Renderer::get()->drawPolygon((Vector2*)(vertices), vertexCount, Color(color.r, color.g, color.b, color.a));
-
-
-	delete[] verts;
 }
 
 void PhysicsDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
-	Vector2* verts = new Vector2[vertexCount];
-	for (int i = 0; i < vertexCount; i++)
-		verts[i] = Vector2(vertices[i].x, vertices[i].y);
-
 	Renderer::get()->drawPolygon((Vector2*)vertices, vertexCount, Color(color.r, color.g, color.b, color.a));
+}
 
-
-	delete[] verts;
+void PhysicsDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) 
+{
+	Renderer::get()->drawLineSegment(toglm(p1), toglm(p2), Color(color.r, color.g, color.b, color.a));
 }
 
 //==============================================================================
@@ -298,6 +290,12 @@ void PhysicsDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, co
 void ContactListener::BeginContact(b2Contact* contact)
 {
 //	LOG_DEBUG("ContactListenerL::startContact");
+
+	if (!Network::isServer())
+	{
+		return;
+	}
+
 	Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
 	Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());
 
@@ -314,6 +312,11 @@ void ContactListener::BeginContact(b2Contact* contact)
 
 void ContactListener::EndContact(b2Contact* contact)
 {
+	if (!Network::isServer())
+	{
+		return;
+	}
+
 	Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
 	Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());
 	if (entityA)

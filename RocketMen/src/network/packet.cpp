@@ -77,7 +77,7 @@ IncomingMessage Packet::readMessage()
 
 	if (dataSize > 0)
 	{
-		msg.data = BitStream::create();
+		msg.data = new BitStream();
 		msg.data->writeData(reinterpret_cast<char*>(m_data + m_read),
 							dataSize);
 		m_read += dataSize;

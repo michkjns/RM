@@ -37,24 +37,7 @@ public:
 	glm::mat4 getViewMatrix();
 	glm::mat4 getProjectionMatrix() const;
 
-	Vector2 screenToWorld(const Vector2& screenPoint)
-	{
-/*
-		Vector2 normalized = Vector2( -1.0f + 2.0f * point.x / view.x,
-		                               1.0f - 2.0f * point.y / view.y);
-
-		glm::mat4 invMat = getViewMatrix();
-		Vector2 result = Vector2(invMat[0][0] * normalized.x + invMat[1][0] * normalized.y + invMat[3][0],
-		                         invMat[0][1] * normalized.x + invMat[1][1] * normalized.y + invMat[3][1]);
-*/
-		const Vector2 ratio    = Vector2(1.f / (m_pixelsPerMeter * m_scale.x), 
-										 -1.f / (m_pixelsPerMeter * m_scale.y));
-		const Vector2 view     = Renderer::get()->getScreenSize();
-		const Vector2 worldPos = Vector2(screenPoint.x * ratio.x - (view.x * ratio.x / 2.f),
-		                                 screenPoint.y * ratio.y - (view.y * ratio.y / 2.f))
-		                         + Vector2(m_position.x, m_position.y );
-		return worldPos;
-	}
+	Vector2 screenToWorld(const Vector2& screenPoint);
 
 	void updateViewMatrix();
 private:

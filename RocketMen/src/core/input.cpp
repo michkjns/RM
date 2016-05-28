@@ -28,6 +28,7 @@ static int32_t s_actionCount;
 static ActionBuffer s_actionBuffer;
 static std::vector<Action> s_events;
 static std::unordered_map<Key, size_t> s_map;
+static std::unordered_map<MouseButton, size_t> s_mouseMap;
 
 GLFWwindow* s_glfwWindow = nullptr;
 Input*      s_instance = nullptr;
@@ -35,7 +36,11 @@ Input*      s_instance = nullptr;
 //==========================================================================
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	if (key == -1) key = 347;
+
+//	LOG_DEBUG("%i", key);
+
+	if (key == -1) 
+		key = 347;
 	if (action == GLFW_PRESS)
 	{
 		s_keyState[key]     = true;
@@ -75,6 +80,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 	{
 		s_mouseState[button]     = true;
 		s_mouseStateDown[button] = true;
+
+		auto it = s_mouseMap.find(MouseButton(button));
+		if (it != s_mouseMap.end())
+		{
+			Action action;
+			action.set(it->second, true);
+			s_actionBuffer.insert(action);
+		}
+
 	}
 	else if (action == GLFW_RELEASE)
 	{
@@ -101,6 +115,7 @@ void Input::update()
 	std::fill(std::begin(s_keyStateDown),   std::end(s_keyStateDown),   false);
 	std::fill(std::begin(s_mouseStateDown), std::end(s_mouseStateDown), false);
 	s_mousePosxRel = s_mousePosyRel = 0;
+	s_actionBuffer.clear();
 }
 
 bool Input::getKey(Key key)
@@ -152,6 +167,14 @@ void Input::mapAction(std::string name, Key key)
 	s_map[key] = strHash(toLower(name));
 
 //	LOG_DEBUG("Action mapped: %s - %i", name, static_cast<int32_t>(key));
+}
+
+void Input::mapAction(std::string name, MouseButton mouseButton)
+{
+	std::hash<std::string> strHash;
+	s_mouseMap[mouseButton] = strHash(toLower(name));
+
+	//	LOG_DEBUG("Action mapped: %s - %i", name, static_cast<int32_t>(key));
 }
 
 void Input::setCursorEnabled(CursorState setEnabled)

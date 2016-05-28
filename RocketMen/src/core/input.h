@@ -37,6 +37,7 @@ public:
 
 	/** Binds a key to an action */
 	static void mapAction(std::string name, input::Key key);
+	static void mapAction(std::string name, input::MouseButton mouseButton);
 
 	/** Enables or disables the cursor */
 	static void setCursorEnabled(input::CursorState newState);

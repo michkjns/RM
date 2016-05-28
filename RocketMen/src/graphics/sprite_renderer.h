@@ -17,7 +17,6 @@ public:
 private:
 	GLuint m_VAO;
 	GLuint m_VBO;
-	GLfloat m_vertices;
 
 	Shader* m_spriteShader;
 };

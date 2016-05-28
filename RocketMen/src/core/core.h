@@ -31,6 +31,7 @@ public:
 
 private:
 	bool loadResources();
+	void drawDebug();
 
 	Game*		     m_game;
 	Renderer*	     m_renderer;
@@ -41,4 +42,5 @@ private:
 	Input*           m_input;
 	Physics*         m_physics;
 	uint64_t         m_timestep;
+	bool             m_enableDebug;
 };

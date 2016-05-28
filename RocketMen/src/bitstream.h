@@ -4,44 +4,55 @@
 #include <cstdint>
 
 /** BitStream class
-*   for serialization
-* @note Why pimpl? ..
+*   for compact serialization
 */
 class BitStream
 {
 public:
-	
+	BitStream();
+	~BitStream();
+
 	/** Write data replacing the current buffer */
-	virtual void writeBuffer(char* data, size_t length)  = 0;
+	void writeBuffer(char* data, size_t length);
 																		
 	/** Write data appending to the current buffer */
-	virtual void writeData(char* data, size_t length)    = 0;
+	void writeData(char* data, size_t length);
 				 											
-	virtual void writeBit(bool value, size_t repeat = 1)  = 0;
-	virtual void writeByte(char value, size_t repeat = 1) = 0;
-	virtual void writeFloat(float value)                  = 0;
-	virtual void writeInt8(int8_t value)                  = 0;
-	virtual void writeInt16(int16_t value)                = 0;
-	virtual void writeInt32(int32_t value)                = 0;
-	virtual void writeInt64(int64_t value)                = 0;
-	virtual void writeBool(bool value)                    = 0;
+	void writeBit(bool value, size_t repeat = 1);
+	void writeByte(char value, size_t repeat = 1);
+	void writeFloat(float value);
+	void writeInt8(int8_t value);
+	void writeInt16(int16_t value);
+	void writeInt32(int32_t value);
+	void writeInt64(int64_t value);
+	void writeBool(bool value);
 
 
-	virtual void    readBytes(char* output, 
-				              size_t numBytes = 1)  = 0;
-	virtual void    readBit(bool* output)           = 0;
-	virtual float	readFloat()                     = 0;
-	virtual int8_t  readInt8()                      = 0;
-	virtual int16_t	readInt16()                     = 0;
-	virtual int32_t	readInt32()                     = 0;
-	virtual int64_t	readInt64()                     = 0;
-	virtual bool	readBool()                      = 0;
+	void    readBytes(char* output, size_t numBytes = 1);
+	void    readBit(bool* output);
+	float	readFloat();
+	int8_t  readInt8();
+	int16_t	readInt16();
+	int32_t	readInt32();
+	int64_t	readInt64();
+	bool	readBool();
 
-	virtual const size_t getLength() const = 0;
-	virtual const char*	 getBuffer() const = 0;
+	const size_t getLength() const;
+	const char*	 getBuffer() const;
 
-	virtual void resetReading() = 0;
+	void resetReading() ;
+	
+private:
+	static const uint32_t s_bufferSize = 65536;
 
-	virtual ~BitStream() {}
-	static BitStream* create();
+	char        m_buffer[s_bufferSize];
+	int32_t     m_readTotalBytes;
+	int32_t	    m_readBit;
+	const char* m_readData;
+
+	int32_t     m_writeTotalBytes;
+	int32_t     m_writeLength;
+	int32_t     m_writeByte;
+	int32_t     m_writeBit;
+	char*       m_writeData;
 };

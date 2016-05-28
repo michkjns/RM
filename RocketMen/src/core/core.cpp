@@ -2,21 +2,24 @@
 #include <core/core.h>
 
 #include <graphics/check_gl_error.h>
-#include <client.h>
+#include <network/client.h>
 #include <core/game.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
 #include <core/entity.h>
 #include <graphics/renderer.h>
+#include <network.h>
 #include <network/address.h>
 #include <physics.h>
-#include <server.h>
+#include <network/server.h>
 #include <time.h>
 
 #include <assert.h>
 #include <cstdint>
 
 using namespace network;
+
+static bool s_enableDebugDraw = true;
 
 Core::Core() :
 	m_client(nullptr),
@@ -26,7 +29,8 @@ Core::Core() :
 	m_window(nullptr),
 	m_input(nullptr),
 	m_physics(nullptr),
-	m_timestep(33333ULL / 2)
+	m_timestep(33333ULL / 2),
+	m_enableDebug(false)
 {
 
 }
@@ -44,7 +48,8 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 {
 	assert(game != nullptr);
 	
-	bool runDedicated = false;
+	bool runDedicated  = false;
+	bool m_enableDebug = false;
 	for (int i = 0; i < argc; i++)
 	{
 		const char* arg = argv[i];
@@ -54,17 +59,32 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		}
 		if (strcmp(arg, "--debug") == 0)
 		{
-			Debug::setVerbosity(Debug::Verbosity::LEVEL_DEBUG);
-			LOG_INFO("Debug logging enabled");
+			m_enableDebug = true;
 		}
 	}
+#ifdef _DEBUG
+	m_enableDebug = true;
+#endif
 
 	m_game = game;
 
-	LOG_INFO("Core: Creating window..");
-	m_window = Window::create();
-	m_window->initialize(g_defaultWidth, g_defaultHeight);
-	
+	if((!runDedicated) || (runDedicated && m_enableDebug))
+	{
+		LOG_INFO("Core: Creating window..");
+		m_window = Window::create();
+		m_window->initialize(g_defaultWidth, g_defaultHeight);
+
+		LOG_INFO("Core: Creating renderer..");
+		m_renderer = Renderer::create();
+		m_renderer->initialize(m_window);
+	}
+
+	if (m_enableDebug)
+	{
+		LOG_INFO("Debug logging enabled");
+		Debug::setVerbosity(Debug::Verbosity::LEVEL_DEBUG);
+	}
+
 	if (runDedicated)
 	{
 		LOG_INFO("Core: Creating server..");
@@ -72,28 +92,27 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		if (m_server->initialize())
 		{
 			LOG_INFO("Server: Server succesfully initialized");
+			Network::setServer(m_server);
 		}
 		m_server->host(g_defaultPort);
 	}
 	else
 	{
-		LOG_INFO("Core: Creating renderer..");
-		m_renderer = Renderer::get();
-		m_renderer->initialize(m_window);
-
 		LOG_INFO("Core: Creating client..");
 		m_client = new Client(m_gameTime, m_game);
 		m_client->initialize();
+		
+		LOG_INFO("Core: Initializing input");
+		m_input = Input::create();
+		m_input->initialize(m_window);
+
+		Network::setClient(m_client);
 	}
 
 	if (!loadResources())
 	{
 		LOG_ERROR("Core: Loading resources has failed");
 	}
-
-	LOG_INFO("Core: Initializing input");
-	m_input = Input::create();
-	m_input->initialize(m_window);
 
 	LOG_INFO("Core: Initializing physics");
 	m_physics = new Physics();
@@ -111,7 +130,21 @@ bool Core::loadResources()
 	ResourceManager::loadShader("data/shaders/tile_shader.vert",
 								"data/shaders/tile_shader.frag",
 								"tile_shader");
+
+	ResourceManager::loadShader("data/shaders/line_shader.vert",
+								"data/shaders/line_shader.frag",
+								"line_shader");
 	return true;
+}
+
+void Core::drawDebug()
+{
+	for (auto& it : Entity::getList())
+	{
+		it->debugDraw();
+	}
+
+	m_physics->drawDebug();
 }
 
 void Core::run()
@@ -128,17 +161,19 @@ void Core::run()
 
 	float currTime = m_gameTime.getSeconds();
 	float accumulator = 0.0f;
-	float fixedDeltaTime = 1.0f / 30.0f;
+	const float fixedDeltaTime = m_timestep / 1000000.0f;
 	float t = 0.0f;
 
 	LOG_DEBUG("Core: Entering main loop..");
-	while (!m_window->pollEvents())
+	bool exit = false;
+	while (!exit)
 	{
+		if (m_window)
+		{
+			exit = m_window->pollEvents();
+		}
 		m_gameTime.update();
-		const float    deltaTime   = m_gameTime.getDeltaSeconds();
-		//const uint64_t currentTime = m_gameTime.getMicroSeconds();
-		//const double   currTime      = (double)m_gameTime.getSeconds();
-		//const uint64_t timestep    = m_game->getTimestep();
+		const float deltaTime = m_gameTime.getDeltaSeconds();
 
 		/****************
 		/** Server Update */
@@ -151,8 +186,8 @@ void Core::run()
 		/** Client Update */
 		if (m_client)
 		{
-			m_client->update();
 			actions = &Input::getActions();
+			m_client->update();
 		}
 		
 		m_game->update(m_gameTime);
@@ -172,20 +207,26 @@ void Core::run()
 		{
 			if (m_client && actions) 
 			{
-				m_client->fixedUpdate(*actions);
 				m_game->processActions(*actions);
+				m_client->fixedUpdate(*actions);
 			}
+			
+			m_game->fixedUpdate(fixedDeltaTime);
+
+			for (auto it : Entity::getList())
 			{
-				m_game->fixedUpdate(fixedDeltaTime);
-				for (auto it : Entity::getList())
-				{
-					it->fixedUpdate(fixedDeltaTime);
-				}
-			}
+				it->fixedUpdate(fixedDeltaTime);
+			}			
 
 			m_physics->step(fixedDeltaTime);
 			t += fixedDeltaTime;
 			accumulator -= fixedDeltaTime;
+		}
+
+		if (Input::getKeyDown(input::Key::NUM_1))
+		{
+			s_enableDebugDraw = !s_enableDebugDraw;
+			LOG_INFO(s_enableDebugDraw? "Debug drawing enabled" : " Debug drawing disabled");
 		}
 
 		m_input->update();
@@ -193,9 +234,15 @@ void Core::run()
 
 		/****************/
 		/** Render */
-		m_renderer->render();
-		m_physics->drawDebug();
-		m_window->swapBuffers();
+		if (m_renderer)
+		{
+			m_renderer->render();
+			if (s_enableDebugDraw)
+			{
+				drawDebug();
+			}
+			m_window->swapBuffers();
+		}
 	}
 
 	LOG_DEBUG("Core: main loop ended..");

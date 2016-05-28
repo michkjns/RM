@@ -1,10 +1,10 @@
 
-#include "network_interface.h"
+#include <network/network_interface.h>
 
-#include "debug.h"
-#include "packet.h"
-#include "network_message.h" 
-#include "socket.h"
+#include <core/debug.h>
+#include <network/packet.h>
+#include <network/network_message.h>
+#include <network/socket.h>
 
 #include <array>
 #include <assert.h>
@@ -52,7 +52,7 @@ void NetworkInterface::receivePackets()
 
 		Packet* packet = new Packet;
 		// Reconstruct packet
-		BitStream* stream = BitStream::create();
+		BitStream* stream = new BitStream();
 			stream->writeBuffer(buffer, length);
 			stream->readBytes((char*)&packet->header, sizeof(PacketHeader));
 			stream->readBytes(packet->getData(), packet->header.dataLength);
@@ -63,7 +63,7 @@ void NetworkInterface::receivePackets()
 		{
 			IncomingMessage msg = packet->readMessage();
 			msg.address = address;
-			if (msg.isOrdered)
+			if (msg.isOrdered && orderedMsgCount < s_maxPendingMessages)
 			{
 				orderedMsgs[orderedMsgCount++] = msg;
 			}
@@ -91,12 +91,13 @@ void NetworkInterface::sendPacket(const Address& destination, Packet* packet)
 {
 	assert(packet != nullptr);
 
-	BitStream* stream = BitStream::create();
-		stream->writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
-		stream->writeData(packet->getData(), packet->header.dataLength);
-		m_socket->send(destination, stream->getBuffer(), stream->getLength());
+	BitStream stream;
+
+	stream.writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
+	stream.writeData(packet->getData(), packet->header.dataLength);
+	m_socket->send(destination, stream.getBuffer(), stream.getLength());
+
 //		LOG_DEBUG("Send packet: %i port", packet->header.messageCount, destination.getPort());
-	delete stream;
 }
 
 void NetworkInterface::setState(State state)

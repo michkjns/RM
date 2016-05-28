@@ -1,11 +1,10 @@
 
-#include "game.h"
+#include <core/game.h>
 
-#include <debug.h>
+#include <core/action_listener.h>
+#include <core/debug.h>
 #include <core/action_buffer.h>
 #include <map>
-
-//std::map<size_t, std::function<void(void)>> exampleMap;
 
 uint64_t Game::getTimestep()
 {
@@ -21,10 +20,14 @@ void Game::processActions(ActionBuffer& actions)
 {
 	for (uint32_t i = 0; i < actions.getNumActions(); i++)
 	{
-		input::Action& a = actions[i];
-		if (a == "PrintSomething")
+		for (auto listener : ActionListener::getList())
 		{
-			LOG_INFO("Something!");
+			listener->executeAction(actions[i].getHash());
+			//input::Action& a = actions[i];
+			//if (a == "PrintSomething")
+			//{
+			//	LOG_INFO("Something!");
+			//}
 		}
 	}
 

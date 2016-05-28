@@ -1,8 +1,13 @@
 
 #pragma once
 
+#define GAME_VERSION 1.0
+#define GAME_NAME    "Untitled Game"
+
+#include <game_time.h>
+
 #include <cstdint>
-#include "game_time.h"
+
 class ActionBuffer;
 class Game
 {
@@ -22,6 +27,8 @@ public:
 	virtual void update(const Time& time) = 0;
 
 	virtual void terminate() = 0;
+
+	virtual void onPlayerJoin() = 0;
 
 public:
 	uint64_t getTimestep();

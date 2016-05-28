@@ -12,9 +12,13 @@ class ActionBuffer
 {
 public:
 	void insert(const input::Action& action);
+	void erase(const input::Action& action);
 	void clear();
 
 	uint32_t getNumActions() const;
+
+	input::Action* begin();
+	input::Action* end();
 
 private:
 	input::Action m_actions[s_maxActions];

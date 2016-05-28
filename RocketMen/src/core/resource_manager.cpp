@@ -3,6 +3,7 @@
 #include <core/resource_manager.h>
 
 #include <graphics/check_gl_error.h>
+#include <graphics/renderer.h>
 
 #include <assert.h>
 #include <iostream>
@@ -16,12 +17,16 @@ std::map<std::string, Shader>	ResourceManager::m_shaders;
 std::map<std::string, Texture>	ResourceManager::m_textures;
 std::map<std::string, TileMap>  ResourceManager::m_tileMaps;
 
-Shader dummyShader;
+Shader  dummyShader;
+Texture dummyTexture;
 
 Shader& ResourceManager::loadShader(const char* vertexShaderFile, 
 									const char* fragmentShaderFile, 
 									const char* name)
 {
+	if (Renderer::get() == nullptr)
+		return dummyShader;
+
 	LOG_INFO("ResourceManager: Loading shader %s", name);
 
 	std::string vertexShaderSource   = loadShaderFromFile(vertexShaderFile);
@@ -53,6 +58,10 @@ Texture& ResourceManager::createTexture(const void*        imageData,
 	                                    Texture::BlendMode blendMode
 	                                    /* = Texture::BlendMode::MODE_OPAQUE */)
 {
+	if(Renderer::get() == nullptr)
+		return dummyTexture;
+
+
 	LOG_INFO("ResourceManager: Creating texture %s", name);
 	Texture texture;
 	texture.generate(imageData, width, height);
@@ -65,6 +74,9 @@ Texture& ResourceManager::loadTexture(const char*        file,
 									  Texture::BlendMode blendMode 
 									  /* = Texture::BlendMode::MODE_OPAQUE */)
 {
+	if (Renderer::get() == nullptr)
+		return dummyTexture;
+
 	LOG_INFO("ResourceManager: Loading texture %s", file);
 	int width, height;
 	unsigned char* imageData = SOIL_load_image( (std::string("../") + std::string(file)).c_str(), 
@@ -74,6 +86,7 @@ Texture& ResourceManager::loadTexture(const char*        file,
 	if (imageData == nullptr)
 	{
 		LOG_ERROR("ResourceManager::LoadTexture: Failed to open texture %s", file);
+		return dummyTexture;
 	}
 	else
 	{

@@ -14,7 +14,7 @@
 
 #include <GLFW/glfw3.h>
 
-Renderer* Renderer::g_singleton;
+static Renderer* s_renderer;
 
 class Renderer_impl : public Renderer
 {
@@ -26,6 +26,14 @@ public:
 	void destroy() override;
 
 	void render() override;
+	void drawPolygon(const Vector2* vertices,
+	                 int32_t vertexCount,
+	                 const Color& color,
+	                 bool screenSpace = false) override;
+
+	void drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color,
+	                     bool screenSpace) override;
+
 	Vector2 Renderer_impl::getScreenSize() const;
 
 private:
@@ -37,6 +45,8 @@ private:
 	SpriteRenderer m_spriteRenderer;
 	TileRenderer   m_tileRenderer;
 	Window*        m_window;
+	GLuint         m_lineVAO;
+	GLuint         m_lineVBO;
 };
 
 Renderer_impl::Renderer_impl()
@@ -69,8 +79,23 @@ bool Renderer_impl::initialize(Window* window)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	checkGL();
-	
+	float lineVerts[] = {
+		1.f, 1.f,
+		0.f, 0.f
+	};
+
+	glGenVertexArrays(1, &m_lineVAO);
+	glGenBuffers(1, &m_lineVBO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, m_lineVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(lineVerts), lineVerts, GL_STATIC_DRAW);
+
+	glBindVertexArray(m_lineVAO);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
 	return true;
 }
 
@@ -80,17 +105,17 @@ void Renderer_impl::destroy()
 
 void Renderer_impl::render()
 {
-	if (Camera::mainCamera) {
-		Camera::mainCamera->updateViewMatrix();
-	}
-	if (true)
+	if (Camera::mainCamera) 
 	{
+		Camera::mainCamera->updateViewMatrix();	
+
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		renderTiles();
+		renderSprites();
+		//renderUI();
 	}
-	renderTiles();
-	renderSprites();
-	//renderUI();
 }
 
 void Renderer_impl::renderSprites()
@@ -100,34 +125,32 @@ void Renderer_impl::renderSprites()
 		if (it->getSpriteName().empty())
 			continue;
 
-		if (Camera::mainCamera)
-		{
-			Texture& texture = ResourceManager::getTexture(it->getSpriteName());
+		Texture& texture = ResourceManager::getTexture(it->getSpriteName());
 
-			glm::mat4 origin = glm::translate(it->getTransform().getWorldMatrix(), Vector3(-.5f, -.50f, 0.0f));
+		glm::mat4 origin = glm::translate(it->getTransform().getWorldMatrix(), 
+		                                  Vector3(-.5f, -.50f, 0.0f));
 
-			m_spriteRenderer.render(origin,
-									Camera::mainCamera->getProjectionMatrix()
-									* Camera::mainCamera->getViewMatrix(),
-									it->getSpriteName());
-		}
+		m_spriteRenderer.render(origin,
+								Camera::mainCamera->getProjectionMatrix()
+								* Camera::mainCamera->getViewMatrix(),
+								it->getSpriteName());
 	}
 }
 
 void Renderer_impl::renderTiles()
 {
-	if (Camera::mainCamera) 
-	{
-		m_tileRenderer.render(&ResourceManager::getTileMap("testmap"), Camera::mainCamera->getProjectionMatrix()
-						 * Camera::mainCamera->getViewMatrix());
-	}
+
+	m_tileRenderer.render(&ResourceManager::getTileMap("testmap"), 
+                          Camera::mainCamera->getProjectionMatrix()
+                          * Camera::mainCamera->getViewMatrix());
 }
 
 void Renderer_impl::renderUI()
 {
 }
 
-void Renderer::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, bool screenSpace)
+void Renderer_impl::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, 
+                                bool screenSpace)
 {
 	Shader::unbindShader();
 	GLfloat glverts[16];
@@ -154,17 +177,50 @@ void Renderer::drawPolygon(const Vector2* vertices, int32_t vertexCount, const C
 	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
+void Renderer_impl::drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color, 
+	                                bool screenSpace)
+{
+	if (!Camera::mainCamera)
+		return;
+
+	Shader& lineShader = ResourceManager::getShader("line_shader");
+	lineShader.use();
+	
+	glm::mat4 projectionMatrix = (screenSpace) ? glm::mat4()
+	                            : Camera::mainCamera->getProjectionMatrix()
+	                              * Camera::mainCamera->getViewMatrix();
+	                                          
+	glm::mat4 modelMatrix(1.f);
+	modelMatrix = glm::translate(glm::mat4(), Vector3(p1, 0.0f));
+	modelMatrix = glm::scale(modelMatrix, glm::vec3(p2-p1, 1.f));
+
+	lineShader.setMatrix4("model", modelMatrix);
+	lineShader.setMatrix4("projection", projectionMatrix);
+	lineShader.setVec4f("lineColor", color);
+
+	glBindVertexArray(m_lineVAO);
+	glDrawArrays(GL_LINES, 0, 2);
+	glBindVertexArray(0);
+
+	checkGL();
+}
+
 Vector2 Renderer_impl::getScreenSize() const
 { 
 	return Vector2(m_window->getWidth(), m_window->getHeight());
 }
 
-Renderer* Renderer::get()
+Renderer* Renderer::create()
 {
-	if (g_singleton == nullptr)
+	if (s_renderer == nullptr)
 	{
-		g_singleton = new Renderer_impl();
+		s_renderer = new Renderer_impl();
 	}
 
-	return g_singleton;
+	return s_renderer;
+}
+
+Renderer* Renderer::get()
+{
+	return s_renderer;
 }

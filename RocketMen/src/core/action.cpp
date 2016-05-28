@@ -14,6 +14,13 @@ void Action::set(size_t hash, bool state)
 {
 	m_type  = hash;
 	m_state = state;
+//	m_isLocalOnly = isLocalOnly;
+}
+
+void input::Action::set(size_t hash, float value)
+{
+	m_type  = hash;
+	m_value = value;
 }
 
 void Action::set(const std::string& name, bool state)
@@ -31,6 +38,26 @@ void Action::set(const std::string& name, float m_value)
 size_t Action::getHash() const
 {
 	return m_type;
+}
+
+//bool Action::isLocalOnly() const
+//{
+//	return m_isLocalOnly;
+//}
+
+float Action::getValue() const
+{
+	return m_value;
+}
+
+bool input::operator==(const Action& a, const Action& b)
+{
+	return (a.getHash() == b.getHash() && a.getValue() == b.getValue());
+}
+
+bool input::operator!=(const Action& a, const Action& b)
+{
+	return !(a == b);
 }
 
 bool input::operator==(const Action& a, const std::string& b)
