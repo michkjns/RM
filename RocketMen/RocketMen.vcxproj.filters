@@ -141,6 +141,9 @@
     <ClCompile Include="src\circular_buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\entity_factory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitstream.h">
@@ -270,6 +273,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\circular_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\entity_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

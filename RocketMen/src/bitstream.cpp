@@ -43,6 +43,7 @@ void WriteStream::serializeBits(uint32_t value, uint32_t numBits)
 	);
 }
 
+/* Write a bool as 0 or 1 bit */
 void WriteStream::serializeBool(bool& value)
 {
 	if (value)
@@ -57,6 +58,7 @@ void WriteStream::serializeBool(bool& value)
 	);
 }
 
+/* Write and compress a 32-bit integer in in range [min, max] */
 void WriteStream::serializeInt(int32_t& value, int32_t min, int32_t max)
 {
 	assert(min < max);	
@@ -68,6 +70,7 @@ void WriteStream::serializeInt(int32_t& value, int32_t min, int32_t max)
 	serializeBits(uvalue, bits);
 }
 
+/* Write a full byte */
 void WriteStream::serializeByte(const uint8_t byte)
 {
 	serializeBits(uint32_t(byte), 8);

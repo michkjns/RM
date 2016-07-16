@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <core/entity.h>
+#include <core/entity_factory.h>
 
 namespace rm
 {
@@ -16,7 +16,8 @@ namespace rm
 	class Rocket : public Entity
 	{
 	public:
-		EntityType getType() const { return EntityType::Rocket; }
+		DefineEntityType(EntityType::Rocket);
+
 	public:
 		Rocket();
 		Rocket(Vector2 direction, float accelerationPower);
@@ -50,29 +51,6 @@ namespace rm
 		Vector2    m_direction;
 		float      m_accelerationPower;
 		float      m_lifetimeSeconds;
-	};
-
-	//==========================================================================
-
-	class RocketFactory : public EntityFactory
-	{
-	public:
-		RocketFactory() : EntityFactory() {};
-		static void initialize() {
-			EntityFactory::registerFactory(getType(), &s_factory);
-		}
-
-	protected:
-		static	EntityType getType() { return EntityType::Rocket; }
-		Entity* instantiateEntity(ReadStream& rs,
-		                          bool shouldReplicate = false);
-
-		virtual bool serializeFull(Entity* entity, WriteStream& stream) override;
-		virtual bool serializeFull(Entity* entity, ReadStream& stream) override;
-		virtual bool serialize(Entity* entity, WriteStream& stream) override;
-		virtual bool serialize(Entity* entity, ReadStream& stream) override;
-
-		static RocketFactory s_factory;
 	};
 
 };

@@ -66,23 +66,36 @@ OnDebug(
 
 };
 
+/* Clamp value n to [lower, upper]
+* @return clamped value n
+*/
 template <typename T>
 T clamp(const T& n, const T& lower, const T& upper)
 {
 	return std::max(lower, std::min(n, upper));
 }
 
+/* Calculates number of bits required to represent an integer in range [min, max] */
 inline int32_t bitsRequired(uint32_t min, uint32_t max)
 {
 	return int32_t((min == max) ? 0 : floor(log2(max - min) + 1));
 }
 
+/* Serialize a single bit, 0 or 1 */
 template<typename Stream>
 void serializeBit(Stream& stream, bool& value)
 {
 	stream.serializeBool(value);
 }
 
+/* Serialize a bool as single bit, 0 or 1 */
+template<typename Stream>
+void serializeBool(Stream& stream, bool& value)
+{
+	stream.serializeBool(value);
+}
+
+/* Serialize an unsigned integer value compressed between range [min, max] */
 template<typename Stream>
 void serializeInt(Stream& stream, uint32_t& value, uint32_t min = INT32_MIN,
 				  uint32_t max = INT32_MAX)
@@ -104,6 +117,7 @@ void serializeInt(Stream& stream, uint32_t& value, uint32_t min = INT32_MIN,
 	}
 }
 
+/* Serialize a signed integer value compressed between range [min, max] */
 template<typename Stream>
 void serializeInt(Stream& stream, int32_t& value, int32_t min = INT32_MIN, 
                   int32_t max = INT32_MAX)
@@ -125,6 +139,7 @@ void serializeInt(Stream& stream, int32_t& value, int32_t min = INT32_MIN,
 	}
 }
 
+/* Serialize a 32-bit float value, uncompressed */
 template<typename Stream>
 bool serializeFloat(Stream& stream, float& value)
 {
@@ -145,6 +160,8 @@ bool serializeFloat(Stream& stream, float& value)
 	return true;
 }
 
+/* Serialize a 32-bit float value within range [min, max] with 
+*  an explicit precision, compressed */
 template<typename Stream>
 bool serializeFloat(Stream& stream, float& value, float min, 
                         float max, float precision)
@@ -178,6 +195,8 @@ bool serializeFloat(Stream& stream, float& value, float min,
 	return true;
 }
 
+/* Serialize a vector2 compressed within range [min, max] with an explicit
+   precision */
 template<typename Stream>
 bool serializeVector2(Stream& stream, Vector2& vector, float min,
                       float max, float precision)
@@ -193,6 +212,7 @@ bool serializeVector2(Stream& stream, Vector2& vector, float min,
 	return true;
 }
 
+/* Serialize a vector2, uncompressed */
 template<typename Stream>
 bool serializeVector2(Stream& stream, Vector2& vector)
 {
@@ -207,6 +227,8 @@ bool serializeVector2(Stream& stream, Vector2& vector)
 	return true;
 }
 
+/* Serialize a vector3 compressed within range [min, max] with an explicit
+precision */
 template<typename Stream>
 void serializeVector3(Stream& stream, Vector3& vector, float min, 
                       float max, float precision)
@@ -229,6 +251,7 @@ void serializeVector3(Stream& stream, Vector3& vector, float min,
 	}
 }
 
+/* Serialize a vector3, uncompressed */
 template<typename Stream>
 void serializeVector3(Stream& stream, Vector3& vector)
 {

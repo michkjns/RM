@@ -43,8 +43,10 @@ bool RocketMenGame::initialize()
 		Network::setLocalPlayers(1);
 	}
 
-	CharacterFactory::initialize();
-	RocketFactory::initialize();
+	//CharacterFactory::initialize();
+	//RocketFactory::initialize();
+	EntityFactory<Character>::initialize();
+	EntityFactory<Rocket>::initialize();
 
 	return true;
 }

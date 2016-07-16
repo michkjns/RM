@@ -12,6 +12,8 @@
 using namespace rm;
 using namespace input;
 
+EntityFactory<Character> EntityFactory<Character>::s_factory;
+
 Character::Character() :
 	m_rigidbody(nullptr)
 {
@@ -45,14 +47,12 @@ void Character::update(float deltaTime)
 
 void Character::fixedUpdate(float deltaTime)
 {
-	glm::vec2 vel = getRigidbody()->getLinearVelocity();
-
 	if (Input::getKey(Key::SPACE))
 	{
+		glm::vec2 vel = getRigidbody()->getLinearVelocity();
 		vel.x = vel.y = 0.0f;
+		getRigidbody()->setLinearVelocity(vel);
 	}
-
-	getRigidbody()->setLinearVelocity(vel);
 }
 
 void Character::debugDraw()
@@ -61,21 +61,29 @@ void Character::debugDraw()
 	Vector2 pos = m_transform.getWorldPosition();
 
 	Renderer::get()->drawLineSegment(pos, mp, Color(1.f, 0.f, 0.f, 1.f));
-
 }
 
 template<typename Stream>
 bool Character::serializeFull(Stream& stream)
 {
+	Vector2 pos;
+	Vector2 vel;
+	int32_t sprLength = 0;
+
+	if (Stream::isWriting)
+	{
+		pos   = m_transform.getLocalPosition();
+		vel   = m_rigidbody->getLinearVelocity();
+		sprLength = int32_t(m_sprite.length());
+	}
+
 	serializeInt(stream, m_networkID, -32, 128);
 	
-	int32_t sprLength = 0;
-	if (Stream::isWriting)
-		sprLength = int32_t(m_sprite.length());
 	serializeInt(stream, sprLength, 0, 32);
 	
 	if (Stream::isReading)
 		m_sprite.resize(sprLength);
+
 	for (int32_t i = 0; i < sprLength; i++)
 	{
 		int32_t character = int32_t(m_sprite[i]);
@@ -87,24 +95,15 @@ bool Character::serializeFull(Stream& stream)
 	if(!m_isInitialized)
 		initialize(false);
 
-	float angle;
-	if (Stream::isWriting)
-		angle = m_transform.getLocalRotation();
-	serializeFloat(stream, angle, 0.0f, 1.0f, 0.01f);
-	if (Stream::isReading)
-		m_transform.setLocalRotation(angle);
+	if (!serializeVector2(stream, pos))
+		return false;
 
-	Vector2 pos;
-	if (Stream::isWriting)
-		pos = m_transform.getLocalPosition();
-	serializeVector2(stream, pos);
 	if (Stream::isReading)
 		m_transform.setLocalPosition(pos);
 
-	Vector2 vel;
-	if (Stream::isWriting)
-		vel = m_rigidbody->getLinearVelocity();
-	serializeVector2(stream, vel);
+	if(!serializeVector2(stream, vel))
+		return false;
+
 	if (Stream::isReading)
 		m_rigidbody->setLinearVelocity(vel);
 
@@ -112,19 +111,25 @@ bool Character::serializeFull(Stream& stream)
 }
 
 template<typename Stream>
-bool Character::serialize(Stream & stream)
+bool Character::serialize(Stream& stream)
 {
 	Vector2 pos;
+	Vector2 vel;
 	if (Stream::isWriting)
+	{
 		pos = m_transform.getLocalPosition();
-	serializeVector2(stream, pos);
+		vel = m_rigidbody->getLinearVelocity();
+	}
+
+	if (!serializeVector2(stream, pos))
+		return false;
+
 	if (Stream::isReading)
 		m_transform.setLocalPosition(pos);
 
-	Vector2 vel;
-	if (Stream::isWriting)
-		vel = m_rigidbody->getLinearVelocity();
-	serializeVector2(stream, vel);
+	if (!serializeVector2(stream, vel))
+		return false;
+
 	if (Stream::isReading)
 		m_rigidbody->setLinearVelocity(vel);
 
@@ -160,37 +165,4 @@ void Character::endContact(Entity* other)
 Rigidbody* Character::getRigidbody() const
 {
 	return m_rigidbody;
-}
-
-//==============================================================================
-
-CharacterFactory CharacterFactory::s_factory;
-
-Entity* CharacterFactory::instantiateEntity(ReadStream& stream,
-                                            bool shouldReplicate)
-{
-	Character* character = new Character();
-	character->serializeFull(stream);
-
-	return character;
-}
-
-bool CharacterFactory::serializeFull(Entity* entity, WriteStream& stream)
-{
-	return dynamic_cast<Character*>(entity)->serializeFull(stream);
-}
-
-bool CharacterFactory::serializeFull(Entity* entity, ReadStream& stream)
-{
-	return dynamic_cast<Character*>(entity)->serializeFull(stream);
-}
-
-bool CharacterFactory::serialize(Entity* entity, WriteStream& ws)
-{
-	return dynamic_cast<Character*>(entity)->serialize(ws);
-}
-
-bool CharacterFactory::serialize(Entity* entity, ReadStream& rs)
-{
-	return dynamic_cast<Character*>(entity)->serialize(rs);
 }

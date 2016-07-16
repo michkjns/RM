@@ -8,6 +8,11 @@
 #include <functional>
 #include <vector>
 
+#define DefineEntityType(x) \
+static const EntityType s_type = x; \
+static EntityType getTypeStatic() { return s_type; }; \
+virtual EntityType getType() override { return s_type; };
+
 class Rigidbody;
 
 static const int32_t  s_maxSpawnPredictedEntities = 8;
@@ -23,10 +28,13 @@ enum class EntityType : int16_t
 
 	COUNT
 };
+class IEntityFactory;
 
 class Entity
 {
 public:
+	static const EntityType s_type = EntityType::Entity;
+
 	static Entity* instantiate(ReadStream& stream, 
                                bool shouldReplicate = false);
 	static bool    serializeFull(Entity* entity, ReadStream& stream, 
@@ -38,12 +46,14 @@ public:
 
 	static void flushEntities();
 	static void killEntities();
+	static void registerFactory(IEntityFactory* factory);
+	static EntityType getTypeStatic() { return s_type; };
 	static std::vector<Entity*>& getList();
 
 public:
 	Entity();
 	virtual ~Entity();
-	virtual EntityType getType() const { return EntityType::Entity; }
+	virtual EntityType getType() { return s_type; }
 
 	void initialize(bool shouldReplicate = false);
 	virtual void update(float deltaTime) {};
@@ -70,23 +80,4 @@ protected:
 	std::string m_sprite;
 	uint32_t    m_id;
 	int32_t     m_networkID;
-};
-
-//==============================================================================
-
-class EntityFactory
-{
-protected:
-	EntityFactory();
-	static EntityType getType() { return EntityType::Character; }
-	static void registerFactory(EntityType type, EntityFactory* factory);
-
-	virtual Entity* instantiateEntity(ReadStream& stream,
-	                                  bool shouldReplicate = false) = 0;
-
-	virtual bool   serializeFull(Entity* entity, WriteStream& ws) = 0;
-	virtual bool   serializeFull(Entity* entity, ReadStream& rs)  = 0;
-	virtual bool   serialize(Entity* entity, WriteStream& ws) = 0;
-	virtual bool   serialize(Entity* entity, ReadStream& rs) = 0;
-	friend class Entity;
 };

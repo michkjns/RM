@@ -2,14 +2,14 @@
 #pragma once
 
 #include <core/action_listener.h>
-#include <core/entity.h>
+#include <core/entity_factory.h>
 
 namespace rm
 {
 	class Character : public Entity
 	{
 	public:
-		EntityType getType() const override { return EntityType::Character; }
+		DefineEntityType(EntityType::Character);
 
 	public:
 		Character();
@@ -42,25 +42,25 @@ namespace rm
 
 	//===========================================================================
 
-	class CharacterFactory : public EntityFactory
-	{
-	public:
-		CharacterFactory() : EntityFactory() {};
-		static void initialize() {
-			EntityFactory::registerFactory(getType(), &s_factory);
-		}
+	//class CharacterFactory : public EntityFactory
+	//{
+	//public:
+	//	CharacterFactory() : EntityFactory() {};
+	//	static void initialize() {
+	//		EntityFactory::registerFactory(getType(), &s_factory);
+	//	}
 
-	protected:
-		static	EntityType getType() { return EntityType::Character; }
-		Entity* instantiateEntity(ReadStream& stream,
-								  bool shouldReplicate = false);
-		virtual bool serializeFull(Entity* entity, WriteStream& stream) override;
-		virtual bool serializeFull(Entity* entity, ReadStream& stream) override;
-		virtual bool serialize(Entity* entity, WriteStream& ws) override;
-		virtual bool serialize(Entity* entity, ReadStream& rs)  override;
+	//protected:
+	//	static	EntityType getType() { return EntityType::Character; }
+	//	Entity* instantiateEntity(ReadStream& stream,
+	//							  bool shouldReplicate = false);
+	//	virtual bool serializeFull(Entity* entity, WriteStream& stream) override;
+	//	virtual bool serializeFull(Entity* entity, ReadStream& stream) override;
+	//	virtual bool serialize(Entity* entity, WriteStream& ws) override;
+	//	virtual bool serialize(Entity* entity, ReadStream& rs)  override;
 
-		static CharacterFactory s_factory;
-	};
+	//	static CharacterFactory s_factory;
+	//};
 
 
 }; // namespace rm

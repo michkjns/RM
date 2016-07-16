@@ -7,6 +7,8 @@
 
 using namespace rm;
 
+EntityFactory<Rocket> EntityFactory<Rocket>::s_factory;
+
 static float s_maxRocketLifetime = 5.0f;
 
 Rocket::Rocket() :
@@ -214,40 +216,4 @@ void Rocket::setupRigidBody()
 	physics::Fixture fixture;
 	fixture.isSensor = true;
 	m_rigidbody = Physics::createBoxRigidbody(Vector2(0.50f, 0.50f), fixture, this);
-}
-
-//==============================================================================
-
-RocketFactory RocketFactory::s_factory;
-
-Entity* RocketFactory::instantiateEntity(ReadStream& rs, bool shouldReplicate)
-{
-	Rocket* rocket = new Rocket();
-	if (!rocket->serializeFull(rs))
-	{
-		rocket->kill();
-		return nullptr;
-	}
-
-	return rocket;
-}
-
-bool RocketFactory::serializeFull(Entity* entity, WriteStream& stream)
-{
-	return dynamic_cast<Rocket*>(entity)->serializeFull(stream);
-}
-
-bool RocketFactory::serializeFull(Entity* entity, ReadStream& stream)
-{
-	return dynamic_cast<Rocket*>(entity)->serializeFull(stream);
-}
-
-bool RocketFactory::serialize(Entity* entity, WriteStream& stream)
-{
-	return dynamic_cast<Rocket*>(entity)->serialize(stream);
-}
-
-bool RocketFactory::serialize(Entity* entity, ReadStream& stream)
-{
-	return dynamic_cast<Rocket*>(entity)->serialize(stream);
 }

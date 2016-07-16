@@ -225,12 +225,6 @@ void Server::onEntityRequest(IncomingMessage& msg)
 	stream.m_buffer = new uint32_t[stream.m_bufferLength];
 	msg.data.readBytes((char*)stream.m_buffer, buflen);
 
-	for (int i = 0; i < buflen / 4; i++)
-	{
-		LOG_DEBUG("s %d", stream.m_buffer[i]);
-	}
-	LOG_DEBUG("size: %d", msg.data.getLength());
-
 	Entity* entity = Entity::instantiate(stream);
 	delete[] stream.m_buffer;
 

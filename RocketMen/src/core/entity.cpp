@@ -1,5 +1,5 @@
 
-#include <core/entity.h>
+#include <core/entity_factory.h>
 
 #include <bitstream.h>
 #include <network.h>
@@ -8,7 +8,8 @@
 #include <map>
 #include <functional>
 
-static std::map<EntityType, EntityFactory*> s_factoryMap;
+static std::map<EntityType, IEntityFactory*> s_factoryMap;
+
 static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
 static uint32_t s_entityID;
@@ -70,7 +71,7 @@ Entity* Entity::instantiate(ReadStream& stream, bool shouldReplicate)
 	int32_t intType = 0;
 	stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
 	type = static_cast<EntityType>(intType);
-	return s_factoryMap.at(type)->instantiateEntity(stream, shouldReplicate);
+	return s_factoryMap.at(type)->instantiate(stream, shouldReplicate);
 }
 
 bool Entity::serializeFull(Entity* entity, ReadStream& stream, bool skipType)
@@ -137,6 +138,12 @@ std::vector<Entity*>& Entity::getList()
 	return s_entities;
 }
 
+void Entity::registerFactory(IEntityFactory* factory)
+{
+	assert(factory);
+	s_factoryMap[factory->getType()] = factory;
+}
+
 //==============================================================================
 
 void Entity::kill()
@@ -193,11 +200,11 @@ Transform& Entity::getTransform()
 
 //==============================================================================
 
-EntityFactory::EntityFactory()
-{
-}
-
-void EntityFactory::registerFactory(EntityType type, EntityFactory* factory)
-{
-	s_factoryMap.insert(std::make_pair(type, factory));
-}
+//EntityFactory::EntityFactory()
+//{
+//}
+//
+//void EntityFactory::registerFactory(EntityType type, EntityFactory* factory)
+//{
+//	s_factoryMap.insert(std::make_pair(type, factory));
+//}
