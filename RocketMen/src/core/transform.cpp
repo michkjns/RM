@@ -20,7 +20,7 @@ void Transform::setLocalPosition(const Vector2& position)
 {
 	if (m_rigidbody)
 	{
-		return m_rigidbody->setPosition(position);
+		m_rigidbody->setPosition(position);
 	}
 
 	m_localPosition = position;
@@ -41,7 +41,7 @@ void Transform::setLocalRotation(float angle)
 {
 	if (m_rigidbody)
 	{
-		return m_rigidbody->setAngle(angle);
+		m_rigidbody->setAngle(angle);
 	}
 
 	m_localAngle = angle;
@@ -132,6 +132,13 @@ bool Transform::isDirty() const
 void Transform::setRigidbody(Rigidbody* rb)
 {
 	m_rigidbody = rb;
+	if (rb)
+	{
+		if (m_parent)
+			m_rigidbody->setPosition(m_parent->getWorldPosition() + m_localPosition);
+		else
+			m_rigidbody->setPosition(m_localPosition);
+	}
 }
 
 void Transform::updateLocalMatrix()

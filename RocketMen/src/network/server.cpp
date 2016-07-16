@@ -5,9 +5,6 @@
 #include <core/game.h>
 #include <core/debug.h>
 #include <network/remote_client.h>
-#include <core/serialize.h>
-
-#include <assert.h>
 
 using namespace network;
 
@@ -44,8 +41,20 @@ bool Server::isInitialized() const
 
 void Server::update()
 {
-	const float deltaTime = m_gameTime.getDeltaSeconds();
+	const float deltaTime   = m_gameTime.getDeltaSeconds();
+	const float currentTime = m_gameTime.getSeconds();
+
 	processIncomingMessages(deltaTime);
+
+	for (auto& client : m_clients) 
+	{
+		if (client.m_timeFromLastMsg - currentTime >= 10.0f)
+		{
+			LOG_INFO("Server: Client %i has timed out");
+			client.m_id = 0; // TODO Properly disconnect the client here
+		}
+	}
+
 	processOutgoingMessages(deltaTime);
 }
 
@@ -73,19 +82,39 @@ void Server::generateNetworkID(Entity* entity)
 	msg.type           = MessageType::SPAWN_ENTITY;
 	msg.isReliable     = true;
 	msg.isOrdered      = true;
-	msg.data           = new BitStream();
 
-	entity->serializeFull(*msg.data);
+	WriteStream stream = {};
+	stream.m_bufferLength = 32;
+	stream.m_buffer = new uint32_t[32];
+	Entity::serializeFull(entity, stream);
+	msg.data.writeData((char*)stream.m_buffer, stream.getLength());
+
+	delete[] stream.m_buffer;
 
 	for (auto& client : m_clients)
 	{
-		client.queueMessage(msg);
-	}	
+		if (client.isUsed())
+			client.queueMessage(msg);
+	}
 }
 
 void Server::registerLocalClient(int32_t clientID)
 {
 	m_localClientID = clientID;
+}
+
+void Server::destroyEntity(int32_t networkID)
+{
+	NetworkMessage msg = {};
+	msg.type           = MessageType::DESTROY_ENTITY;
+	msg.isReliable     = true;
+	msg.isOrdered      = true;
+	msg.data.writeInt32(networkID);
+	for (auto& client : m_clients)
+	{
+		if(client.isUsed())
+			client.queueMessage(msg);
+	}
 }
 
 void Server::onClientConnect(const IncomingMessage& msg)
@@ -101,6 +130,7 @@ void Server::onClientConnect(const IncomingMessage& msg)
 		{
 			if (client.m_duplicatePeers >= s_maxDuplicatePeers)
 			{
+				LOG_INFO("Server: Client connection refused: Too many connections from the same machine.");
 				return;
 			}
 			else
@@ -117,17 +147,17 @@ void Server::onClientConnect(const IncomingMessage& msg)
 		RemoteClient* client = FindUnusedClient();
 		assert(client != nullptr);
 		{
-			client->m_address        = msg.address;
-			client->m_id             = m_clientIDCounter++;
-			client->m_duplicatePeers = duplicatePeers;
-			client->m_numPlayers     = 0;
+			client->m_address          = msg.address;
+			client->m_id               = m_clientIDCounter++;
+			client->m_duplicatePeers   = duplicatePeers;
+			client->m_numPlayers       = 0;
+			client->m_timeFromLastMsg = 0.0f;
 			m_numConnectedClients++;
 		}
 		
 		NetworkMessage message = {};
 			message.type = MessageType::CLIENT_CONNECT_ACCEPT;		
-			message.data = new BitStream();
-			message.data->writeInt32(client->m_id);
+			message.data.writeInt32(client->m_id);
 			message.isReliable = true;
 		client->queueMessage(message);
 	}
@@ -145,40 +175,17 @@ void Server::onClientDisconnect(const IncomingMessage& msg)
 
 void Server::onAckMessage(const IncomingMessage& msg)
 {
-	RemoteClient* client = getClient(msg.address);
-	assert(msg.data != nullptr);
-	assert(client != nullptr);
-
-	int32_t count = msg.data->readInt32();
-	for (int32_t i = 0; i < count; i++)
-	{
-		uint32_t seq = msg.data->readInt32();
-		for (NetworkMessage& outMsg : client->m_messageBuffer)
-		{
-			if (outMsg.sequenceNr == seq)
-			{
-			//	LOG_DEBUG("Server: Message %i has been ACK'd", seq);
-				outMsg.type = MessageType::MESSAGE_CLEAR;
-				delete outMsg.data;
-				outMsg.data = nullptr;
-				break;
-			}
-		}
-	}
 }
 
-void Server::onPlayerIntroduction(const IncomingMessage& msg)
+void Server::onPlayerIntroduction(IncomingMessage& msg)
 {
-	assert(msg.data != nullptr);
-	assert(msg.data->getLength() == sizeof(int32_t));
-
 	// Read player count
 	RemoteClient* client = getClient(msg.address);
 
 	if (client->m_numPlayers > 0)
 		return; // Already initialized, dismiss duplicate packet
 
-	uint32_t numPlayers = msg.data->readInt32();
+	uint32_t numPlayers = msg.data.readInt32();
 
 	assert(numPlayers > 0);
 	assert(numPlayers <= 4);
@@ -195,57 +202,86 @@ void Server::onPlayerIntroduction(const IncomingMessage& msg)
 	NetworkMessage outMessage = {};
 	outMessage.type = MessageType::PLAYER_JOIN_ACCEPT;
 	outMessage.isReliable = true;
-	outMessage.data = new BitStream();
+
 	for (uint32_t i = 0; i < numPlayers; i++)
 	{
 		LOG_INFO("Giving player id %i", m_playerIDCounter);
-		outMessage.data->writeInt32(m_playerIDCounter++);
+		outMessage.data.writeInt32(m_playerIDCounter++);
 	}
 
 	client->queueMessage(outMessage);
 	m_game->onPlayerJoin();
 }
 
-void Server::onEntityRequest(const IncomingMessage& msg)
+void Server::onEntityRequest(IncomingMessage& msg)
 {
-	//static int32_t nextID = 0;
-
 	RemoteClient* client = getClient(msg.address);
+	int32_t receivedID   = msg.data.readInt16();
+	int32_t generatedID  = m_objectIDCounter++;
+	
+	ReadStream stream = {};
+	int32_t buflen = int32_t(msg.data.getLength()) - msg.data.getReadTotalBytes();
+	stream.m_bufferLength = buflen;
+	stream.m_buffer = new uint32_t[stream.m_bufferLength];
+	msg.data.readBytes((char*)stream.m_buffer, buflen);
 
-	int32_t size = msg.data->readInt32();
-	EntityInitializer* init = (EntityInitializer*)malloc(size);
-	msg.data->readBytes((char*)init, size);
+	for (int i = 0; i < buflen / 4; i++)
+	{
+		LOG_DEBUG("s %d", stream.m_buffer[i]);
+	}
+	LOG_DEBUG("size: %d", msg.data.getLength());
 
-	//for (auto id : client->m_recentNetworkIDs)
-	//{
-	//	if (id == init->networkID)
-	//	{
-	//		// drop duplicate packet..
-	//		free(init);
-	//		return;
-	//	}
-	//}
-	//client->m_recentNetworkIDs[nextID++] = init->networkID;
-//	if (nextID >= 15) nextID = 0;
-	//LOG_DEBUG("Send ent apprv %i", client->m_recentNetworkIDs[nextID - 1]);
-	int32_t receivedID = init->networkID;
-	LOG_DEBUG("Rec ent req %i", receivedID);
+	Entity* entity = Entity::instantiate(stream);
+	delete[] stream.m_buffer;
 
-	init->networkID = m_objectIDCounter++;
-	Entity* entity = Entity::instantiate(init);
-	free(init);
+	if (!entity)
+	{
+		LOG_WARNING("Failed to instantiate entity");
+		return;
+	}
+	entity->setNetworkID(generatedID);
 
 	NetworkMessage outMsg = {};
 	outMsg.isOrdered      = false;
 	outMsg.isReliable     = true;
 	outMsg.type           = MessageType::APPROVE_ENTITY;
-	outMsg.data           = new BitStream();
-	outMsg.data->writeInt32(receivedID);
-	entity->serializeFull(*outMsg.data);
+	outMsg.data.writeInt32(receivedID);
+	outMsg.data.writeInt32(generatedID);
+
+	WriteStream ws = {};
+	ws.m_bufferLength = 128;
+	ws.m_buffer = new uint32_t[128];
+	if (!Entity::serializeFull(entity, ws))
+	{
+		entity->kill();
+		delete[] ws.m_buffer;
+		assert(false);
+		return;
+	}
+	outMsg.data.writeData((char*)ws.m_buffer, ws.getLength());
 	client->queueMessage(outMsg);
+
+	NetworkMessage spawnMsg = {};
+	spawnMsg.isOrdered      = false;
+	spawnMsg.isReliable     = true;
+	spawnMsg.type           = MessageType::SPAWN_ENTITY;
+
+	spawnMsg.data.writeInt32(generatedID);
+	spawnMsg.data.writeData((char*)ws.m_buffer, ws.getLength());
+	delete[] ws.m_buffer;
+	for (auto& c : m_clients)
+	{
+		if (c.isUsed())
+		{
+			if (c == *client)
+				continue;
+
+			c.queueMessage(spawnMsg);
+		}
+	}
 }
 
-void Server::processMessage(const IncomingMessage& msg)
+void Server::processMessage(IncomingMessage& msg)
 {
 	RemoteClient* client = getClient(msg.address);
 	if (client)
@@ -254,16 +290,12 @@ void Server::processMessage(const IncomingMessage& msg)
 		{
 			if (i == msg.sequenceNr)
 				return; // Disregard duplicate message
+			client->m_timeFromLastMsg = m_gameTime.getSeconds();
 		}
 	}
 
 	switch (msg.type)
 	{	
-		case MessageType::MESSAGE_ACK:
-		{
-			onAckMessage(msg);
-			break;
-		}
 		/* Client to server */
 		case MessageType::PLAYER_INTRO:
 		{
@@ -298,12 +330,6 @@ void Server::processMessage(const IncomingMessage& msg)
 		client->m_recentlyProcessed[client->m_nextProcessed++] = msg.sequenceNr;
 		if (client->m_nextProcessed >= 32) client->m_nextProcessed = 0;
 	}
-	if (msg.isReliable)
-	{
-		LOG_DEBUG("Received reliable msg %i", msg.sequenceNr);
-		RemoteClient* client = getClient(msg.address);
-		if(client) client->m_reliableAckList.push_back(msg.sequenceNr);
-	}
 }
 
 void Server::processIncomingMessages(float deltaTime)
@@ -321,7 +347,6 @@ void Server::processIncomingMessages(float deltaTime)
 			m_lastOrderedMessaged = incomingMessage.sequenceNr;
 			processMessage(incomingMessage);
 		}
-		destroyMessage(incomingMessage);
 		orderedMessages.pop();
 	}
 
@@ -330,7 +355,6 @@ void Server::processIncomingMessages(float deltaTime)
 	{
 		IncomingMessage& incomingMessage = unorderedMessages.front();
 		processMessage(incomingMessage);
-		destroyMessage(incomingMessage);
 		unorderedMessages.pop();
 	}
 }
@@ -368,25 +392,30 @@ void Server::writeSnapshot()
 void Server::writeSnapshot(RemoteClient& client)
 {
 	std::vector<Entity*>& entityList = Entity::getList();
-	BitStream* stream = new BitStream();
+	WriteStream ws = {};
+	ws.m_bufferLength = 256;
+	ws.m_buffer = new uint32_t[256];
 
-	stream->writeInt32(m_objectIDCounter);
-
-	for (auto& entity : entityList)
+	for (uint32_t netID = 0; netID < s_maxNetworkedEntities; netID++)
 	{
-		if (entity->getNetworkID() < 0)
-			continue;
+		bool written = false;
+		for (auto& entity : entityList)
+		{
+			if (entity->getNetworkID() != netID)
+				continue;
 
-		stream->writeInt32(entity->getNetworkID());
-		Serialize::serializePosition(stream, 
-									 entity->getTransform().getLocalPosition());
-		Serialize::serializeAngle(stream, 
-								  entity->getTransform().getLocalRotation());
+			written = true;
+			serializeBit(ws, written);
+			Entity::serialize(entity, ws);
+		}
+		if (!written)
+			serializeBit(ws, written);
 	}
 
 	NetworkMessage msg = {};
 	msg.type       = MessageType::SERVER_GAMESTATE;
-	msg.data       = stream;
+	msg.data.writeBuffer((char*)ws.m_buffer, ws.getLength());
+	delete[] ws.m_buffer;
 	msg.isOrdered  = true;
 	msg.isReliable = false;
 
@@ -400,36 +429,13 @@ void Server::sendMessages()
 		if (client.isUsed())
 		{
 			static std::vector<NetworkMessage> messages;
-
-			// Create ACK message
-			NetworkMessage ackMsg = {};
-			ackMsg.type = MessageType::MESSAGE_ACK;
-			ackMsg.isOrdered = true;
-			if (client.m_reliableAckList.size() > 0)
-			{
-				ackMsg.data = new BitStream();
-				ackMsg.data->writeInt32(static_cast<int32_t>(
-					client.m_reliableAckList.size())); // write length
-				for (auto seq : client.m_reliableAckList)
-				{
-					ackMsg.data->writeInt32(seq); // write seq
-					//LOG_DEBUG("Sending ack %i", seq);
-				}
-				client.m_reliableAckList.clear();
-				client.queueMessage(ackMsg);
-			}
-
-			// Other messages
 			for (NetworkMessage& msg : client.m_messageBuffer)
 			{
 				if (msg.type == MessageType::MESSAGE_CLEAR) 
 					continue;
 
 				messages.push_back(msg);
-				if (!msg.isReliable)
-				{
-					msg.type = MessageType::MESSAGE_CLEAR;
-				}
+				msg.type = MessageType::MESSAGE_CLEAR;
 			}
 			m_networkInterface.sendMessages(client.m_address, messages);
 			messages.clear();

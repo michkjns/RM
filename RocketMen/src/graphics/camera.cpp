@@ -13,7 +13,7 @@ Camera::Camera(ProjectionMode projection, float width, float height, int32_t pix
 	m_viewMatrix(1),
 	m_isDirty(false),
 	m_pixelsPerMeter(pixelsPerMeter),
-	m_projSize(width/ pixelsPerMeter, height/ pixelsPerMeter)
+	m_projSize(width / pixelsPerMeter, height / pixelsPerMeter)
 {
 	switch (projection)
 	{

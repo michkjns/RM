@@ -29,7 +29,8 @@ public:
 	static uint32_t getNumLocalPlayers();
 	static bool isLocalPlayer(int32_t playerID);
 
-	static void requestEntity(Entity* entity);
+	static bool requestEntity(Entity* entity);
+	static void destroyEntity(int32_t networkID);
 
 public:
 	static bool isServer();

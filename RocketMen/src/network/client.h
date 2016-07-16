@@ -1,13 +1,14 @@
 
 #pragma once
 
+#include <core/entity.h>
+#include <circular_buffer.h>
 #include <network/network_interface.h>
 #include <network/network_message.h>
 
 #include <array>
 #include <cstdint>
 
-class Entity;
 class Game;
 class Time;
 class ActionBuffer;
@@ -29,6 +30,7 @@ namespace network
 	{
 		Address  serverAddress;
 		uint32_t sequenceCounter;
+		uint32_t pendingMessages;
 		bool     isActive;
 		std::array<NetworkMessage, 64> messageBuffer;
 	};
@@ -37,6 +39,7 @@ namespace network
 	{
 	private:
 		static const uint32_t s_sequenceMemorySize = 256;
+		static const uint32_t s_recentlyDestroyedSize = 32;
 	public:
 		Client(Time& time, Game* game);
 		~Client();
@@ -57,22 +60,23 @@ namespace network
 		void connect(const Address& address);
 		void queueMessage(const NetworkMessage& message);
 		void setLocalPlayers(uint32_t numPlayers);
-		void requestEntity(Entity* entity);
+		bool requestEntity(Entity* entity);
 
 		uint32_t getNumLocalPlayers() const;
 		bool     isLocalPlayer(int32_t playerID) const;
 
 	private:
-		void onHandshake(const IncomingMessage& msg);
+		void onHandshake(IncomingMessage& msg);
 		void onAckMessage(const IncomingMessage& msg);
-		void onPlayerAccepted(const IncomingMessage& msg);
-		void onSpawnEntity(const IncomingMessage& msg);
-		void onApproveEntity(const IncomingMessage& msg);
-		void onGameState(const IncomingMessage& msg);
+		void onPlayerAccepted(IncomingMessage& msg);
+		void onSpawnEntity(IncomingMessage& msg);
+		void onApproveEntity(IncomingMessage& msg);
+		void onDestroyEntity(IncomingMessage& msg);
+		void onGameState(IncomingMessage& msg);
 
 		void processIncomingMessages(float deltaTime);
 		void processOutgoingMessages(float deltaTime);
-		void processMessage(const IncomingMessage& msg);
+		void processMessage(IncomingMessage& msg);
 		void sendInput();
 		void setState(State state);
 		void sendMessages();
@@ -90,8 +94,14 @@ namespace network
 		float            m_maxMessageSentTime;
 		uint32_t         m_connectionAttempt;
 		bool             m_isInitialized;
-		int32_t          m_recentNetworkIDs[16];
-		int32_t          m_recentlyProcessed[s_sequenceMemorySize];
+
+		CircularBuffer<int32_t, s_sequenceMemorySize> m_recentlyProcessed;
+
+		CircularBuffer<int32_t, s_recentlyDestroyedSize>
+		m_recentlyDestroyedEntities;
+
+		CircularBuffer<int32_t, s_maxSpawnPredictedEntities>
+		m_recentlyPredictedSpawns;
 
 		std::vector<int32_t> m_reliableAckList;
 		std::array<LocalPlayer, s_maxPlayersPerClient> m_localPlayers;	

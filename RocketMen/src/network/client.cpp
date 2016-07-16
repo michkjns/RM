@@ -6,7 +6,6 @@
 #include <core/game.h>
 #include <core/input.h>
 #include <core/debug.h>
-#include <core/serialize.h>
 #include <network/server.h>
 #include <game_time.h>
 #include <network/address.h>
@@ -33,7 +32,7 @@ Client::Client(Time& time, Game* game) :
 	m_connectionAttempt(0),
 	m_isInitialized(false)
 {
-	std::fill(m_recentNetworkIDs, m_recentNetworkIDs + s_sequenceMemorySize, -1);
+	clearSession();
 }
 
 Client::~Client()
@@ -42,8 +41,7 @@ Client::~Client()
 
 bool Client::initialize()
 {
-	m_session = {};
-	std::fill(m_recentlyProcessed, m_recentlyProcessed + 32, -1);
+	clearSession();
 	m_isInitialized = true;
 	return true;
 }
@@ -51,6 +49,17 @@ bool Client::initialize()
 bool Client::isInitialized() const
 {
 	return m_isInitialized;
+}
+
+void Client::clearSession()
+{
+	m_session.isActive        = false;
+	m_session.sequenceCounter = 0;
+	m_session.pendingMessages = 0;
+	
+	m_recentlyProcessed.fill(-1);
+	m_recentlyDestroyedEntities.fill(-1);
+	m_recentlyPredictedSpawns.fill(0);
 }
 
 void Client::fixedUpdate(ActionBuffer& actions)
@@ -148,15 +157,16 @@ void Client::queueMessage(const NetworkMessage& message)
 		if (msg.type == MessageType::MESSAGE_CLEAR)
 		{
 			msg.type       = message.type;
-			msg.data       = message.data;
+			msg.data.reset();
+			msg.data.writeBuffer(message.data.getBuffer(), message.data.getLength());
 			msg.isReliable = message.isReliable;
 			msg.sequenceNr = ++m_session.sequenceCounter;
+			m_session.pendingMessages++;
 			return;
 		}
 	}
 
 	LOG_WARNING("Message Queue is full! Message discarded.");
-	delete message.data;
 }
 
 void Client::setLocalPlayers(uint32_t numPlayers)
@@ -171,17 +181,32 @@ void Client::setLocalPlayers(uint32_t numPlayers)
 	}
 }
 
-void Client::requestEntity(Entity* entity)
+bool Client::requestEntity(Entity* entity)
 {
+	const int32_t tempID = entity->getNetworkID();
+
+	if (m_recentlyPredictedSpawns.contains(tempID))
+		return false; // Too many requests!
+
+	m_recentlyPredictedSpawns.insert(tempID);
+
 	NetworkMessage msg = {};
 	msg.type           = MessageType::ENTITY_REQUEST;
 	msg.isOrdered      = true;
 	msg.isReliable     = true;
-	msg.data           = new BitStream();
-	
-	entity->serializeFull(*msg.data);
-	LOG_DEBUG("Requesting ent %i", entity->getNetworkID());
+
+	msg.data.writeInt16(tempID);
+
+	WriteStream ws = {};
+	ws.m_buffer = new uint32_t[128];
+	ws.m_bufferLength = 128;
+
+	Entity::serializeFull(entity, ws);
+	msg.data.writeData((char*)ws.m_buffer, ws.getLength());
+	delete[] ws.m_buffer;
+
 	queueMessage(msg);
+	return true;
 }
 
 uint32_t Client::getNumLocalPlayers() const
@@ -206,16 +231,15 @@ bool Client::isLocalPlayer(int32_t playerID) const
 	return false;
 }
 
-void Client::onHandshake(const IncomingMessage& msg)
+void Client::onHandshake(IncomingMessage& msg)
 {
-	assert(msg.data != nullptr);
 	if (m_state != State::STATE_CONNECTING)
 		return;
 	LOG_INFO("Client: Received handshake from the server! I have received ID ");
 	//========================
 	
 	// Read my ID
-	int32_t myID = msg.data->readInt32();
+	int32_t myID = msg.data.readInt32();
 	LOG_INFO("%d\n", myID);
 	setState(State::STATE_CONNECTED);
 
@@ -227,8 +251,7 @@ void Client::onHandshake(const IncomingMessage& msg)
 	// Introduce Players
 	NetworkMessage outMessage = {};
 	outMessage.type = MessageType::PLAYER_INTRO;
-	outMessage.data = new BitStream();
-	outMessage.data->writeInt32(getNumLocalPlayers());
+	outMessage.data.writeInt32(getNumLocalPlayers());
 	outMessage.isReliable = true;
 	
 	//for (auto player : m_localPlayers)
@@ -241,70 +264,48 @@ void Client::onHandshake(const IncomingMessage& msg)
 
 void Client::onAckMessage(const IncomingMessage& msg)
 {
-	assert(msg.data != nullptr);
-
-	int32_t count = msg.data->readInt32();
-	for (int32_t i = 0; i < count; i++)
-	{
-		uint32_t seq = msg.data->readInt32();
-		for (NetworkMessage& outMsg : m_session.messageBuffer)
-		{
-			if (outMsg.type == MessageType::MESSAGE_CLEAR) continue;
-			if (outMsg.sequenceNr == seq)
-			{
-			//	LOG_DEBUG("Client: Message %i has been ACK'd", seq);
-				outMsg.type = MessageType::MESSAGE_CLEAR;
-				delete outMsg.data;
-				outMsg.data = nullptr;
-				break;
-			}
-		}
-	}
 }
 
-void Client::onPlayerAccepted(const IncomingMessage& msg)
+void Client::onPlayerAccepted(IncomingMessage& msg)
 {
 	if (m_localPlayers[0].playerID >= 0)
 		return; // Player ID already set, dismiss duplicate packet
 
 	for (uint32_t i = 0; i < getNumLocalPlayers(); i++)
 	{
-		m_localPlayers[i].playerID = msg.data->readInt32();
+		m_localPlayers[i].playerID = msg.data.readInt32();
 		LOG_INFO("Received player id %i", m_localPlayers[i].playerID);
 	}
 }
 
-void Client::onSpawnEntity(const IncomingMessage& msg)
+void Client::onSpawnEntity(IncomingMessage& msg)
 {
-	static int32_t nextID = 0;
+	LOG_INFO("onSpawnEntity");
 
-	int32_t size = msg.data->readInt32();
-	EntityInitializer* init = (EntityInitializer*)malloc(size);
-	msg.data->readBytes((char*)init, size);
+	ReadStream rs = {};
+	rs.m_buffer = new uint32_t[msg.data.getLength()];
+	rs.m_bufferLength = int32_t(msg.data.getLength());
+	msg.data.readBytes((char*)rs.m_buffer, 
+                        msg.data.getLength() - msg.data.getReadTotalBytes());
 
-	for (auto id : m_recentNetworkIDs)
-	{
-		if (id == init->networkID)
-		{
-			// drop duplicate packet..
-			free(init);
-			return;
-		}
-	}
+	Entity::instantiate(rs);
 
-	m_recentNetworkIDs[nextID++] = init->networkID;
-	if (nextID >= 15) nextID = 0;
-
-	Entity::instantiate(init);
-
-	free(init);
+	delete[] rs.m_buffer;
 }
 
-void Client::onApproveEntity(const IncomingMessage& msg)
+void Client::onApproveEntity(IncomingMessage& msg)
 {
-	int32_t localID = msg.data->readInt32();
-	LOG_DEBUG("Rec ent appr %i (%i)", localID, msg.sequenceNr);
-	Entity* entity = nullptr;
+	int32_t localID  = msg.data.readInt32();
+	int32_t remoteID = msg.data.readInt32();
+	Entity* entity   = nullptr;
+
+	int32_t index = m_recentlyPredictedSpawns.find(localID);
+	if ( index >= 0)
+	{
+		m_recentlyPredictedSpawns[index] = 0;
+	}
+
+
 	for (auto& _entity : Entity::getList())
 	{
 		if (_entity->getNetworkID() == localID)
@@ -319,36 +320,66 @@ void Client::onApproveEntity(const IncomingMessage& msg)
 		LOG_DEBUG("Error, unknown netID (%i)", localID);
 		return;
 	}
-	int32_t size = msg.data->readInt32();
-	EntityInitializer* init = (EntityInitializer*)malloc(size);
-	msg.data->readBytes((char*)init, size);
 
-	Entity::instantiate(init, false, entity);
+	if (m_recentlyDestroyedEntities.contains(remoteID))
+	{
+		entity->kill();
+		return;
+	}
 
+	entity->setNetworkID(remoteID);
 }
 
-void Client::onGameState(const IncomingMessage& msg)
+void Client::onDestroyEntity(IncomingMessage& msg)
+{
+	int32_t networkID = msg.data.readInt32();
+	//LOG_INFO("onDestroyEntity (%d)", networkID);
+
+	if (networkID < -s_maxSpawnPredictedEntities
+		|| networkID > s_maxNetworkedEntities)
+	{
+		return;
+	}
+
+	for (auto& entity : Entity::getList())
+	{
+		if (entity->getNetworkID() == networkID)
+		{
+			entity->kill();
+			return;
+		}
+	}
+
+	// Not found, but remember it incase a spawn message comes in delayed
+	m_recentlyDestroyedEntities.insert(networkID);
+}
+
+void Client::onGameState(IncomingMessage& msg)
 {
 	std::vector<Entity*>& entityList = Entity::getList();
-	int32_t numObjects = msg.data->readInt32();
+	ReadStream rs = {};
+	rs.m_bufferLength = 256;
+	rs.m_buffer = new uint32_t[256];
+	msg.data.readBytes((char*)rs.m_buffer, 
+                        msg.data.getLength() - msg.data.getReadTotalBytes());
 
-	for (int32_t i = 0; i < numObjects; i++)
+	for (int32_t netID = 0; netID < s_maxNetworkedEntities; netID++)
 	{
-		int32_t networkID = msg.data->readInt32();
-		for (auto& entity : entityList)
+		bool written = false;
+		serializeBit(rs, written);
+		if (written)
 		{
-			if (entity->getNetworkID() == networkID)
+			for (auto& entity : entityList)
 			{
-				entity->getTransform().setLocalPosition(
-					Serialize::deserializePosition(msg.data)
-				);
-				
-				entity->getTransform().setLocalRotation(
-					Serialize::deserializeAngle(msg.data)
-				);
+				if (entity->getNetworkID() == netID)
+				{
+					Entity::serialize(entity, rs);
+				}
 			}
 		}
 	}
+
+	delete[] rs.m_buffer;
 }
 
 void Client::processIncomingMessages(float deltaTime)
@@ -360,6 +391,18 @@ void Client::processIncomingMessages(float deltaTime)
 	std::queue<IncomingMessage>& unorderedMessages = 
 		m_networkInterface.getMessages();
 
+	if (orderedMessages.size() >= 2048)
+	{
+		LOG_WARNING("Client: orderedMessages is very big!");
+		__debugbreak();
+	}
+
+	if (unorderedMessages.size() >= 2048)
+	{
+		LOG_WARNING("Client: unorderedMessages is very big!");
+		__debugbreak();
+	}
+
 	// Process ordered queue
 	while (!orderedMessages.empty())
 	{
@@ -369,7 +412,6 @@ void Client::processIncomingMessages(float deltaTime)
 			m_lastOrderedMessaged = incomingMessage.sequenceNr;
 			processMessage(incomingMessage);
 		}
-		destroyMessage(incomingMessage);
 		orderedMessages.pop();
 	}
 
@@ -378,7 +420,6 @@ void Client::processIncomingMessages(float deltaTime)
 	{
 		IncomingMessage& incomingMessage = unorderedMessages.front();
 		processMessage(incomingMessage);
-		destroyMessage(incomingMessage);
 		unorderedMessages.pop();
 	}
 }
@@ -393,21 +434,18 @@ void Client::processOutgoingMessages(float deltaTime)
 	}
 }
 
-void Client::processMessage(const IncomingMessage& msg)
+void Client::processMessage(IncomingMessage& msg)
 {
 	static int32_t index = 0;
-	for (auto i : m_recentlyProcessed)
+
+	// Disregard duplicate messages
+	if (m_recentlyProcessed.contains(msg.sequenceNr))
 	{
-		if (i == msg.sequenceNr)
-			return; // Disregard duplicate message
+		return;
 	}
+
 	switch (msg.type)
 	{
-		case MessageType::MESSAGE_ACK:
-		{
-			onAckMessage(msg);
-			break;
-		}
 		/** Server to client */
 		case MessageType::SERVER_GAMESTATE:
 		{
@@ -432,6 +470,11 @@ void Client::processMessage(const IncomingMessage& msg)
 			onApproveEntity(msg);
 			break;
 		}
+		case MessageType::DESTROY_ENTITY:
+		{
+			onDestroyEntity(msg);
+			break;
+		}
 		/** Connection */
 		case MessageType::CLIENT_CONNECT_ACCEPT:
 		{
@@ -451,20 +494,17 @@ void Client::processMessage(const IncomingMessage& msg)
 		default: break;
 	}
 
-	m_recentlyProcessed[index++] = msg.sequenceNr;
-	if (index >= s_sequenceMemorySize) index = 0;
-
-	if (msg.isReliable)
-	{
-	//	LOG_DEBUG("Received reliable msg %i", msg.sequenceNr);
-		m_reliableAckList.push_back(msg.sequenceNr);
-	}
-
+	m_recentlyProcessed.insert(msg.sequenceNr);
+	
+	//if (msg.isReliable)
+	//{
+	////	LOG_DEBUG("Received reliable msg %i", msg.sequenceNr);
+	//	m_reliableAckList.push_back(msg.sequenceNr);
+	//}
 }
 
 void Client::sendInput()
 {
-
 }
 
 void Client::setState(State state)
@@ -486,45 +526,23 @@ void Client::sendMessages()
 {
 	static std::vector<NetworkMessage> messages;
 
-	// Create ACK message
+	if (m_session.pendingMessages > 60)
 	{
-		NetworkMessage ackMsg = {};
-		ackMsg.type = MessageType::MESSAGE_ACK;
-		ackMsg.isOrdered = true;
-		if (m_reliableAckList.size() > 0)
-		{
-			ackMsg.data = new BitStream();
-			ackMsg.data->writeInt32(static_cast<int32_t>(
-				m_reliableAckList.size())); // write length
-			for (auto seq : m_reliableAckList)
-			{
-				ackMsg.data->writeInt32(seq); // write seq
-			//	LOG_DEBUG("Sending ack %i", seq);
-			}
-			m_reliableAckList.clear();
-			queueMessage(ackMsg);
-		}
+		LOG_WARNING("Client: pendingMessages is very big!");
 	}
-
-	// Send other messages
+	
 	for (NetworkMessage& msg : m_session.messageBuffer)
 	{
 		if (msg.type == MessageType::MESSAGE_CLEAR) continue;
 		messages.push_back(msg);
-		if (!msg.isReliable)
-		{
-			msg.type = MessageType::MESSAGE_CLEAR;
-		}
+		msg.type = MessageType::MESSAGE_CLEAR;
 	}
 	if (!messages.empty())
 	{
 		m_networkInterface.sendMessages(m_session.serverAddress, messages);
 	}
 	messages.clear();
+	m_session.pendingMessages = 0;
 }
 
-void Client::clearSession()
-{
-	memset(&m_session, 0, sizeof(m_session));
-}
 

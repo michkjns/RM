@@ -63,6 +63,7 @@ bool TileMap::initialize(std::string tileSheet,
  	ResourceManager::createTexture(image, imgWidth, imgHeight, name);
 	delete[] image;
 	m_isInitialized = true;
+	return true;
 }
 
 TileMap::~TileMap()

@@ -28,7 +28,6 @@ Character::~Character()
 
 void Character::initialize(bool shouldReplicate)
 {
-
 	m_actionListener = new ActionListener();
 	m_actionListener->registerAction("Fire", &Character::Fire, this);
 
@@ -47,15 +46,6 @@ void Character::update(float deltaTime)
 void Character::fixedUpdate(float deltaTime)
 {
 	glm::vec2 vel = getRigidbody()->getLinearVelocity();
-	//if (Input::getKey(Key::A))
-	//{
-	//	vel.x = -50.0f  * deltaTime;
-	//}
-
-	//if (Input::getKey(Key::D))
-	//{
-	//	vel.x = 50.0f  * deltaTime;
-	//}
 
 	if (Input::getKey(Key::SPACE))
 	{
@@ -69,54 +59,98 @@ void Character::debugDraw()
 {
 	Vector2 mp = Camera::mainCamera->screenToWorld(Input::getMousePosition());
 	Vector2 pos = m_transform.getWorldPosition();
-	//	LOG_INFO("%f, %f", mp.x, mp.y);
 
 	Renderer::get()->drawLineSegment(pos, mp, Color(1.f, 0.f, 0.f, 1.f));
 
 }
 
-void Character::serializeFull(BitStream& stream)
+template<typename Stream>
+bool Character::serializeFull(Stream& stream)
 {
-//	const Vector2 pos = m_transform.getWorldPosition();
-//
-//	stream->writeInt16(static_cast<int16_t>(getType()));
-//	stream->writeFloat(pos.x);
-//	stream->writeFloat(pos.y);
+	serializeInt(stream, m_networkID, -32, 128);
+	
+	int32_t sprLength = 0;
+	if (Stream::isWriting)
+		sprLength = int32_t(m_sprite.length());
+	serializeInt(stream, sprLength, 0, 32);
+	
+	if (Stream::isReading)
+		m_sprite.resize(sprLength);
+	for (int32_t i = 0; i < sprLength; i++)
+	{
+		int32_t character = int32_t(m_sprite[i]);
+		serializeInt(stream, character, CHAR_MIN, CHAR_MAX);
+		if (Stream::isReading)
+			m_sprite[i] = char(character);
+	}
+	
+	if(!m_isInitialized)
+		initialize(false);
 
-	CharacterFactory::CharacterInitializer init;
-	init.sprite    = m_sprite;
-	init.position  = m_transform.getWorldPosition();
-	init.networkID = m_networkID;
-	init.velocity  = m_rigidbody->getLinearVelocity();
+	float angle;
+	if (Stream::isWriting)
+		angle = m_transform.getLocalRotation();
+	serializeFloat(stream, angle, 0.0f, 1.0f, 0.01f);
+	if (Stream::isReading)
+		m_transform.setLocalRotation(angle);
 
-	stream.writeInt32(sizeof(init));
-	stream.writeData(reinterpret_cast<char*>(&init), sizeof(init));
+	Vector2 pos;
+	if (Stream::isWriting)
+		pos = m_transform.getLocalPosition();
+	serializeVector2(stream, pos);
+	if (Stream::isReading)
+		m_transform.setLocalPosition(pos);
+
+	Vector2 vel;
+	if (Stream::isWriting)
+		vel = m_rigidbody->getLinearVelocity();
+	serializeVector2(stream, vel);
+	if (Stream::isReading)
+		m_rigidbody->setLinearVelocity(vel);
+
+	return true;
 }
-//
-//void Character::deserializeFull(BitStream* stream)
-//{
-//	Vector2 pos(stream->readFloat(), stream->readFloat());
-//	m_transform.setLocalPosition(pos);
-//}
+
+template<typename Stream>
+bool Character::serialize(Stream & stream)
+{
+	Vector2 pos;
+	if (Stream::isWriting)
+		pos = m_transform.getLocalPosition();
+	serializeVector2(stream, pos);
+	if (Stream::isReading)
+		m_transform.setLocalPosition(pos);
+
+	Vector2 vel;
+	if (Stream::isWriting)
+		vel = m_rigidbody->getLinearVelocity();
+	serializeVector2(stream, vel);
+	if (Stream::isReading)
+		m_rigidbody->setLinearVelocity(vel);
+
+	return true;
+}
 
 void Character::Fire()
 {
+	if (!Camera::mainCamera) 
+		return;
+
 	const Vector2 mp        = Input::getMousePosition();
 	const Vector2 mpWorld   = Camera::mainCamera->screenToWorld(mp);
-	const Vector2 pos       = m_transform.getWorldPosition();
-	const Vector2 direction = glm::normalize(mpWorld - 
-	                                            m_transform.getWorldPosition());
+	const Vector2 direction = 
+		glm::normalize(mpWorld - m_transform.getWorldPosition());
 	const float   power     = 20.f;
 
 	Rocket* rocket = new Rocket();
-	rocket->getTransform().setLocalPosition(m_transform.getWorldPosition());
+	const Vector2 pos = m_transform.getWorldPosition() + direction * 1.0f;
+	rocket->getTransform().setLocalPosition(pos);
 	rocket->initialize(this, direction, power, true);
-	LOG_DEBUG("Character::Fire()");
+	//LOG_DEBUG("Character::Fire() %f, %f", pos.x, pos.y);
 }
 
 void Character::startContact(Entity* other)
 {
-	//LOG_DEBUG("Character::startContact");
 }
 
 void Character::endContact(Entity* other)
@@ -132,20 +166,31 @@ Rigidbody* Character::getRigidbody() const
 
 CharacterFactory CharacterFactory::s_factory;
 
-Entity* CharacterFactory::instantiateEntity(EntityInitializer* initializer,
-                                            bool shouldReplicate,
-                                            Entity* toReplace)
+Entity* CharacterFactory::instantiateEntity(ReadStream& stream,
+                                            bool shouldReplicate)
 {
-	CharacterInitializer* init = dynamic_cast<CharacterInitializer*>(initializer);
-
-	Character* character = toReplace ? 
-		dynamic_cast<Character*>(toReplace) : new Character();
-
-	character->setSprite(init->sprite);
-	character->setNetworkID(init->networkID);
-	character->initialize();
-	character->getRigidbody()->setPosition(init->position);
-	character->getRigidbody()->setPosition(init->velocity);
+	Character* character = new Character();
+	character->serializeFull(stream);
 
 	return character;
+}
+
+bool CharacterFactory::serializeFull(Entity* entity, WriteStream& stream)
+{
+	return dynamic_cast<Character*>(entity)->serializeFull(stream);
+}
+
+bool CharacterFactory::serializeFull(Entity* entity, ReadStream& stream)
+{
+	return dynamic_cast<Character*>(entity)->serializeFull(stream);
+}
+
+bool CharacterFactory::serialize(Entity* entity, WriteStream& ws)
+{
+	return dynamic_cast<Character*>(entity)->serialize(ws);
+}
+
+bool CharacterFactory::serialize(Entity* entity, ReadStream& rs)
+{
+	return dynamic_cast<Character*>(entity)->serialize(rs);
 }

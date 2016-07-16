@@ -2,6 +2,7 @@
 #include <network/network_interface.h>
 
 #include <core/debug.h>
+//#include <crc/crc.h>
 #include <network/packet.h>
 #include <network/network_message.h>
 #include <network/socket.h>
@@ -11,6 +12,8 @@
 #include <algorithm>
 
 using namespace network;
+
+extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 static const uint32_t s_maxPeers          = 8;
 static const uint32_t s_maxDuplicatePeers = 8; // Maximum peers allowed to have the same address
@@ -22,6 +25,7 @@ NetworkInterface::NetworkInterface() :
 	m_state(State::STATE_DISCONNECTED)
 {
 	m_socket = Socket::create(Socket::NetProtocol::PROTOCOL_UDP);
+	assert(m_socket);
 }
 
 NetworkInterface::~NetworkInterface()
@@ -51,13 +55,27 @@ void NetworkInterface::receivePackets()
 		assert(length <= g_maxPacketSize);
 
 		Packet* packet = new Packet;
+		uint32_t checksum;
+
 		// Reconstruct packet
-		BitStream* stream = new BitStream();
-			stream->writeBuffer(buffer, length);
-			stream->readBytes((char*)&packet->header, sizeof(PacketHeader));
-			stream->readBytes(packet->getData(), packet->header.dataLength);
-		delete stream;
+		BitStream stream;
+		stream.writeBuffer(buffer, length);
+		checksum = stream.readInt32();
+		stream.readBytes((char*)&packet->header, sizeof(PacketHeader));
+		stream.readBytes(packet->getData(), packet->header.dataLength);
 		
+
+		// Write protocol ID after packet to include in the checksum
+		memcpy(packet->getData() + packet->header.dataLength, &s_protocolID, sizeof(s_protocolID));
+
+		if (checksum != crcFast((const unsigned char*)packet->getData(), 
+		                        packet->header.dataLength + sizeof(uint32_t)))
+		{
+			LOG_DEBUG("Checksum mismatch! Packet dicarded.");
+			delete packet;
+			continue;
+		}
+
 		// Dissect packet
 		for (int32_t i = 0; i < packet->header.messageCount; i++)
 		{
@@ -76,11 +94,13 @@ void NetworkInterface::receivePackets()
 		delete packet;
 	}
 
-	std::sort(orderedMsgs.begin(), orderedMsgs.begin() + orderedMsgCount,
-			  [](IncomingMessage a, IncomingMessage b) {
-		return (a.sequenceNr < b.sequenceNr);
-	});
-
+	if(orderedMsgCount > 0)
+	{
+		std::sort(orderedMsgs.begin(), orderedMsgs.begin() + orderedMsgCount-1,
+				  [](IncomingMessage& a, IncomingMessage& b) {
+			return (a.sequenceNr < b.sequenceNr);
+		});
+	}
 	for (uint32_t i = 0; i < orderedMsgCount; i++)
 	{
 		m_incomingMessagesOrdered.push(orderedMsgs[i]);
@@ -92,7 +112,13 @@ void NetworkInterface::sendPacket(const Address& destination, Packet* packet)
 	assert(packet != nullptr);
 
 	BitStream stream;
+	assert(g_maxBlockSize - packet->header.dataLength > sizeof(uint32_t));
 
+	// Write protocol ID after packet to include in the checksum
+	memcpy(packet->getData() + packet->header.dataLength, &s_protocolID, sizeof(s_protocolID));
+	uint32_t checksum = crcFast((const unsigned char*)packet->getData(), 
+	                            packet->header.dataLength + sizeof(uint32_t));
+	stream.writeInt32(checksum);
 	stream.writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
 	stream.writeData(packet->getData(), packet->header.dataLength);
 	m_socket->send(destination, stream.getBuffer(), stream.getLength());
@@ -181,8 +207,9 @@ void NetworkInterface::sendMessage(const Address& destination, NetworkMessage& m
 	delete packet;
 }
 
-void NetworkInterface::sendMessages(const Address& destination, 
-									std::vector<NetworkMessage>& messages)
+void NetworkInterface::sendMessages(
+	const Address& destination, 
+	std::vector<NetworkMessage>& messages)
 {
 	Packet* packet = new Packet;
 		packet->header = {};
@@ -190,8 +217,6 @@ void NetworkInterface::sendMessages(const Address& destination,
 		for (auto msg : messages)
 		{
 			packet->writeMessage(msg);
-			if (!msg.isReliable) 
-				destroyMessage(msg);
 		}
 		sendPacket(destination, packet);
 	delete packet;

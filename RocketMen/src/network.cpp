@@ -52,10 +52,18 @@ bool Network::isLocalPlayer(int32_t playerID)
 	return false;
 }
 
-void Network::requestEntity(Entity* entity)
+bool Network::requestEntity(Entity* entity)
 {
 	if (s_client)
-		s_client->requestEntity(entity);
+		return s_client->requestEntity(entity);
+
+	return false;
+}
+
+void Network::destroyEntity(int32_t networkID)
+{
+	if (s_server)
+		s_server->destroyEntity(networkID);
 }
 
 void Network::setClient(Client* client)

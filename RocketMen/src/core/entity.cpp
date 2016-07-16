@@ -13,9 +13,7 @@ static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
 static uint32_t s_entityID;
 
-static const uint32_t s_maxSpawnPredictedEntities = 8;
 static uint32_t s_nextTempID = 1;
-//static bool m_tempNetworkID[s_maxSpawnPredictedEntities];
 
 Entity::Entity() :
 	m_id(0),
@@ -54,20 +52,55 @@ void Entity::initialize(bool replicate)
 		else
 		{
 			m_networkID = s_nextTempID++ * -1;
-			if (s_nextTempID >= s_maxSpawnPredictedEntities)
+			if (s_nextTempID > s_maxSpawnPredictedEntities)
 				s_nextTempID = 1;
 
-			Network::requestEntity(this);
+			if (!Network::requestEntity(this))
+			{
+				LOG_DEBUG("Couldn't Request Entity!");
+				kill();
+			}
 		}
 	}
 }
 
-Entity* Entity::instantiate(EntityInitializer* initializer, bool shouldReplicate,
-                            Entity* toReplace)
+Entity* Entity::instantiate(ReadStream& stream, bool shouldReplicate)
 {
-	return s_factoryMap.at(initializer->type)->instantiateEntity(initializer,
-	                                                            shouldReplicate,
-	                                                            toReplace);
+	EntityType type = EntityType::Entity;
+	int32_t intType = 0;
+	stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
+	type = static_cast<EntityType>(intType);
+	return s_factoryMap.at(type)->instantiateEntity(stream, shouldReplicate);
+}
+
+bool Entity::serializeFull(Entity* entity, ReadStream& stream, bool skipType)
+{
+	if (!skipType)
+	{
+		int32_t intType = static_cast<int32_t>(entity->getType());
+		stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
+	}
+	return s_factoryMap.at(entity->getType())->serializeFull(entity, stream);
+}
+
+bool Entity::serializeFull(Entity* entity, WriteStream& stream, bool skipType)
+{
+	if (!skipType)
+	{
+		int32_t intType = static_cast<int32_t>(entity->getType());
+		stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
+	}
+	return s_factoryMap.at(entity->getType())->serializeFull(entity, stream);
+}
+
+bool Entity::serialize(Entity* entity, WriteStream& stream)
+{
+	return s_factoryMap.at(entity->getType())->serialize(entity, stream);
+}
+
+bool Entity::serialize(Entity* entity, ReadStream& stream)
+{
+	return s_factoryMap.at(entity->getType())->serialize(entity, stream);;
 }
 
 void Entity::flushEntities()
@@ -97,14 +130,6 @@ void Entity::killEntities()
 		delete (*it);
 		it = s_entities.erase(it);
 	}
-	
-	// or ?
-
-//	for (auto it = s_entities.begin(); it != s_entities.end();)
-//	{
-//		(*it)->kill();
-//		it++;
-//	}
 }
 
 std::vector<Entity*>& Entity::getList()
@@ -117,6 +142,10 @@ std::vector<Entity*>& Entity::getList()
 void Entity::kill()
 {
 	m_id = 0;
+	if (Network::isServer())
+	{
+		Network::destroyEntity(m_networkID);
+	}
 }
 
 bool Entity::isAlive() const
@@ -138,14 +167,6 @@ int32_t Entity::getNetworkID() const
 {
 	return m_networkID;
 }
-
-void Entity::serializeFull(BitStream& stream)
-{
-}
-
-//void Entity::deserializeFull(BitStream* stream)
-//{
-//}
 
 void Entity::startContact(Entity* other)
 {

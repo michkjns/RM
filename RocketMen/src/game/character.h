@@ -9,7 +9,7 @@ namespace rm
 	class Character : public Entity
 	{
 	public:
-		EntityType getType() const { return EntityType::Character; }
+		EntityType getType() const override { return EntityType::Character; }
 
 	public:
 		Character();
@@ -20,8 +20,13 @@ namespace rm
 		virtual void fixedUpdate(float deltaTime)       override;
 		virtual void debugDraw()                        override;
 
-		virtual void serializeFull(BitStream& stream)   override;
-	//	virtual void deserializeFull(BitStream* stream) override;
+		/** Serialize whole object */
+		template<typename Stream>
+		bool serializeFull(Stream& stream);
+
+		/** Serialize commonly updated properties */
+		template<typename Stream>
+		bool serialize(Stream& stream);
 
 		virtual void Fire();
 
@@ -40,14 +45,6 @@ namespace rm
 	class CharacterFactory : public EntityFactory
 	{
 	public:
-		struct CharacterInitializer : public EntityInitializer
-		{
-			CharacterInitializer() { type = getType(); }
-			Vector2     position;
-			Vector2     velocity;
-			std::string sprite;
-		};
-
 		CharacterFactory() : EntityFactory() {};
 		static void initialize() {
 			EntityFactory::registerFactory(getType(), &s_factory);
@@ -55,9 +52,13 @@ namespace rm
 
 	protected:
 		static	EntityType getType() { return EntityType::Character; }
-		Entity* instantiateEntity(EntityInitializer* initialize,
-								  bool shouldReplicate = false,
-		                          Entity* toReplace = nullptr) override;
+		Entity* instantiateEntity(ReadStream& stream,
+								  bool shouldReplicate = false);
+		virtual bool serializeFull(Entity* entity, WriteStream& stream) override;
+		virtual bool serializeFull(Entity* entity, ReadStream& stream) override;
+		virtual bool serialize(Entity* entity, WriteStream& ws) override;
+		virtual bool serialize(Entity* entity, ReadStream& rs)  override;
+
 		static CharacterFactory s_factory;
 	};
 

@@ -24,24 +24,27 @@ namespace rm
 
 		void initialize(Entity* owner, Vector2 direction, float power,
 		                bool shouldReplicate = false);
-		virtual void initialize(bool shouldReplicate = false);
+
 		virtual void update(float deltaTime)      override;
 		virtual void fixedUpdate(float deltaTime) override;
-
-		void setDirection(Vector2 direction, float power);
-		//	Vector2 getDirection() const;
 
 		void setAccelerationPower(float accelerationPower);
 		float getAccelerationPower() const;
 		Rigidbody* getRigidbody() const;
 
-		virtual void serializeFull(BitStream& stream);
-		//	virtual void deserializeFull(BitStream* stream);
+		/** Serialize whole object */
+		template<typename Stream>
+		bool serializeFull(Stream& stream);
+
+		/** Serialize commonly updated properties */
+		template<typename Stream>
+		bool serialize(Stream& stream);
 
 		virtual void startContact(Entity* other) override;
 		virtual void endContact(Entity* other)   override;
 
 	private:
+		virtual void setupRigidBody();
 		Rigidbody* m_rigidbody;
 		Entity*    m_owner;
 		Vector2    m_direction;
@@ -54,15 +57,6 @@ namespace rm
 	class RocketFactory : public EntityFactory
 	{
 	public:
-		struct RocketInitializer : public EntityInitializer
-		{
-			RocketInitializer() { type = getType(); }
-			Vector2   position;
-			Vector2   direction;
-			float     power;
-			int32_t   ownerNetworkID;
-		};
-
 		RocketFactory() : EntityFactory() {};
 		static void initialize() {
 			EntityFactory::registerFactory(getType(), &s_factory);
@@ -70,9 +64,13 @@ namespace rm
 
 	protected:
 		static	EntityType getType() { return EntityType::Rocket; }
-		Entity* instantiateEntity(EntityInitializer* initializer, 
-		                          bool shouldReplicate = false,
-		                          Entity* toReplace = nullptr) override;
+		Entity* instantiateEntity(ReadStream& rs,
+		                          bool shouldReplicate = false);
+
+		virtual bool serializeFull(Entity* entity, WriteStream& stream) override;
+		virtual bool serializeFull(Entity* entity, ReadStream& stream) override;
+		virtual bool serialize(Entity* entity, WriteStream& stream) override;
+		virtual bool serialize(Entity* entity, ReadStream& stream) override;
 
 		static RocketFactory s_factory;
 	};

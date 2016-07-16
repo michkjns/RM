@@ -40,11 +40,6 @@ size_t Action::getHash() const
 	return m_type;
 }
 
-//bool Action::isLocalOnly() const
-//{
-//	return m_isLocalOnly;
-//}
-
 float Action::getValue() const
 {
 	return m_value;

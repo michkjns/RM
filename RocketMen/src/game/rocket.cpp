@@ -34,25 +34,26 @@ Rocket::~Rocket()
 
 void Rocket::initialize(Entity* owner, Vector2 direction, float power, bool shouldReplicate)
 {
+	if (m_rigidbody == nullptr)
+	{
+		setupRigidBody();
+	}
+
 	m_owner             = owner;
-	m_direction         = direction;
+	m_accelerationPower = power;
+	m_direction         = glm::normalize(direction);
 	m_accelerationPower = power;
 
-	initialize(shouldReplicate);
-}
-
-void Rocket::initialize(bool shouldReplicate)
-{
-	Entity::initialize(shouldReplicate);
 
 	if (m_rigidbody == nullptr)
 	{
-		physics::Fixture fixture;
-		fixture.isSensor = true;
-		m_rigidbody = Physics::createBoxRigidbody(Vector2(0.50f, 0.50f), fixture, this);
+		setupRigidBody();
 	}
-	m_rigidbody->setPosition(getTransform().getWorldPosition());
+
 	m_transform.setRigidbody(m_rigidbody);
+	m_rigidbody->setLinearVelocity(m_accelerationPower * m_direction);
+
+	Entity::initialize(shouldReplicate);
 }
 
 void Rocket::update(float deltaTime)
@@ -67,23 +68,13 @@ void Rocket::fixedUpdate(float deltaTime)
 	m_lifetimeSeconds += deltaTime;
 
 	if (Network::isServer())
-	{
-		if (m_lifetimeSeconds >= s_maxRocketLifetime)
+	{		
+		if (m_lifetimeSeconds >= s_maxRocketLifetime) 
+		{
 			kill();
+		}
 	}
 }
-
-void Rocket::setDirection(Vector2 direction, float power)
-{
-	m_rigidbody->setLinearVelocity(direction * power);
-	m_direction         = direction;
-	m_accelerationPower = power;
-}
-
-//Vector2 Rocket::getDirection() const
-//{
-//	return m_direction;
-//}
 
 void Rocket::setAccelerationPower(float accelerationPower)
 {
@@ -100,34 +91,116 @@ Rigidbody* Rocket::getRigidbody() const
 	return m_rigidbody;
 }
 
-void Rocket::serializeFull(BitStream& stream)
+template<typename Stream>
+bool Rocket::serializeFull(Stream& stream)
 {
-	RocketFactory::RocketInitializer init;
-	init.position       = m_transform.getWorldPosition();
-	init.direction      = m_direction;
-	init.networkID      = m_networkID;
-	init.power          = m_accelerationPower;
-	init.ownerNetworkID = m_owner->getNetworkID();
+	int32_t ownerID = -1;
+	Entity* owner = nullptr;
+	Vector2 vel;
+	Vector2 pos;
 
-	stream.writeInt32(sizeof(init));
-	stream.writeData(reinterpret_cast<char*>(&init), sizeof(init));
+	serializeInt(stream, m_networkID, -s_maxSpawnPredictedEntities, s_maxNetworkedEntities);
+	if (Stream::isReading)
+	{
+		if (m_networkID < -s_maxSpawnPredictedEntities || std::abs(m_networkID) > s_maxNetworkedEntities)
+		{
+			LOG_WARNING("Rocket: Received invalid networkID");
+			return false;
+		}
+	}
+	if (Stream::isWriting)
+	{
+		ownerID = m_owner->getNetworkID();
+		vel     = m_rigidbody->getLinearVelocity();
+		pos     = m_transform.getLocalPosition();
+	}
+
+	serializeInt(stream, ownerID, 0, s_maxNetworkedEntities);
+	if (Stream::isReading)
+	{
+		if (ownerID >= s_maxNetworkedEntities || ownerID < 0)
+			return false;
+
+		for (const auto& entity : Entity::getList())
+		{
+			if (entity->getNetworkID() == ownerID)
+			{
+				owner = entity;
+				break;
+			}
+		}
+	}
+	
+	if (!serializeVector2(stream, vel, -100.0f, 100.0f, 0.01f))
+		return false;
+
+	if (!serializeFloat(stream, m_accelerationPower))
+		return false;
+
+	if (!m_isInitialized)
+	{
+		initialize(owner, glm::normalize(vel), m_accelerationPower, false);
+	}
+
+	if(!serializeVector2(stream, pos, -100.0f, 100.0f, 0.01f))
+		return false;
+
+	if (Stream::isReading)
+	{
+		m_transform.setLocalPosition(pos);
+		m_rigidbody->setLinearVelocity(vel);
+	}
+
+	return true;
 }
 
-//void Rocket::deserializeFull(BitStream* stream)
-//{
-//
-//}
+template<typename Stream>
+bool Rocket::serialize(Stream& stream)
+{
+	float angle;
+	Vector2 vel;
+	Vector2 pos;
+
+	if (Stream::isWriting)
+	{
+		pos = m_transform.getLocalPosition();
+		vel = m_rigidbody->getLinearVelocity();
+	}
+
+	if (!serializeFloat(stream, angle, 0.0f, 2.0f, 0.01f))
+		return false;
+	if (Stream::isReading)
+	{
+		m_transform.setLocalRotation(angle);
+	}
+
+	serializeVector2(stream, pos);
+	if (Stream::isReading)
+	{
+		m_transform.setLocalPosition(pos);
+	}
+
+	serializeVector2(stream, vel);
+	if (Stream::isReading)
+	{
+		m_rigidbody->setLinearVelocity(vel);
+	}
+	return true;
+}
 
 void Rocket::startContact(Entity* other)
 {
-	//LOG_DEBUG("Rocket::startContact");
+	return;
 	if (isAlive())
 	{
 		if (other == m_owner) return;
+		LOG_DEBUG("Rocket::startContact");
 		RocketExplode explosionEvent = { m_rigidbody->getPosition(), 0, 3.f, 5.f };
-
-		// Physics::blastExplosion(explosionEvent.pos, explosionEvent.radius, explosionEvent.power);
-		kill();
+		if (Network::isServer())
+		{
+			Physics::blastExplosion(explosionEvent.pos, explosionEvent.radius, explosionEvent.power);
+			kill();
+		}
 	}
 }
 
@@ -135,37 +208,46 @@ void Rocket::endContact(Entity* other)
 {
 }
 
+void Rocket::setupRigidBody()
+{
+	assert(m_rigidbody == nullptr);
+	physics::Fixture fixture;
+	fixture.isSensor = true;
+	m_rigidbody = Physics::createBoxRigidbody(Vector2(0.50f, 0.50f), fixture, this);
+}
+
 //==============================================================================
 
 RocketFactory RocketFactory::s_factory;
 
-Entity* RocketFactory::instantiateEntity(EntityInitializer* initializer, bool shouldReplicate, Entity* toReplace)
+Entity* RocketFactory::instantiateEntity(ReadStream& rs, bool shouldReplicate)
 {
-	if (Network::isClient() && toReplace == nullptr)
+	Rocket* rocket = new Rocket();
+	if (!rocket->serializeFull(rs))
 	{
-		// TODO
-		// client and server running
-		// prevent duplicate function calls..
+		rocket->kill();
 		return nullptr;
 	}
 
-	RocketInitializer* init = dynamic_cast<RocketInitializer*>(initializer);
-
-	Rocket* rocket = (toReplace != nullptr) ? dynamic_cast<Rocket*>(toReplace) : new Rocket();
-
-	Entity* owner = nullptr;
-	for (const auto& entity : Entity::getList())
-	{
-		if (entity->getNetworkID() == init->ownerNetworkID)
-		{
-			owner = entity;
-			break;
-		}
-	}
-	rocket->setNetworkID(init->networkID);
-	rocket->getTransform().setLocalPosition(Vector2(init->position[0],
-													init->position[1]));
-	rocket->initialize(owner, init->direction, init->power);
-
 	return rocket;
+}
+
+bool RocketFactory::serializeFull(Entity* entity, WriteStream& stream)
+{
+	return dynamic_cast<Rocket*>(entity)->serializeFull(stream);
+}
+
+bool RocketFactory::serializeFull(Entity* entity, ReadStream& stream)
+{
+	return dynamic_cast<Rocket*>(entity)->serializeFull(stream);
+}
+
+bool RocketFactory::serialize(Entity* entity, WriteStream& stream)
+{
+	return dynamic_cast<Rocket*>(entity)->serialize(stream);
+}
+
+bool RocketFactory::serialize(Entity* entity, ReadStream& stream)
+{
+	return dynamic_cast<Rocket*>(entity)->serialize(stream);
 }

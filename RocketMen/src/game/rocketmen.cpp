@@ -79,10 +79,6 @@ void RocketMenGame::update(const Time& time)
 	{
 		Camera::mainCamera->translate(Vector3(0.0f, -1.0f, 0.0f) * cameraSpeed);
 	}
-
-	//Camera::mainCamera->setPosition(Vector3(m_character->getTransform().getWorldPosition(), 0.0f));
-	//Camera::mainCamera->setPosition(Vector3(m_character->getRigidbody()->getPosition(), 0.0f));
-
 }
 
 void RocketMenGame::terminate()

@@ -34,16 +34,17 @@ namespace network
 
 		void generateNetworkID(Entity* entity);
 		void registerLocalClient(int32_t clientID);
+		void destroyEntity(int32_t networkID);
 
 	private:
 		void onClientConnect(const IncomingMessage& msg);
 		void onClientDisconnect(const IncomingMessage& msg);
 
 		void onAckMessage(const IncomingMessage& msg);
-		void onPlayerIntroduction(const IncomingMessage& msg);
-		void onEntityRequest(const IncomingMessage& msg);
+		void onPlayerIntroduction(IncomingMessage& msg);
+		void onEntityRequest(IncomingMessage& msg);
 
-		void processMessage(const IncomingMessage& msg);
+		void processMessage(IncomingMessage& msg);
 
 		void processIncomingMessages(float deltaTime);
 		void processOutgoingMessages(float deltaTime);

@@ -21,7 +21,8 @@ namespace network
 			m_duplicatePeers(0),
 			m_sequenceCounter(0),
 			m_nextNetworkID(0),
-			m_nextProcessed(0)
+			m_nextProcessed(0),
+			m_timeFromLastMsg(0.0f)
 		{
 			std::fill(m_recentNetworkIDs, m_recentNetworkIDs + 16, -1);
 
@@ -41,12 +42,16 @@ namespace network
 		int8_t   m_nextNetworkID;
 		int32_t  m_recentlyProcessed[s_sequenceMemorySize];
 		int32_t  m_nextProcessed;
+		float    m_timeFromLastMsg;
 
 		std::array<NetworkMessage, s_maxPendingMessages> m_messageBuffer;
 
 		/** List tracking received and unacknowledged sequenceNrs */
 		std::vector<int32_t> m_reliableAckList;
 
+		friend bool operator== (const RemoteClient& a, const RemoteClient& b);
+		friend bool operator!= (const RemoteClient& a, const RemoteClient& b);
 	};	
+
 
 }; // namespace network

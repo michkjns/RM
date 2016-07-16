@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "address.h"
-#include "game_time.h"
-#include "packet.h"
+#include <network/address.h>
+#include <game_time.h>
+#include <network/packet.h>
 
 #include <cstdint>
 #include <vector>
@@ -21,7 +21,6 @@ namespace network
 	class NetworkInterface
 	{
 	public:
-
 		NetworkInterface();
 		virtual	~NetworkInterface();
 
@@ -38,7 +37,6 @@ namespace network
 		void update(float deltaTime);
 		void connect(const Address& destination, const Time& time);
 		void host(uint32_t port);
-		//void disconnect();
 		
 		/** Sends message directly, ignoring reliability */
 		void sendMessage(const Address& destination, NetworkMessage& message);
@@ -67,8 +65,6 @@ namespace network
 		std::vector<Packet>         m_outgoingPackets;
 		std::queue<IncomingMessage> m_incomingMessages;
 		std::queue<IncomingMessage> m_incomingMessagesOrdered;
-
-		int32_t m_recentlyProcessed[32];
 
 		Socket* m_socket;
 		float   m_stateTimer;

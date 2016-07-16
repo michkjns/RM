@@ -23,6 +23,8 @@ namespace network
 		SERVER_GAMESTATE,
 		SPAWN_ENTITY,
 		APPROVE_ENTITY,
+		DESTROY_ENTITY,
+		GAME_EVENT,
 
 		// Client to server
 		PLAYER_INTRO,
@@ -35,7 +37,7 @@ namespace network
 	struct NetworkMessage
 	{
 		MessageType type;
-		BitStream*  data;
+		BitStream   data;
 		bool        isReliable;
 		bool        isOrdered;
 		int32_t     sequenceNr;
@@ -44,27 +46,27 @@ namespace network
 	struct IncomingMessage
 	{
 		MessageType type;
-		BitStream*  data;
+		BitStream   data;
 		bool        isReliable;
 		bool        isOrdered;
 		Address     address; // sender address
 		int32_t     sequenceNr;
 	};
 
-	inline void destroyMessage(NetworkMessage& message)
-	{
-		if (message.data != nullptr)
-		{
-			delete message.data;
-		}
-	}
+	//inline void destroyMessage(NetworkMessage& message)
+	//{
+	//	if (message.data != nullptr)
+	//	{
+	//		delete message.data;
+	//	}
+	//}
 
-	inline void destroyMessage(IncomingMessage& message)
-	{
-		if (message.data != nullptr)
-		{
-			delete message.data;
-		}
-	}
+	//inline void destroyMessage(IncomingMessage& message)
+	//{
+	//	if (message.data != nullptr)
+	//	{
+	//		delete message.data;
+	//	}
+	//}
 
 }; // namespace network

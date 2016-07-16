@@ -1,5 +1,5 @@
 
-#include "packet.h"
+#include <network/packet.h>
 
 #include <assert.h>
 #include <cstring>
@@ -14,29 +14,18 @@ Packet::Packet() :
 
 void Packet::writeMessage(const NetworkMessage& message)
 {
-	if (message.data != nullptr)
-	{
-		assert(header.dataLength + sizeof(MessageType) + sizeof(int32_t) +
-			   message.data->getLength() < g_maxPacketSize);
-	}
-	else
-	{
-		assert(header.dataLength + sizeof(MessageType) + sizeof(int32_t) 
-			   < g_maxPacketSize);
-	}
+	assert(header.dataLength + sizeof(MessageType) + sizeof(int32_t) +
+			   message.data.getLength() < g_maxPacketSize);
 
 	int32_t sequenceNr = (message.isReliable) ? -message.sequenceNr : message.sequenceNr;
 	int8_t  type = (message.isOrdered) ? -(int8_t)message.type : (int8_t)message.type;
 	this->writeData(&type, sizeof(type)); // Write type, negative=ordered
 	this->writeData(&sequenceNr, sizeof(sequenceNr)); // Write sequence, negative=reliable
-	if (message.data != nullptr)
+	if(message.data.getLength() > 0)
 	{
-		if(message.data->getLength() > 0)
-		{
-			int32_t size = static_cast<int32_t>(message.data->getLength());
+			int32_t size = static_cast<int32_t>(message.data.getLength());
 			this->writeData(&size, sizeof(size)); // Write data size
-			this->writeData(message.data->getBuffer(), message.data->getLength()); // Write data
-		}
+			this->writeData(message.data.getBuffer(), message.data.getLength()); // Write data
 	}
 	else
 	{
@@ -77,8 +66,7 @@ IncomingMessage Packet::readMessage()
 
 	if (dataSize > 0)
 	{
-		msg.data = new BitStream();
-		msg.data->writeData(reinterpret_cast<char*>(m_data + m_read),
+		msg.data.writeData(reinterpret_cast<char*>(m_data + m_read),
 							dataSize);
 		m_read += dataSize;
 	}

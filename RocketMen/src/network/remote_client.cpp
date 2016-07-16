@@ -16,7 +16,9 @@ void RemoteClient::queueMessage(const NetworkMessage& message)
 		if (msg.type == MessageType::MESSAGE_CLEAR)
 		{
 			msg.type       = message.type;
-			msg.data       = message.data;
+			msg.data.reset();
+			msg.data.writeBuffer(message.data.getBuffer(), message.data.getLength());
+
 			msg.isReliable = message.isReliable;
 			msg.isOrdered  = message.isOrdered;
 			msg.sequenceNr = ++m_sequenceCounter;
@@ -25,6 +27,14 @@ void RemoteClient::queueMessage(const NetworkMessage& message)
 	}
 
 	LOG_WARNING("Message Queue is full! Message discarded.");
-	delete message.data;
+}
 
+bool network::operator==(const RemoteClient& a, const RemoteClient& b)
+{
+	return (a.m_id == b.m_id);
+}
+
+bool network::operator!=(const RemoteClient& a, const RemoteClient& b)
+{
+	return (a.m_id != b.m_id);
 }

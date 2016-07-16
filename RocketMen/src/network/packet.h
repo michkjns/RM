@@ -8,12 +8,16 @@
 
 namespace network
 {
+	static const int32_t s_protocolID = 1000;
+
 	struct PacketHeader
 	{
 		/** Number of messages in packet */
 		int32_t  messageCount;
-		int32_t  sequenceNumber;
+		uint32_t sequenceNumber;
+		uint32_t ack;
 		uint16_t dataLength;
+		uint32_t hash;
 	};
 
 	static const int32_t g_maxBlockSize = 2048;

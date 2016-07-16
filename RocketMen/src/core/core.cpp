@@ -17,6 +17,8 @@
 #include <assert.h>
 #include <cstdint>
 
+extern "C" void crcInit(void);
+
 using namespace network;
 
 static bool s_enableDebugDraw = true;
@@ -28,7 +30,7 @@ Core::Core() :
 	m_server(nullptr),
 	m_window(nullptr),
 	m_input(nullptr),
-	m_physics(nullptr),
+	m_physics(nullptr),		
 	m_timestep(33333ULL / 2),
 	m_enableDebug(false)
 {
@@ -46,10 +48,14 @@ Core::~Core()
 
 bool Core::initialize(Game* game, int argc, char* argv[])
 {
-	assert(game != nullptr);
-	
-	bool runDedicated  = false;
-	bool m_enableDebug = false;
+	if (game == nullptr) {
+		LOG_ERROR("Core::initialize: game is null"); assert(false);	return false;
+	}
+
+	crcInit();
+
+	bool runDedicated = false;
+	bool enableDebug  = true;
 	for (int i = 0; i < argc; i++)
 	{
 		const char* arg = argv[i];
@@ -59,16 +65,16 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		}
 		if (strcmp(arg, "--debug") == 0)
 		{
-			m_enableDebug = true;
+			enableDebug = true;
 		}
 	}
 #ifdef _DEBUG
-	m_enableDebug = true;
+	//m_enableDebug = true;
 #endif
 
 	m_game = game;
 
-	if((!runDedicated) || (runDedicated && m_enableDebug))
+	if((!runDedicated) || (runDedicated && enableDebug))
 	{
 		LOG_INFO("Core: Creating window..");
 		m_window = Window::create();
@@ -191,7 +197,7 @@ void Core::run()
 		}
 		
 		m_game->update(m_gameTime);
-		for (auto it : Entity::getList())
+		for (auto& it : Entity::getList())
 		{
 			it->update(deltaTime);
 		}
@@ -213,12 +219,19 @@ void Core::run()
 			
 			m_game->fixedUpdate(fixedDeltaTime);
 
-			for (auto it : Entity::getList())
+			for (auto& it : Entity::getList())
 			{
-				it->fixedUpdate(fixedDeltaTime);
-			}			
+				if (it->isAlive())
+				{
+					it->fixedUpdate(fixedDeltaTime);
+				}
+			}	
 
-			m_physics->step(fixedDeltaTime);
+			if (m_server)
+			{
+				m_physics->step(fixedDeltaTime);
+			}
+
 			t += fixedDeltaTime;
 			accumulator -= fixedDeltaTime;
 		}

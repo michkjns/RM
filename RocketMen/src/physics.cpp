@@ -188,8 +188,9 @@ void Physics::blastExplosion(Vector2 position, float radius, float power)
 		//ignore bodies outside the blast range
 		if ((bodyCom - tob2(position)).Length() >= radius)
 			continue;
-
-		_applyBlastImpulse(body, tob2(position), power);
+		 
+		_applyBlastImpulse(body, tob2(position), glm::min(power, 2.0f));
+		LOG_DEBUG("%f", power);
 	}
 
 }
@@ -216,32 +217,86 @@ bool Physics::destroyStaticbody(Staticbody* sb)
 
 void Physics::generateWorld(std::string tilemapName)
 {
-#define GENERATE_WORLD_NAIVE
-#ifdef GENERATE_WORLD_NAIVE
 	TileMap& tilemap = ResourceManager::getTileMap(tilemapName.c_str());
 
-	const Vector2 offset(-static_cast<float>(tilemap.getMapWidth() / 2.0f) + 0.5f, 
-	                      static_cast<float>(tilemap.getMapHeight()/ 2.0f) - 0.5f);
-
+	struct Rect
+	{
+		uint32_t x;
+		uint32_t y;
+		uint32_t w;
+		uint32_t h;
+	};
+	
+	std::vector<Rect> rects;
+	char* tempMap = new char[tilemap.getMapWidth() * tilemap.getMapHeight()];
+	memcpy(tempMap, tilemap.getMap(), tilemap.getMapWidth() * tilemap.getMapHeight());
+	bool newRect = true;
+	Rect currentRect;
 	for (uint32_t x = 0; x < tilemap.getMapWidth(); x++)
 	{
 		for (uint32_t y = 0; y < tilemap.getMapHeight(); y++)
 		{
-			physics::Fixture fixture;
-			char tile = tilemap.getMap()[x + y * tilemap.getMapWidth()];
+			char tile = tempMap[x + y * tilemap.getMapWidth()];
 			if (tile != '0')
 			{
-				
-				Physics::createStaticBody(Vector2(x, -1.f * y) + offset,
-				                          Vector2(1, 1.0f), fixture);
-
-				/*Physics::createStaticBody(Vector2(x*2.f  - width/2, (-(float)y*2.f + height/2))
-										  + offset,
-										  Vector2(1, 1.0f), fixture);*/
+				currentRect.x = x;
+				currentRect.y = y;
+				currentRect.w = 0;
+				currentRect.h = 0;
+				bool _break = false;
+				uint32_t y_lim = tilemap.getMapHeight();
+				for (uint32_t x1 = x; x1 < tilemap.getMapWidth(); x1++)
+				{
+					if (_break) break;
+					for (uint32_t y1 = y; y1 < y_lim; y1++)
+					{
+						char& tile1 = tempMap[x1 + y1 * tilemap.getMapWidth()];
+						if (y1 == y)
+						{
+							if (tile1 != '0')
+							{
+								currentRect.w++;
+								tile1 = '0';
+								if (x1 == x || y1 > y + currentRect.h)
+									currentRect.h++;
+								continue;
+							}
+							else
+							{
+								_break = true;
+								break;
+							}
+						}
+						if (tile1 != '0')
+						{
+							tile1 = '0';
+							if (x1 == x || y1 > y + currentRect.h)
+							{
+								currentRect.h++;
+							}
+							
+						}
+						else 
+						{
+							y_lim = y1;
+							break;
+						};
+					}
+				}
+				rects.push_back(currentRect);
 			}
 		}
 	}
-#endif
+	delete[] tempMap;
+
+	physics::Fixture fixture;
+	for (auto& rect : rects)
+	{
+		const Vector2 offset(-static_cast<float>(tilemap.getMapWidth() / 2.0f) + 0.5f * rect.w,
+							 static_cast<float>(tilemap.getMapHeight() / 2.0f) - 0.5f * rect.h);
+		Physics::createStaticBody(Vector2(rect.x, -1.f * rect.y) + offset ,
+								  Vector2(rect.w, rect.h), fixture);
+	}
 }
 
 void Physics::drawDebug()
@@ -272,17 +327,23 @@ void Physics::destroyBodies()
 
 void PhysicsDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
-	Renderer::get()->drawPolygon((Vector2*)(vertices), vertexCount, Color(color.r, color.g, color.b, color.a));
+	if(Renderer::get())
+		Renderer::get()->drawPolygon(
+		    (Vector2*)(vertices), vertexCount, Color(color.r, color.g, color.b, color.a));
 }
 
 void PhysicsDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
-	Renderer::get()->drawPolygon((Vector2*)vertices, vertexCount, Color(color.r, color.g, color.b, color.a));
+	if (Renderer::get())
+		Renderer::get()->drawPolygon(
+		    (Vector2*)vertices, vertexCount, Color(color.r, color.g, color.b, color.a));
 }
 
 void PhysicsDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) 
 {
-	Renderer::get()->drawLineSegment(toglm(p1), toglm(p2), Color(color.r, color.g, color.b, color.a));
+	if (Renderer::get())
+		Renderer::get()->drawLineSegment(
+		    toglm(p1), toglm(p2), Color(color.r, color.g, color.b, color.a));
 }
 
 //==============================================================================
@@ -313,9 +374,7 @@ void ContactListener::BeginContact(b2Contact* contact)
 void ContactListener::EndContact(b2Contact* contact)
 {
 	if (!Network::isServer())
-	{
 		return;
-	}
 
 	Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
 	Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());

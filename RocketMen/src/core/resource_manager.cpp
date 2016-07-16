@@ -151,12 +151,14 @@ TileMap& ResourceManager::loadTilemap(const char* file,
 	const uint32_t mapHeight = atoi(heightStr.c_str());
 
 	TileMap tileMap;
-	bool success = tileMap.initialize(sheetName,
-					   &mapInput[0],
-					   name,
-					   mapWidth,
-					   mapHeight,
-					   2, 2, 16);
+	bool success = tileMap.initialize(
+	    sheetName,
+	    &mapInput[0],
+	    name,
+	    mapWidth,
+	    mapHeight,
+	    2, 2, 16);
+
 	assert(success);
 	m_tileMaps[name] = tileMap;
 	return m_tileMaps[name];

@@ -22,9 +22,6 @@ public:
 	unsigned int getWidth()  const override;
 	unsigned int getHeight() const override;
 
-
-	//int32_t getFrameWidth()  const override;
-
 	void* getGLFWwindow()    const override;
 
 private:
@@ -48,16 +45,6 @@ void* Window_impl::getGLFWwindow() const
 {
 	return (void*)m_glfwWindow;
 }
-
-//int32_t Window::getFrameWidth() const
-//{
-//	return int32_t();
-//}
-//
-//int32_t Window::getFrameHeight() const
-//{
-//	return int32_t();
-//}
 
 Window* Window::create()
 {

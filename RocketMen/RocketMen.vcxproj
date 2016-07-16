@@ -151,8 +151,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\circular_buffer.cpp" />
     <ClCompile Include="src\core\action_listener.cpp" />
-    <ClCompile Include="src\core\serialize.cpp" />
     <ClCompile Include="src\game\character.cpp" />
     <ClCompile Include="src\core\action.cpp" />
     <ClCompile Include="src\core\action_buffer.cpp" />
@@ -172,6 +172,7 @@
     <ClCompile Include="src\core\core.cpp" />
     <ClCompile Include="src\core\debug.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\crc\crc.c" />
     <ClCompile Include="src\network\network_interface.cpp" />
     <ClCompile Include="src\network\network_message.cpp" />
     <ClCompile Include="src\network\packet.cpp" />
@@ -190,10 +191,11 @@
     <ClCompile Include="src\game_time.cpp" />
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\core\transform.cpp" />
+    <ClCompile Include="src\tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\circular_buffer.h" />
     <ClInclude Include="src\core\action_listener.h" />
-    <ClInclude Include="src\core\serialize.h" />
     <ClInclude Include="src\game\character.h" />
     <ClInclude Include="src\core\action.h" />
     <ClInclude Include="src\core\action_buffer.h" />
@@ -214,6 +216,7 @@
     <ClInclude Include="src\core\game.h" />
     <ClInclude Include="src\includes.h" />
     <ClInclude Include="src\network\address.h" />
+    <ClInclude Include="src\crc\crc.h" />
     <ClInclude Include="src\network\network_interface.h" />
     <ClInclude Include="src\network\network_message.h" />
     <ClInclude Include="src\network\packet.h" />

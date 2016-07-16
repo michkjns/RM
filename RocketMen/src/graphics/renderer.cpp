@@ -37,7 +37,6 @@ public:
 	Vector2 Renderer_impl::getScreenSize() const;
 
 private:
-
 	void renderSprites();
 	void renderTiles();
 	void renderUI();
@@ -139,7 +138,6 @@ void Renderer_impl::renderSprites()
 
 void Renderer_impl::renderTiles()
 {
-
 	m_tileRenderer.render(&ResourceManager::getTileMap("testmap"), 
                           Camera::mainCamera->getProjectionMatrix()
                           * Camera::mainCamera->getViewMatrix());
@@ -152,6 +150,9 @@ void Renderer_impl::renderUI()
 void Renderer_impl::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, 
                                 bool screenSpace)
 {
+	if (!Renderer::get())
+		return;
+
 	Shader::unbindShader();
 	GLfloat glverts[16];
 	glVertexPointer(2, GL_FLOAT, 0, glverts);
@@ -180,7 +181,7 @@ void Renderer_impl::drawPolygon(const Vector2* vertices, int32_t vertexCount, co
 void Renderer_impl::drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color, 
 	                                bool screenSpace)
 {
-	if (!Camera::mainCamera)
+	if (!Camera::mainCamera && !Renderer::get())
 		return;
 
 	Shader& lineShader = ResourceManager::getShader("line_shader");

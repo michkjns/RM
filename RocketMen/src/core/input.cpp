@@ -99,14 +99,15 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 bool Input::initialize(Window* window)
 {
-	assert(window != nullptr);
-	s_glfwWindow = (GLFWwindow*)window->getGLFWwindow();
-	assert(s_glfwWindow != nullptr);
+	if (window)
+	{
+		s_glfwWindow = (GLFWwindow*)window->getGLFWwindow();
+		assert(s_glfwWindow != nullptr);
 
-	glfwSetKeyCallback(s_glfwWindow, key_callback);
-	glfwSetCursorPosCallback(s_glfwWindow, cursor_position_callback);
-	glfwSetMouseButtonCallback(s_glfwWindow, mouse_button_callback);
-
+		glfwSetKeyCallback(s_glfwWindow, key_callback);
+		glfwSetCursorPosCallback(s_glfwWindow, cursor_position_callback);
+		glfwSetMouseButtonCallback(s_glfwWindow, mouse_button_callback);
+	}
 	return true;
 }
 
