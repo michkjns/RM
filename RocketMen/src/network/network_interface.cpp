@@ -22,9 +22,10 @@ static const float    s_connectionTimeout = 30.0f; // Seconds to wait until time
 
 NetworkInterface::NetworkInterface() : 
 	m_stateTimer(0.0f),
-	m_state(State::STATE_DISCONNECTED)
+	m_state(State::Disconnected),
+	m_receivedMessageCount(0)
 {
-	m_socket = Socket::create(Socket::NetProtocol::PROTOCOL_UDP);
+	m_socket = Socket::create(Socket::NetProtocol::UDP);
 	assert(m_socket);
 }
 
@@ -71,21 +72,35 @@ void NetworkInterface::receivePackets()
 		if (checksum != crcFast((const unsigned char*)packet->getData(), 
 		                        packet->header.dataLength + sizeof(uint32_t)))
 		{
-			LOG_DEBUG("Checksum mismatch! Packet dicarded.");
+			LOG_DEBUG("Checksum mismatch; Packet discarded.");
 			delete packet;
 			continue;
 		}
 
+		if (packet->header.ackBits != 0 && 
+			packet->header.sequence > 0 && 
+			packet->header.ackSequence >= 0)
+		{
+			IncomingMessage ackMsg = {};
+			ackMsg.type     = MessageType::Ack;
+			ackMsg.address  = address;
+			ackMsg.sequence = packet->header.sequence;
+			ackMsg.data.writeInt32(packet->header.ackSequence);
+			ackMsg.data.writeInt32(packet->header.ackBits);
+			m_incomingMessages.push(ackMsg);
+		}
 		// Dissect packet
 		for (int32_t i = 0; i < packet->header.messageCount; i++)
 		{
 			IncomingMessage msg = packet->readMessage();
+
 			msg.address = address;
-			if (msg.isOrdered && orderedMsgCount < s_maxPendingMessages)
-			{
-				orderedMsgs[orderedMsgCount++] = msg;
-			}
-			else
+			msg.sequence = m_receivedMessageCount++;
+			//if (msg.isOrdered && orderedMsgCount < s_maxPendingMessages)
+			//{
+			//	orderedMsgs[orderedMsgCount++] = msg;
+			//}
+			//else
 			{
 				m_incomingMessages.push(msg);
 			}
@@ -94,13 +109,13 @@ void NetworkInterface::receivePackets()
 		delete packet;
 	}
 
-	if(orderedMsgCount > 0)
-	{
-		std::sort(orderedMsgs.begin(), orderedMsgs.begin() + orderedMsgCount-1,
-				  [](IncomingMessage& a, IncomingMessage& b) {
-			return (a.sequenceNr < b.sequenceNr);
-		});
-	}
+	//if(orderedMsgCount > 0)
+	//{
+	//	std::sort(orderedMsgs.begin(), orderedMsgs.begin() + orderedMsgCount-1,
+	//			  [](IncomingMessage& a, IncomingMessage& b) {
+	//		return (a.sequence < b.sequence);
+	//	});
+	//}
 	for (uint32_t i = 0; i < orderedMsgCount; i++)
 	{
 		m_incomingMessagesOrdered.push(orderedMsgs[i]);
@@ -122,8 +137,6 @@ void NetworkInterface::sendPacket(const Address& destination, Packet* packet)
 	stream.writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
 	stream.writeData(packet->getData(), packet->header.dataLength);
 	m_socket->send(destination, stream.getBuffer(), stream.getLength());
-
-//		LOG_DEBUG("Send packet: %i port", packet->header.messageCount, destination.getPort());
 }
 
 void NetworkInterface::setState(State state)
@@ -140,11 +153,11 @@ void NetworkInterface::update(float deltaTime)
 
 	switch (m_state)
 	{
-		case State::STATE_CONNECTING:
+		case State::Connecting:
 		{
 			if (m_stateTimer >= s_connectionTimeout)
 			{
-				return setState(State::STATE_DISCONNECTED);
+				return setState(State::Disconnected);
 			}
 			break;
 		}
@@ -158,17 +171,8 @@ void NetworkInterface::connect(const Address& destination, const Time& time)
 	{
 		m_socket->initialize(destination.getPort());
 	}
-
-	NetworkMessage message = {};
-	message.type           = MessageType::CLIENT_CONNECT_REQUEST;
-
-	Packet* packet = new Packet;
-		packet->header = {};
-		packet->writeMessage(message);
-		sendPacket(destination, packet);
-	delete packet;
-
-	setState(State::STATE_CONNECTING);
+	
+	setState(State::Connecting);
 }
 
 void NetworkInterface::host(uint32_t port)
@@ -180,7 +184,7 @@ void NetworkInterface::host(uint32_t port)
 	
 	if (m_socket->initialize(port, true))
 	{
-		setState(State::STATE_HOSTING);
+		setState(State::Hosting);
 	}
 }
 
@@ -207,24 +211,9 @@ void NetworkInterface::sendMessage(const Address& destination, NetworkMessage& m
 	delete packet;
 }
 
-void NetworkInterface::sendMessages(
-	const Address& destination, 
-	std::vector<NetworkMessage>& messages)
-{
-	Packet* packet = new Packet;
-		packet->header = {};
-		packet->header.sequenceNumber = static_cast<int32_t>(m_socket->getPacketsSent());
-		for (auto msg : messages)
-		{
-			packet->writeMessage(msg);
-		}
-		sendPacket(destination, packet);
-	delete packet;
-}
-
 bool NetworkInterface::isConnecting() const
 {
-	return (m_state == State::STATE_CONNECTING);
+	return (m_state == State::Connecting);
 }
 
 std::queue<IncomingMessage>& NetworkInterface::getMessages()

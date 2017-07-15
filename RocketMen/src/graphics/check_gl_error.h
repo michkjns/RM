@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <common.h>
+
 #ifdef _DEBUG
 #define checkGL() checkOpenGLError( __FUNCSIG__, __FILE__, __LINE__ )
 #else

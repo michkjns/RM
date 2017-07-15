@@ -1,7 +1,7 @@
 
-#include <includes.h>
 #include <graphics/renderer.h>
 
+#include <core/debug.h>
 #include <core/entity.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
@@ -10,17 +10,18 @@
 #include <graphics/sprite_renderer.h>
 #include <graphics/tile_renderer.h>
 #include <physics.h>
-#include <fstream>
 
 #include <GLFW/glfw3.h>
 
+#include <fstream>
+
 static Renderer* s_renderer;
 
-class Renderer_impl : public Renderer
+class Renderer_glfw : public Renderer
 {
 public:
-	Renderer_impl();
-	~Renderer_impl();
+	Renderer_glfw();
+	~Renderer_glfw();
 
 	bool initialize(Window* window) override;
 	void destroy() override;
@@ -31,10 +32,10 @@ public:
 	                 const Color& color,
 	                 bool screenSpace = false) override;
 
-	void drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color,
-	                     bool screenSpace) override;
+	void drawLineSegment(const Vector2& p1, const Vector2& p2,
+		                 const Color& color, bool screenSpace) override;
 
-	Vector2 Renderer_impl::getScreenSize() const;
+	Vector2i Renderer_glfw::getScreenSize() const;
 
 private:
 	void renderSprites();
@@ -48,16 +49,16 @@ private:
 	GLuint         m_lineVBO;
 };
 
-Renderer_impl::Renderer_impl()
+Renderer_glfw::Renderer_glfw()
 	: m_window(nullptr)
 {
 }
 
-Renderer_impl::~Renderer_impl()
+Renderer_glfw::~Renderer_glfw()
 {
 }
 
-bool Renderer_impl::initialize(Window* window)
+bool Renderer_glfw::initialize(Window* window)
 {
 	assert(window != nullptr);
 
@@ -98,11 +99,11 @@ bool Renderer_impl::initialize(Window* window)
 	return true;
 }
 
-void Renderer_impl::destroy()
+void Renderer_glfw::destroy()
 {
 }
 
-void Renderer_impl::render()
+void Renderer_glfw::render()
 {
 	if (Camera::mainCamera) 
 	{
@@ -117,7 +118,7 @@ void Renderer_impl::render()
 	}
 }
 
-void Renderer_impl::renderSprites()
+void Renderer_glfw::renderSprites()
 {
 	for (const auto& it : Entity::getList())
 	{
@@ -136,23 +137,21 @@ void Renderer_impl::renderSprites()
 	}
 }
 
-void Renderer_impl::renderTiles()
+void Renderer_glfw::renderTiles()
 {
 	m_tileRenderer.render(&ResourceManager::getTileMap("testmap"), 
                           Camera::mainCamera->getProjectionMatrix()
                           * Camera::mainCamera->getViewMatrix());
 }
 
-void Renderer_impl::renderUI()
+void Renderer_glfw::renderUI()
 {
+	// TODO implement renderUI
 }
 
-void Renderer_impl::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, 
+void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, 
                                 bool screenSpace)
 {
-	if (!Renderer::get())
-		return;
-
 	Shader::unbindShader();
 	GLfloat glverts[16];
 	glVertexPointer(2, GL_FLOAT, 0, glverts);
@@ -160,7 +159,6 @@ void Renderer_impl::drawPolygon(const Vector2* vertices, int32_t vertexCount, co
 
 	for (int i = 0; i < vertexCount; i++) 
 	{
-		Vector2 view = Renderer::get()->getScreenSize();
 		Vector4 xy = (screenSpace) ? Vector4(vertices[i], 0.0f, 0.0f)
 			: Camera::mainCamera->getProjectionMatrix() * Camera::mainCamera->getViewMatrix() *
 			Vector4(vertices[i], 1.0f, 1.0f);
@@ -178,11 +176,10 @@ void Renderer_impl::drawPolygon(const Vector2* vertices, int32_t vertexCount, co
 	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void Renderer_impl::drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color, 
+void Renderer_glfw::drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color, 
 	                                bool screenSpace)
 {
-	if (!Camera::mainCamera && !Renderer::get())
-		return;
+	assert(Camera::mainCamera);
 
 	Shader& lineShader = ResourceManager::getShader("line_shader");
 	lineShader.use();
@@ -206,16 +203,16 @@ void Renderer_impl::drawLineSegment(const Vector2& p1, const Vector2& p2, const 
 	checkGL();
 }
 
-Vector2 Renderer_impl::getScreenSize() const
+Vector2i Renderer_glfw::getScreenSize() const
 { 
-	return Vector2(m_window->getWidth(), m_window->getHeight());
+	return m_window->getSize();
 }
 
 Renderer* Renderer::create()
 {
 	if (s_renderer == nullptr)
 	{
-		s_renderer = new Renderer_impl();
+		s_renderer = new Renderer_glfw();
 	}
 
 	return s_renderer;

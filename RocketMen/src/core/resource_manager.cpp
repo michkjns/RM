@@ -1,5 +1,5 @@
 
-#include <includes.h>
+#include <core/debug.h>
 #include <core/resource_manager.h>
 
 #include <graphics/check_gl_error.h>
@@ -17,23 +17,25 @@ std::map<std::string, Shader>	ResourceManager::m_shaders;
 std::map<std::string, Texture>	ResourceManager::m_textures;
 std::map<std::string, TileMap>  ResourceManager::m_tileMaps;
 
-Shader  dummyShader;
-Texture dummyTexture;
+static Shader  dummyShader;
+static Texture dummyTexture;
 
-Shader& ResourceManager::loadShader(const char* vertexShaderFile, 
-									const char* fragmentShaderFile, 
+Shader& ResourceManager::loadShader(const char* vertexShaderFilePath, 
+									const char* fragmentShaderFilePath, 
 									const char* name)
 {
 	if (Renderer::get() == nullptr)
+	{
 		return dummyShader;
+	}
 
-	LOG_INFO("ResourceManager: Loading shader %s", name);
+	LOG_DEBUG("ResourceManager: Loading shader %s", name);
 
-	std::string vertexShaderSource   = loadShaderFromFile(vertexShaderFile);
-	std::string fragmentShaderSource = loadShaderFromFile(fragmentShaderFile);
+	std::string vertexShaderSource   = readFileToString(vertexShaderFilePath);
+	std::string fragmentShaderSource = readFileToString(fragmentShaderFilePath);
 
-	Shader shader = Shader();
-	LOG_INFO("ResourceManager: Compiling shader %s", name);
+	Shader shader;
+	LOG_DEBUG("ResourceManager: Compiling shader %s", name);
 	if (!shader.compile(vertexShaderSource, fragmentShaderSource))
 	{
 		LOG_ERROR("ResourceManager: Shader compilation failed");
@@ -55,12 +57,10 @@ Texture& ResourceManager::createTexture(const void*        imageData,
 	                                    uint32_t           width,
 	                                    uint32_t           height,
 	                                    const char*        name,
-	                                    Texture::BlendMode blendMode
-	                                    /* = Texture::BlendMode::MODE_OPAQUE */)
+	                                    Texture::BlendMode blendMode /* = Texture::BlendMode::MODE_OPAQUE */)
 {
 	if(Renderer::get() == nullptr)
 		return dummyTexture;
-
 
 	LOG_INFO("ResourceManager: Creating texture %s", name);
 	Texture texture;
@@ -77,7 +77,7 @@ Texture& ResourceManager::loadTexture(const char*        file,
 	if (Renderer::get() == nullptr)
 		return dummyTexture;
 
-	LOG_INFO("ResourceManager: Loading texture %s", file);
+	LOG_DEBUG("ResourceManager: Loading texture %s", file);
 	int width, height;
 	unsigned char* imageData = SOIL_load_image( (std::string("../") + std::string(file)).c_str(), 
 											   &width, &height, 0, SOIL_LOAD_RGBA );
@@ -90,7 +90,6 @@ Texture& ResourceManager::loadTexture(const char*        file,
 	}
 	else
 	{
-		checkGL();
 		texture.generate(imageData, width, height);
 		checkGL();
 		SOIL_free_image_data(imageData);
@@ -145,8 +144,8 @@ TileMap& ResourceManager::loadTilemap(const char* file,
 	int32_t dotFirst = static_cast<int32_t>(widthHeight.find_first_of('.', 0));
 	int32_t dotLast  = static_cast<int32_t>(widthHeight.find_first_of('.', dotFirst+1));
 	widthHeight = widthHeight.substr(dotFirst, dotLast);
-	std::string widthStr  = widthHeight.substr(1, widthHeight.find('x')-1);
-	std::string heightStr = widthHeight.substr(widthHeight.find('x')+1, widthHeight.find_last_of('.')-3);
+	std::string widthStr  = widthHeight.substr(1, widthHeight.find('x') - 1);
+	std::string heightStr = widthHeight.substr(widthHeight.find('x') + 1, widthHeight.find_last_of('.') - 3);
 	const uint32_t mapWidth = atoi(widthStr.c_str());
 	const uint32_t mapHeight = atoi(heightStr.c_str());
 
@@ -203,19 +202,18 @@ void ResourceManager::clear()
 	clearTileMaps();
 }
 
-std::string ResourceManager::loadShaderFromFile(const char* shaderFile)
+std::string ResourceManager::readFileToString(const char* filePath)
 {
 	std::ifstream ifs;
 
-	/* Load the shader. */
-	ifs.open(shaderFile);
+	ifs.open(filePath);
 
 	if (!ifs)
 	{
-		ifs.open((std::string("../") + std::string(shaderFile)).c_str());
+		ifs.open((std::string("../") + std::string(filePath)).c_str());
 		if (!ifs)
 		{
-			LOG_ERROR("Shader: Failed to open file: %s", shaderFile);
+			LOG_ERROR("Shader: Failed to open file: %s", filePath);
 			return std::string();
 		}
 	}

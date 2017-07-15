@@ -2,8 +2,8 @@
 #include <core/debug.h>
 
 #include <ctime>
-#include <iomanip>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -11,17 +11,16 @@
 
 static bool             s_fileOpened = false;
 static std::ofstream    s_logFile;
-static Debug::Verbosity	s_verbosityLevel = Debug::Verbosity::LEVEL_INFO;
-//==============================================================================
+static Debug::Verbosity	s_verbosityLevel = Debug::Verbosity::Info;
+// ============================================================================
 
 inline std::string verbosityToString(Debug::Verbosity verbosity)
 {
 	return std::string(
-		(verbosity <= Debug::Verbosity::LEVEL_DEBUG)   ? "DEBUG"   :
-		(verbosity <= Debug::Verbosity::LEVEL_INFO)    ? "INFO"    :
-		(verbosity <= Debug::Verbosity::LEVEL_WARNING) ? "WARNING" :
-		(verbosity <= Debug::Verbosity::LEVEL_ERROR)   ? "ERROR"   :
-		"");
+		(verbosity == Debug::Verbosity::Error)   ? "ERROR"   :
+		(verbosity == Debug::Verbosity::Warning) ? "WARNING" :
+		(verbosity == Debug::Verbosity::Info)    ? "INFO"    :
+		(verbosity == Debug::Verbosity::Debug)   ? "DEBUG"   : "");
 }
 
 void Debug::openLog(const char* file)
@@ -77,9 +76,15 @@ void Debug::setVerbosity(Verbosity verbosity)
 	LOG_INFO("Logging Verbosity is now set to: %s", verbosityStr.c_str());
 }
 
+Debug::Verbosity Debug::getVerbosity()
+{
+	return s_verbosityLevel;
+}
+
 void Debug::log(Verbosity verbosityLevel, const char* format, ...)
 {
-	if (verbosityLevel < s_verbosityLevel) return;
+	if (verbosityLevel > s_verbosityLevel) 
+		return;
 
 	std::string verbosityStr = verbosityToString(verbosityLevel);
 	char buffer[1024];

@@ -27,11 +27,11 @@ namespace network
 	public: 
 		enum class State
 		{
-			STATE_DISCONNECTED,
-			STATE_CONNECTING,
-			STATE_CONNECTED,
-			STATE_DISCONNECTING,
-			STATE_HOSTING
+			Disconnected,
+			Connecting,
+			Connected,
+			Disconnecting,
+			Hosting
 		};
 
 		void update(float deltaTime);
@@ -41,23 +41,20 @@ namespace network
 		/** Sends message directly, ignoring reliability */
 		void sendMessage(const Address& destination, NetworkMessage& message);
 
-		/** Sends a batch of messages */
-		void sendMessages(const Address& destination,
-						  std::vector<NetworkMessage>& messages);
+		void sendPacket(const Address& destination, Packet* packet);
 
 		/** @return true if attempting a connection */
 		bool isConnecting() const;
 
-		/** Returns queue of incoming messages */
+		/** @return queue of incoming messages */
 		std::queue<IncomingMessage>& getMessages();
 
-		/** Returns queue of incoming messages */
+		/** @return queue of incoming ordered messages */
 		std::queue<IncomingMessage>& getOrderedMessages();
 
 		void clearBuffers();
 	private:
 		/** Directly sends a packet */
-		void sendPacket(const Address& destination, Packet* packet);
 
 		void receivePackets();
 		void setState(State state);
@@ -69,7 +66,7 @@ namespace network
 		Socket* m_socket;
 		float   m_stateTimer;
 		State   m_state;
-		//uint64_t m_packetSequence;
+		int32_t m_receivedMessageCount;
 	};
 
 } // namespace network

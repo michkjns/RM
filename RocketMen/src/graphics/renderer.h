@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <common.h>
+
 class Window;
 
 class Renderer
@@ -23,7 +25,7 @@ public:
 	                             const Color& color,
 	                             bool screenSpace = false) = 0;
 
-	virtual	Vector2 getScreenSize() const = 0;
+	virtual	Vector2i getScreenSize() const = 0;
 
 	static Renderer* create();
 	static Renderer* get();

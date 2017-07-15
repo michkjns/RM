@@ -1,10 +1,12 @@
 
-#include <core/entity_factory.h>
+#include <core/entity.h>
 
 #include <bitstream.h>
+#include <core/debug.h>
+#include <core/entity_factory.h>
 #include <network.h>
-
 #include <physics.h>
+
 #include <map>
 #include <functional>
 
@@ -14,82 +16,73 @@ static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
 static uint32_t s_entityID;
 
-static uint32_t s_nextTempID = 1;
+inline bool entityExists(Entity* entity)
+{
+	for (const auto& ent : s_entities)
+	{
+		if (ent == entity)
+			return true;
+	}
+
+	return false;
+}
 
 Entity::Entity() :
 	m_id(0),
 	m_isInitialized(false),
-	m_networkID(-1)
+	m_networkID(INDEX_NONE)
+{
+}
+
+Entity::~Entity()
 {
 }
 
 void Entity::initialize(bool replicate)
 {
-	bool newEntity = true;
-	if (!s_entities.empty())
-	{
-		for (const auto& ent : s_entities) // If this is a re-initialization,
-		{                                  // Prevent duplicates..
-			if (ent == this)
-				newEntity = false;
-		}
-	} 
-	if (newEntity)
+ 	if (!entityExists(this))
 	{
 		m_id = ++s_entityID;
 		s_newEntities.push_back(this);
 	}
+
 	m_isInitialized = true;
-
-	if (m_networkID >= 0)
-		return;
-
-	if (replicate)
+	
+	if (replicate && m_networkID == INDEX_NONE)
 	{
-		if (Network::isServer())
-		{
-			Network::generateNetworkID(this);
-		}
-		else
-		{
-			m_networkID = s_nextTempID++ * -1;
-			if (s_nextTempID > s_maxSpawnPredictedEntities)
-				s_nextTempID = 1;
-
-			if (!Network::requestEntity(this))
-			{
-				LOG_DEBUG("Couldn't Request Entity!");
-				kill();
-			}
-		}
+		Network::generateNetworkID(this);
 	}
 }
 
-Entity* Entity::instantiate(ReadStream& stream, bool shouldReplicate)
+Entity* Entity::instantiate(ReadStream& stream, bool replicate)
 {
 	EntityType type = EntityType::Entity;
-	int32_t intType = 0;
-	stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
+	int32_t intType = INDEX_NONE;
+	stream.serializeInt(intType, 0, s_numEntityTypes);
+
+	ensure(intType > INDEX_NONE && intType < s_numEntityTypes);
 	type = static_cast<EntityType>(intType);
-	return s_factoryMap.at(type)->instantiate(stream, shouldReplicate);
+	return s_factoryMap.at(type)->instantiate(stream, replicate);
 }
 
-bool Entity::serializeFull(Entity* entity, ReadStream& stream, bool skipType)
+bool Entity::serializeFull(Entity* entity, ReadStream& stream, bool includeType)
 {
-	if (!skipType)
+	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
-		stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
+		int32_t readType = INDEX_NONE;
+		stream.serializeInt(readType, 0, s_numEntityTypes);
+		ensure(readType == intType);
 	}
 	return s_factoryMap.at(entity->getType())->serializeFull(entity, stream);
 }
 
-bool Entity::serializeFull(Entity* entity, WriteStream& stream, bool skipType)
+bool Entity::serializeFull(Entity* entity, WriteStream& stream, bool includeType)
 {
-	if (!skipType)
+	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
-		stream.serializeInt(intType, 0, (int32_t)EntityType::COUNT);
+		stream.serializeInt(intType, 0, s_numEntityTypes);
 	}
 	return s_factoryMap.at(entity->getType())->serializeFull(entity, stream);
 }
@@ -175,16 +168,16 @@ int32_t Entity::getNetworkID() const
 	return m_networkID;
 }
 
+DEBUG_ONLY(uint32_t Entity::getID() const
+{
+	return m_id;
+})
+
 void Entity::startContact(Entity* other)
 {
-	LOG_DEBUG("Entity::startContact");
 }
 
 void Entity::endContact(Entity* other)
-{
-}
-
-Entity::~Entity()
 {
 }
 
@@ -197,14 +190,3 @@ Transform& Entity::getTransform()
 {
 	return m_transform;
 }
-
-//==============================================================================
-
-//EntityFactory::EntityFactory()
-//{
-//}
-//
-//void EntityFactory::registerFactory(EntityType type, EntityFactory* factory)
-//{
-//	s_factoryMap.insert(std::make_pair(type, factory));
-//}

@@ -9,7 +9,7 @@
 //using namespace physics;
 extern b2World g_boxWorld;
 
-extern Vector2 toglm(const b2Vec2& a);
+extern Vector2 toVector2(const b2Vec2& a);
 extern b2Vec2  tob2(const Vector2& a);
 
 

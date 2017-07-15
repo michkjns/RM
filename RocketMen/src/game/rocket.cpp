@@ -2,6 +2,7 @@
 #include <game/rocket.h>
 
 #include <bitstream.h>
+#include <core/debug.h>
 #include <network.h>
 #include <physics.h>
 

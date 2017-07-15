@@ -1,5 +1,6 @@
 
-#include <includes.h>
+#include <common.h>
+
 #include <core/input.h>
 #include <core/resource_manager.h>
 #include <game/character.h>
@@ -14,37 +15,37 @@ using namespace rm;
 
 bool RocketMenGame::initialize()
 {
+	Game::initialize();
+
+	const char* defaultMapName = "testmap";
+
 	ResourceManager::loadTexture("data/textures/square.png", "demoTexture", 
 	                             Texture::BlendMode::MODE_OPAQUE);
 
 	ResourceManager::loadTexture("data/textures/tilesheet.png", "tilesheet",
 	                             Texture::BlendMode::MODE_OPAQUE);
 
-	ResourceManager::loadTilemap("data/testmap.16x16.csv", "tilesheet", "testmap");
-
-	setTimestep(33333ULL / 2);
+	ResourceManager::loadTilemap("data/testmap.16x16.csv", "tilesheet", defaultMapName);
+	Physics::loadCollisionFromTilemap(defaultMapName);
 
 	const int32_t pixelsPerMeter = 16;
-	Physics::generateWorld("testmap");
 
-	if (Renderer::get() != nullptr)
+	if (Renderer* renderer = Renderer::get())
 	{
 		Camera::mainCamera = new Camera(graphics::ProjectionMode::ORTOGRAPHIC_PROJECTION,
-		                                Renderer::get()->getScreenSize().x,
-		                                Renderer::get()->getScreenSize().y,
+			                            static_cast<float>(renderer->getScreenSize().x),
+			                            static_cast<float>(renderer->getScreenSize().y),
 		                                pixelsPerMeter);
-		Camera::mainCamera->setScale(Vector3(2.f));
 
+		Camera::mainCamera->setScale(Vector3(2.f));
 	}
 
 	if (Network::isClient())
 	{
 		Input::mapAction("Fire", MouseButton::MOUSE_LEFT);
-		Network::setLocalPlayers(1);
+		assert(Network::addLocalPlayer(0));
 	}
 
-	//CharacterFactory::initialize();
-	//RocketFactory::initialize();
 	EntityFactory<Character>::initialize();
 	EntityFactory<Rocket>::initialize();
 
@@ -85,7 +86,7 @@ void RocketMenGame::update(const Time& time)
 
 void RocketMenGame::terminate()
 {
-	delete Camera::mainCamera;
+	if(Camera::mainCamera) delete Camera::mainCamera;
 }
 
 void RocketMenGame::onPlayerJoin()
@@ -95,5 +96,5 @@ void RocketMenGame::onPlayerJoin()
 	character->getTransform().setLocalPosition( Vector2(-3.f, 3.f));
 	character->setSprite("demoTexture");
 	
-	character->initialize(true);
+	character->initialize();
 }

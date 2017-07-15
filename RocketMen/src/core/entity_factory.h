@@ -1,7 +1,10 @@
 
 #pragma once
 
-#include <core/entity.h>
+#include <bitstream.h>
+#include <core/entity_type.h>
+
+class Entity;
 
 class IEntityFactory
 {
@@ -30,7 +33,8 @@ public:
 		Entity::registerFactory(dynamic_cast<IEntityFactory*>(&s_factory));
 	}
 
-	EntityType getType() override {
+	EntityType getType() override 
+	{
 		return T::getTypeStatic();
 	}
 

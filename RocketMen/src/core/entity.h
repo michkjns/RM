@@ -1,34 +1,26 @@
 
 #pragma once
 
-#include <includes.h>
 #include <bitstream.h>
+#include <common.h>
+#include <core/entity_type.h>
 #include <core/transform.h>
 
 #include <functional>
 #include <vector>
 
-#define DefineEntityType(x) \
-static const EntityType s_type = x; \
-static EntityType getTypeStatic() { return s_type; }; \
-virtual EntityType getType() override { return s_type; };
+#define DEFINE_ENTITY_TYPE(x) \
+	static const EntityType s_type = x; \
+	static EntityType getTypeStatic() { return s_type; }; \
+	virtual EntityType getType() override { return s_type; };
 
-class Rigidbody;
 
 static const int32_t  s_maxSpawnPredictedEntities = 8;
 static const uint32_t s_maxNetworkedEntities = 256;
+static const int32_t s_numEntityTypes = 
+	static_cast<int32_t>(EntityType::NUM_ENTITY_TYPES);
 
 //==============================================================================
-
-enum class EntityType : int16_t
-{
-	Entity = 0,
-	Character,
-	Rocket,
-
-	COUNT
-};
-class IEntityFactory;
 
 class Entity
 {
@@ -36,17 +28,19 @@ public:
 	static const EntityType s_type = EntityType::Entity;
 
 	static Entity* instantiate(ReadStream& stream, 
-                               bool shouldReplicate = false);
-	static bool    serializeFull(Entity* entity, ReadStream& stream, 
-                                 bool skipType = false);
-	static bool    serializeFull(Entity* entity, WriteStream& stream,
-                                 bool skipType = false);
-	static bool    serialize(Entity* entity, WriteStream& stream);
-	static bool    serialize(Entity* entity, ReadStream& stream);
+		                       bool shouldReplicate = false);
+	static bool serializeFull(Entity* entity, ReadStream& stream, 
+                              bool includeType = true);
+
+	static bool serializeFull(Entity* entity, WriteStream& stream,
+                              bool includeType = true);
+
+	static bool serialize(Entity* entity, WriteStream& stream);
+	static bool serialize(Entity* entity, ReadStream& stream);
 
 	static void flushEntities();
 	static void killEntities();
-	static void registerFactory(IEntityFactory* factory);
+	static void registerFactory(class IEntityFactory* factory);
 	static EntityType getTypeStatic() { return s_type; };
 	static std::vector<Entity*>& getList();
 
@@ -73,6 +67,10 @@ public:
 
 	virtual void startContact(Entity* other);
 	virtual void endContact(Entity* other);
+
+	DEBUG_ONLY(
+		uint32_t getID() const;
+	)
 
 protected:
 	bool        m_isInitialized;

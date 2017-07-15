@@ -77,7 +77,7 @@ bool Character::serializeFull(Stream& stream)
 		sprLength = int32_t(m_sprite.length());
 	}
 
-	serializeInt(stream, m_networkID, -32, 128);
+	serializeInt(stream, m_networkID, -s_maxSpawnPredictedEntities - 1, s_maxNetworkedEntities);
 	
 	serializeInt(stream, sprLength, 0, 32);
 	

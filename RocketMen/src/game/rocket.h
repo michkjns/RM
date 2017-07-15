@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <core/entity.h>
 #include <core/entity_factory.h>
 
 namespace rm
@@ -16,7 +17,7 @@ namespace rm
 	class Rocket : public Entity
 	{
 	public:
-		DefineEntityType(EntityType::Rocket);
+		DEFINE_ENTITY_TYPE(EntityType::Rocket);
 
 	public:
 		Rocket();

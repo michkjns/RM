@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include <includes.h>
+#include <common.h>
 
 #include <algorithm>
-#include <cstdint>
 #include <memory>
 
 class WriteStream
@@ -19,14 +18,21 @@ public:
 	static const bool isReading = false;
 	static const bool isWriting = true;
 
+	WriteStream(size_t size);
+	~WriteStream();
+
 	void flush(bool increment);
 	void serializeBits(uint32_t value, uint32_t numBits);
 	void serializeBool(bool& value);
 	void serializeInt(int32_t& value, int32_t min, int32_t max);
 	void serializeByte(const uint8_t byte);
 	void serializeData(const uint8_t* data, int32_t dataLength);
-	int32_t getLength() { return (m_wordIndex + 1) * 4; }
+	uint32_t* getBuffer() const;
 
+	/** @return length in bytes */
+	size_t getLength() const;
+
+private:
 	uint64_t  m_scratch;
 	int32_t   m_scratchBits;
 	int32_t   m_wordIndex;
@@ -34,7 +40,7 @@ public:
 	int32_t   m_bufferLength;
 	bool      m_isFull;
 	
-OnDebug(
+DEBUG_ONLY(
 	int32_t m_bitsWritten
 );
 
@@ -46,13 +52,18 @@ public:
 	static const bool isReading = true;
 	static const bool isWriting = false;
 
+	ReadStream(size_t size);
+	~ReadStream();
+
 	void flush(bool = false);
 	void serializeBits(uint32_t& value, uint32_t numBits);
 	void serializeBool(bool& dest);
 	void serializeInt(int32_t& dest, int32_t min, int32_t max);
 	void serializeByte(uint8_t& dest);
 	void serializeData(uint8_t* dest, int32_t length);
+	uint32_t* getBuffer() const;
 
+private:
 	uint64_t  m_scratch;
 	int32_t   m_scratchBits;
 	int32_t   m_numBitsRead;
@@ -60,7 +71,7 @@ public:
 	int32_t   m_bufferLength;
 	uint32_t* m_buffer;
 	bool      m_corrupted;
-OnDebug(
+DEBUG_ONLY(
 	int32_t m_bitsRead;
 );
 

@@ -57,7 +57,7 @@ IncomingMessage Packet::readMessage()
 		msg.isOrdered = true;
 	}
 
-	memcpy(&msg.sequenceNr, m_data + m_read, sizeof(int32_t));
+	memcpy(&msg.sequence, m_data + m_read, sizeof(int32_t));
 	m_read += sizeof(int32_t);
 
 	int32_t dataSize;
@@ -66,15 +66,8 @@ IncomingMessage Packet::readMessage()
 
 	if (dataSize > 0)
 	{
-		msg.data.writeData(reinterpret_cast<char*>(m_data + m_read),
-							dataSize);
+		msg.data.writeData(reinterpret_cast<char*>(m_data + m_read), dataSize);
 		m_read += dataSize;
-	}
-
-	if (msg.sequenceNr < 0)
-	{
-		msg.sequenceNr = -msg.sequenceNr;
-		msg.isReliable = true;
 	}
 
 	return msg;

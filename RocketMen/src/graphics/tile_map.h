@@ -1,11 +1,7 @@
 
 #pragma once
 
-#include <string>
-
-//namespace graphics {
-	class Texture;
-//};
+#include <common.h>
 
 class TileMap
 {

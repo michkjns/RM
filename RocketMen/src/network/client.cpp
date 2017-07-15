@@ -6,18 +6,27 @@
 #include <core/game.h>
 #include <core/input.h>
 #include <core/debug.h>
-#include <network/server.h>
 #include <game_time.h>
-#include <network/address.h>
 #include <network.h>
-
-#include <algorithm>
-#include <assert.h>
+#include <network/address.h>
+#include <network/server.h>
+#include <utility.h>
 
 using namespace network;
 
 static const uint32_t s_maxConnectionAttempts = 3;
 static const uint32_t s_connectionRetryTime   = 5;
+
+static const int32_t s_firstTempNetworkID = -2; // Reserve -1 for INDEX_NONE
+static int32_t s_nextTempNetworkID = s_firstTempNetworkID;
+
+void my_itoa(int value, std::string& buf, int base) {
+
+	int i = 30;
+	buf = "";
+	for (; value && i; --i, value /= base) buf = "0123456789abcdef"[value % base] + buf;
+}
+
 //==============================================================================
 
 Client::Client(Time& time, Game* game) :
@@ -25,12 +34,14 @@ Client::Client(Time& time, Game* game) :
 	m_game(game),
 	m_lastReceivedState(0),
 	m_lastOrderedMessaged(0),
-	m_state(State::STATE_DISCONNECTED),
+	m_state(State::DISCONNECTED),
 	m_stateTimer(0.0f),
 	m_messageSentTime(0.0f),
-	m_maxMessageSentTime(0.02f),
+	m_maxMessageSentTime(0.05f),
 	m_connectionAttempt(0),
-	m_isInitialized(false)
+	m_isInitialized(false),
+	m_numLocalPlayers(0),
+	m_sequenceCounter(0)
 {
 	clearSession();
 }
@@ -42,6 +53,8 @@ Client::~Client()
 bool Client::initialize()
 {
 	clearSession();
+	clearLocalPlayers();
+
 	m_isInitialized = true;
 	return true;
 }
@@ -51,15 +64,55 @@ bool Client::isInitialized() const
 	return m_isInitialized;
 }
 
-void Client::clearSession()
+void Client::update()
 {
-	m_session.isActive        = false;
-	m_session.sequenceCounter = 0;
-	m_session.pendingMessages = 0;
-	
-	m_recentlyProcessed.fill(-1);
-	m_recentlyDestroyedEntities.fill(-1);
-	m_recentlyPredictedSpawns.fill(0);
+	const float deltaTime = m_gameTime.getDeltaSeconds();
+
+	if (m_state != State::DISCONNECTED)
+	{
+		processIncomingMessages(deltaTime);
+	}
+
+	processOutgoingMessages(deltaTime);
+
+	m_stateTimer += deltaTime;
+
+	switch (m_state)
+	{
+		case State::CONNECTING:
+		{
+			if (!m_networkInterface.isConnecting())
+			{
+				setState(State::DISCONNECTED);
+				break;
+			}
+
+			if (static_cast<uint32_t>(m_stateTimer) >= m_connectionAttempt 
+				* s_connectionRetryTime)
+			{
+				if (m_connectionAttempt < s_maxConnectionAttempts)
+				{
+					connect(m_session.serverAddress);
+				}
+				else
+				{
+					LOG_INFO("Connecting to %s timed out after %i attempts\n",
+							 m_session.serverAddress.toString().c_str(), 
+							 m_connectionAttempt);
+					m_connectionAttempt = 0;
+					m_session.serverAddress = Address();
+					setState(State::DISCONNECTED);
+					clearSession();
+				}
+			}
+			break;
+		}
+		case State::CONNECTED:
+		case State::DISCONNECTING:
+		case State::DISCONNECTED:
+			break;
+
+	}
 }
 
 void Client::fixedUpdate(ActionBuffer& actions)
@@ -91,62 +144,28 @@ void Client::fixedUpdate(ActionBuffer& actions)
 	//queueMessage(msg);
 }
 
-void Client::update()
-{
-	const float deltaTime = m_gameTime.getDeltaSeconds();
-
-	processIncomingMessages(deltaTime);
-	processOutgoingMessages(deltaTime);
-
-	m_stateTimer += deltaTime;
-
-	switch (m_state)
-	{
-		case State::STATE_CONNECTING:
-		{
-			if (!m_networkInterface.isConnecting())
-			{
-				setState(State::STATE_DISCONNECTED);
-				break;
-			}
-
-			if (static_cast<uint32_t>(m_stateTimer) >= m_connectionAttempt 
-				* s_connectionRetryTime)
-			{
-				if (m_connectionAttempt < s_maxConnectionAttempts)
-				{
-					connect(m_session.serverAddress);
-				}
-				else
-				{
-					LOG_INFO("Connecting to %s timed out after %i attempts\n",
-							 m_session.serverAddress.toString().c_str(), 
-							 m_connectionAttempt);
-					m_connectionAttempt = 0;
-					m_session.serverAddress = Address();
-					setState(State::STATE_DISCONNECTED);
-					clearSession();
-				}
-			}
-			break;
-		}
-		default: break;
-	}
-}
-
 void Client::connect(const Address& address)
 {
 	m_connectionAttempt++;
-	LOG_INFO("Client: Attempting to connect to %s, attempt %i", 
-	         address.toString().c_str(),
-	         m_connectionAttempt);
+	LOG_DEBUG("Client: Connecting.., attempt %i",
+	          m_connectionAttempt);
 
 	m_session.serverAddress = address;
-	m_networkInterface.connect(address, m_gameTime);
 
-	if (m_state != State::STATE_CONNECTING)
+	NetworkMessage message = {};
+	message.type = MessageType::ClientConnectRequest;
+	message.data.writeInt32(rand());
+
+	Packet* packet = new Packet;
+	packet->header = {};
+	packet->writeMessage(message);
+	m_networkInterface.connect(address, m_gameTime);
+	m_networkInterface.sendPacket(address, packet);
+	delete packet;	
+
+	if (m_state != State::CONNECTING)
 	{
-		setState(State::STATE_CONNECTING);
+		setState(State::CONNECTING);
 	}
 }
 
@@ -154,70 +173,85 @@ void Client::queueMessage(const NetworkMessage& message)
 {
 	for (NetworkMessage& msg : m_session.messageBuffer)
 	{
-		if (msg.type == MessageType::MESSAGE_CLEAR)
+		if (msg.type == MessageType::Clear)
 		{
 			msg.type       = message.type;
 			msg.data.reset();
 			msg.data.writeBuffer(message.data.getBuffer(), message.data.getLength());
 			msg.isReliable = message.isReliable;
-			msg.sequenceNr = ++m_session.sequenceCounter;
 			m_session.pendingMessages++;
-			return;
+			break;
 		}
 	}
 
-	LOG_WARNING("Message Queue is full! Message discarded.");
+	if (message.isReliable)
+	{
+		for (NetworkMessage& msg : m_session.reliableBuffer)
+		{
+			if (msg.type == MessageType::Clear)
+			{
+				msg.type = message.type;
+				msg.data.reset();
+				msg.data.writeBuffer(message.data.getBuffer(), message.data.getLength());
+				msg.isReliable = message.isReliable;
+				msg.timeOfCreation = m_gameTime.getSeconds();
+				m_session.pendingMessages++;
+				break;
+			}
+		}
+	}
 }
 
-void Client::setLocalPlayers(uint32_t numPlayers)
+void Client::clearLocalPlayers()
 {
-	m_localPlayers = {};
-
-	for (uint32_t i = 0; i < numPlayers; i++)
+	for (LocalPlayer& localPlayer : m_localPlayers)
 	{
-		m_localPlayers[i].isUsed       = true;
-		m_localPlayers[i].controllerID = i;
-		m_localPlayers[i].playerID     = -1;
+		localPlayer.controllerID = INDEX_NONE;
+		localPlayer.playerID     = INDEX_NONE;
 	}
+}
+
+bool Client::addLocalPlayer(int32_t controllerID)
+{
+	if (m_numLocalPlayers < s_maxPlayersPerClient)
+	{
+		m_localPlayers[m_numLocalPlayers++].controllerID = controllerID;
+		return true;
+	}
+
+	return false;
 }
 
 bool Client::requestEntity(Entity* entity)
 {
-	const int32_t tempID = entity->getNetworkID();
+	const int32_t tempID = requestTempNetworkID();
+	entity->setNetworkID(tempID);
 
-	if (m_recentlyPredictedSpawns.contains(tempID))
-		return false; // Too many requests!
+	if (m_recentlyPredictedSpawns.contains(tempID) == false)
+	{
+		m_recentlyPredictedSpawns.insert(tempID);
 
-	m_recentlyPredictedSpawns.insert(tempID);
+		NetworkMessage msg = {};
+		msg.type           = MessageType::RequestEntity;
+		msg.isOrdered      = true;
+		msg.isReliable     = true;
 
-	NetworkMessage msg = {};
-	msg.type           = MessageType::ENTITY_REQUEST;
-	msg.isOrdered      = true;
-	msg.isReliable     = true;
+		msg.data.writeInt16(tempID);
 
-	msg.data.writeInt16(tempID);
+		WriteStream ws(128);
+		Entity::serializeFull(entity, ws);
+		msg.data.writeData((char*)ws.getBuffer(), ws.getLength());
+	
+		queueMessage(msg);
+		return true;
+	}
 
-	WriteStream ws = {};
-	ws.m_buffer = new uint32_t[128];
-	ws.m_bufferLength = 128;
-
-	Entity::serializeFull(entity, ws);
-	msg.data.writeData((char*)ws.m_buffer, ws.getLength());
-	delete[] ws.m_buffer;
-
-	queueMessage(msg);
-	return true;
+	return false;
 }
 
 uint32_t Client::getNumLocalPlayers() const
 {
-	uint32_t count = 0;
-	for (auto player : m_localPlayers)
-	{
-		if (player.isUsed) count++;
-	}
-
-	return count;
+	return m_numLocalPlayers;
 }
 
 bool Client::isLocalPlayer(int32_t playerID) const
@@ -233,24 +267,25 @@ bool Client::isLocalPlayer(int32_t playerID) const
 
 void Client::onHandshake(IncomingMessage& msg)
 {
-	if (m_state != State::STATE_CONNECTING)
+	if (!ensure(m_state == State::CONNECTING))
 		return;
+
 	LOG_INFO("Client: Received handshake from the server! I have received ID ");
 	//========================
 	
 	// Read my ID
 	int32_t myID = msg.data.readInt32();
 	LOG_INFO("%d\n", myID);
-	setState(State::STATE_CONNECTED);
+	setState(State::CONNECTED);
 
 	if (Network::isServer())
 	{
-		Network::getLocalServer()->registerLocalClient(myID);
+		Network::getLocalServer()->registerLocalClientID(myID);
 	}
 
 	// Introduce Players
 	NetworkMessage outMessage = {};
-	outMessage.type = MessageType::PLAYER_INTRO;
+	outMessage.type = MessageType::IntroducePlayer;
 	outMessage.data.writeInt32(getNumLocalPlayers());
 	outMessage.isReliable = true;
 	
@@ -262,15 +297,21 @@ void Client::onHandshake(IncomingMessage& msg)
 	queueMessage(outMessage);
 }
 
-void Client::onAckMessage(const IncomingMessage& msg)
+void Client::onAckMessage(IncomingMessage& ackMessage)
 {
+	const int32_t remoteSequence = ackMessage.sequence;
+	const int32_t ackSeq = ackMessage.data.readInt32();
+	const int32_t ackList = ackMessage.data.readInt32();
 }
 
-void Client::onPlayerAccepted(IncomingMessage& msg)
+void Client::onAcceptPlayer(IncomingMessage& msg)
 {
-	if (m_localPlayers[0].playerID >= 0)
-		return; // Player ID already set, dismiss duplicate packet
-
+	if (m_localPlayers[0].playerID < 0 == false)
+	{
+		ensure(false);
+		return;
+	}
+	
 	for (uint32_t i = 0; i < getNumLocalPlayers(); i++)
 	{
 		m_localPlayers[i].playerID = msg.data.readInt32();
@@ -280,20 +321,16 @@ void Client::onPlayerAccepted(IncomingMessage& msg)
 
 void Client::onSpawnEntity(IncomingMessage& msg)
 {
-	LOG_INFO("onSpawnEntity");
+	ReadStream readStream(static_cast<int32_t>(msg.data.getLength()));
+	msg.data.readBytes((char*)readStream.getBuffer(), msg.data.getLength() - msg.data.getReadTotalBytes());
 
-	ReadStream rs = {};
-	rs.m_buffer = new uint32_t[msg.data.getLength()];
-	rs.m_bufferLength = int32_t(msg.data.getLength());
-	msg.data.readBytes((char*)rs.m_buffer, 
-                        msg.data.getLength() - msg.data.getReadTotalBytes());
-
-	Entity::instantiate(rs);
-
-	delete[] rs.m_buffer;
+	Entity* entity = Entity::instantiate(readStream);
+	DEBUG_ONLY(
+		LOG_DEBUG("Client: Spawned entity ID: %d netID: %d", entity->getID(), entity->getNetworkID());
+	)
 }
 
-void Client::onApproveEntity(IncomingMessage& msg)
+void Client::onAcceptEntity(IncomingMessage& msg)
 {
 	int32_t localID  = msg.data.readInt32();
 	int32_t remoteID = msg.data.readInt32();
@@ -305,35 +342,27 @@ void Client::onApproveEntity(IncomingMessage& msg)
 		m_recentlyPredictedSpawns[index] = 0;
 	}
 
-
-	for (auto& _entity : Entity::getList())
+	auto entities = Entity::getList();
+	if (Entity* entity = findPtrByPredicate(entities.begin(), entities.end(),
+		[localID](Entity* it) { return it->getNetworkID() == localID; } ))
 	{
-		if (_entity->getNetworkID() == localID)
+		if (m_recentlyDestroyedEntities.contains(remoteID))
 		{
-			entity = _entity;
-			break;
+			entity->kill();
+			return;
 		}
-	}
 
-	if (entity == nullptr)
+		entity->setNetworkID(remoteID);
+	}
+	else
 	{
-		LOG_DEBUG("Error, unknown netID (%i)", localID);
-		return;
+		LOG_DEBUG("Client::onAcceptEntity: Unknown netID (%i)", localID);
 	}
-
-	if (m_recentlyDestroyedEntities.contains(remoteID))
-	{
-		entity->kill();
-		return;
-	}
-
-	entity->setNetworkID(remoteID);
 }
 
 void Client::onDestroyEntity(IncomingMessage& msg)
 {
 	int32_t networkID = msg.data.readInt32();
-	//LOG_INFO("onDestroyEntity (%d)", networkID);
 
 	if (networkID < -s_maxSpawnPredictedEntities
 		|| networkID > s_maxNetworkedEntities)
@@ -357,29 +386,24 @@ void Client::onDestroyEntity(IncomingMessage& msg)
 void Client::onGameState(IncomingMessage& msg)
 {
 	std::vector<Entity*>& entityList = Entity::getList();
-	ReadStream rs = {};
-	rs.m_bufferLength = 256;
-	rs.m_buffer = new uint32_t[256];
-	msg.data.readBytes((char*)rs.m_buffer, 
-                        msg.data.getLength() - msg.data.getReadTotalBytes());
+	ReadStream readStream(512);
 
-	for (int32_t netID = 0; netID < s_maxNetworkedEntities; netID++)
+	msg.data.readBytes((char*)readStream.getBuffer(),
+        msg.data.getLength() - msg.data.getReadTotalBytes());
+
+	for (uint32_t netID = 0; netID < s_maxNetworkedEntities; netID++)
 	{
-		bool written = false;
-		serializeBit(rs, written);
-		if (written)
+		bool readEntityData = false;
+		serializeBit(readStream, readEntityData);
+		if (readEntityData)
 		{
-			for (auto& entity : entityList)
+			if (Entity* netEntity = findPtrByPredicate(entityList.begin(), entityList.end(), 
+				[netID](Entity* entity) -> bool { return entity->getNetworkID() == netID; }))
 			{
-				if (entity->getNetworkID() == netID)
-				{
-					Entity::serialize(entity, rs);
-				}
+				Entity::serialize(netEntity, readStream);
 			}
 		}
 	}
-
-	delete[] rs.m_buffer;
 }
 
 void Client::processIncomingMessages(float deltaTime)
@@ -394,22 +418,22 @@ void Client::processIncomingMessages(float deltaTime)
 	if (orderedMessages.size() >= 2048)
 	{
 		LOG_WARNING("Client: orderedMessages is very big!");
-		__debugbreak();
+		ensure(false);
 	}
 
 	if (unorderedMessages.size() >= 2048)
 	{
 		LOG_WARNING("Client: unorderedMessages is very big!");
-		__debugbreak();
+		ensure(false);
 	}
 
 	// Process ordered queue
 	while (!orderedMessages.empty())
 	{
 		IncomingMessage& incomingMessage = orderedMessages.front();
-		if (incomingMessage.sequenceNr > (int32_t)m_lastOrderedMessaged)
+		if (incomingMessage.sequence > (int32_t)m_lastOrderedMessaged)
 		{
-			m_lastOrderedMessaged = incomingMessage.sequenceNr;
+			m_lastOrderedMessaged = incomingMessage.sequence;
 			processMessage(incomingMessage);
 		}
 		orderedMessages.pop();
@@ -428,6 +452,22 @@ void Client::processOutgoingMessages(float deltaTime)
 {
 	m_messageSentTime += deltaTime;
 
+	const float currentTime = m_gameTime.getSeconds();
+
+	/* Requeue reliable messages older than 1.0s */
+	for (NetworkMessage& msg : m_session.reliableBuffer)
+	{
+		if (msg.type == MessageType::Clear)
+			continue;
+
+		if (currentTime - msg.timeOfCreation >= 1.0f)
+		{
+			//queueMessage(msg); 
+			msg.type = MessageType::Clear;
+		}
+	}
+
+	/** Send all queued messages */
 	if (m_messageSentTime >= m_maxMessageSentTime)
 	{
 		sendMessages();
@@ -436,71 +476,75 @@ void Client::processOutgoingMessages(float deltaTime)
 
 void Client::processMessage(IncomingMessage& msg)
 {
-	static int32_t index = 0;
-
 	// Disregard duplicate messages
-	if (m_recentlyProcessed.contains(msg.sequenceNr))
+	if (m_recentlyProcessed.contains(msg.sequence))
 	{
 		return;
 	}
 
+	m_recentlyProcessed.insert(msg.sequence);
+
 	switch (msg.type)
 	{
 		/** Server to client */
-		case MessageType::SERVER_GAMESTATE:
+		case MessageType::Gamestate:
 		{
-			if (msg.sequenceNr <= m_lastReceivedState)
+			if (msg.sequence <= m_lastReceivedState)
 			{// discard packet
 				break;
 			}
 			else
 			{
-				m_lastReceivedState = msg.sequenceNr;
+				m_lastReceivedState = msg.sequence;
 				onGameState(msg);
 			}
 			break;
 		}
-		case MessageType::SPAWN_ENTITY:
+		case MessageType::SpawnEntity:
 		{
 			onSpawnEntity(msg);
 			break;
 		}
-		case MessageType::APPROVE_ENTITY:
+		case MessageType::AcceptEntity:
 		{
-			onApproveEntity(msg);
+			onAcceptEntity(msg);
 			break;
 		}
-		case MessageType::DESTROY_ENTITY:
+		case MessageType::DestroyEntity:
 		{
 			onDestroyEntity(msg);
 			break;
 		}
+		case MessageType::Ack:
+		{
+			onAckMessage(msg);
+			break;
+		}
 		/** Connection */
-		case MessageType::CLIENT_CONNECT_ACCEPT:
+		case MessageType::AcceptClient:
 		{
 			onHandshake(msg);
 			break;
 		}
-		case MessageType::PLAYER_JOIN_ACCEPT:
+		case MessageType::AcceptPlayer:
 		{
-			onPlayerAccepted(msg);
-			break;
-		}
-		case MessageType::CLIENT_DISCONNECT:
-		{
+			onAcceptPlayer(msg);
 			break;
 		}
 
-		default: break;
+		case MessageType::RequestEntity:
+		case MessageType::IntroducePlayer:
+		case MessageType::PlayerInput:
+		case MessageType::Clear:
+		case MessageType::Ping:
+		case MessageType::ClientConnectRequest:
+		case MessageType::ClientDisconnect:
+		case MessageType::GameEvent:
+		case MessageType::NUM_MESSAGE_TYPES:
+		{
+			break;
+		}
 	}
-
-	m_recentlyProcessed.insert(msg.sequenceNr);
-	
-	//if (msg.isReliable)
-	//{
-	////	LOG_DEBUG("Received reliable msg %i", msg.sequenceNr);
-	//	m_reliableAckList.push_back(msg.sequenceNr);
-	//}
 }
 
 void Client::sendInput()
@@ -509,17 +553,22 @@ void Client::sendInput()
 
 void Client::setState(State state)
 {
-	m_state = state;
-	m_stateTimer = 0.0f;
-
 	switch (state)
 	{
-		case State::STATE_DISCONNECTED:
+		case State::DISCONNECTED:
 		{
 			m_connectionAttempt = 0;
 		};
-		default: break;
+		case State::CONNECTED:
+		case State::CONNECTING:
+		case State::DISCONNECTING:
+		{
+			break;
+		}
 	}
+
+	m_state = state;
+	m_stateTimer = 0.0f;
 }
 
 void Client::sendMessages()
@@ -528,21 +577,58 @@ void Client::sendMessages()
 
 	if (m_session.pendingMessages > 60)
 	{
-		LOG_WARNING("Client: pendingMessages is very big!");
+		LOG_DEBUG("Client: Warning: pendingMessages is very big");
 	}
 	
 	for (NetworkMessage& msg : m_session.messageBuffer)
 	{
-		if (msg.type == MessageType::MESSAGE_CLEAR) continue;
+		if (msg.type == MessageType::Clear) continue;
 		messages.push_back(msg);
-		msg.type = MessageType::MESSAGE_CLEAR;
+		msg.type = MessageType::Clear;
 	}
-	if (!messages.empty())
+
+	if (messages.empty() && m_state == State::CONNECTED)
 	{
-		m_networkInterface.sendMessages(m_session.serverAddress, messages);
+		NetworkMessage msg = {};
+		msg.type = MessageType::Ping;
+		messages.push_back(msg);
 	}
+
+	Packet* packet = new Packet;
+	packet->header = {};
+	packet->header.sequence = m_sequenceCounter++;
+
+	for (auto& msg : messages)
+	{
+		packet->writeMessage(msg);
+	}
+	
+	m_networkInterface.sendPacket(m_session.serverAddress, packet);
+	delete packet;
+	
 	messages.clear();
 	m_session.pendingMessages = 0;
 }
 
+void Client::clearSession()
+{
+	m_session.isActive = false;
+	m_session.sequenceCounter = 0;
+	m_session.pendingMessages = 0;
+	m_session.pendingReliable = 0;
 
+	m_recentlyProcessed.fill(INDEX_NONE);
+	m_recentlyDestroyedEntities.fill(INDEX_NONE);
+	m_recentlyPredictedSpawns.fill(0);
+}
+
+int32_t Client::requestTempNetworkID()
+{
+	int32_t tempNetworkID = s_nextTempNetworkID--;
+	if (s_nextTempNetworkID <= -s_maxSpawnPredictedEntities - 1)
+	{
+		s_nextTempNetworkID = s_firstTempNetworkID;
+	}
+
+	return tempNetworkID;
+}

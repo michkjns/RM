@@ -1,14 +1,14 @@
 
 #pragma once
 
-#include <includes.h>
+#include <common.h>
 #include <core/input.h>
 #include <game_time.h>
 
-static const uint32_t g_defaultWidth  = 640;
-static const uint32_t g_defaultHeight = 480;
-static const uint32_t g_defaultPort   = 4321;
-static const char*    g_localHost     = "127.0.0.1";
+static const Vector2i g_defaultResolution(640, 480);
+static const Vector2i g_defaultWindowSize = g_defaultResolution;
+static const uint32_t g_defaultPort = 4321;
+static const char*    g_localHost = "127.0.0.1";
 
 class Game;
 class Renderer;
@@ -33,14 +33,13 @@ private:
 	bool loadResources();
 	void drawDebug();
 
-	Game*		     m_game;
-	Renderer*	     m_renderer;
-	Window*          m_window;
+	class Game*		 m_game;
+	class Renderer*	 m_renderer;
+	class Window*    m_window;
 	network::Client* m_client;
 	network::Server* m_server;
 	Time             m_gameTime;
 	Input*           m_input;
-	Physics*         m_physics;
+	class Physics*   m_physics;
 	uint64_t         m_timestep;
-	bool             m_enableDebug;
 };

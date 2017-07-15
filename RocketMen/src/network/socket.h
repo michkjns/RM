@@ -41,8 +41,8 @@ namespace network
 	
 		enum class NetProtocol
 		{
-			PROTOCOL_UDP,
-			PROTOCOL_TCP
+			UDP,
+			TCP
 		};
 
 		static Socket* create(NetProtocol type);

@@ -1,6 +1,7 @@
 
-#include "includes.h"
 #include "texture.h"
+
+#include <core/debug.h>
 
 Texture* Texture::s_currentTexture = nullptr;
 

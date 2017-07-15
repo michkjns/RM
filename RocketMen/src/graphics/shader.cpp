@@ -1,14 +1,13 @@
 
-#include <includes.h>
 #include <graphics/shader.h>
 
+#include <core/debug.h>
 #include <graphics/check_gl_error.h>
 
-#include <assert.h>
-#include <iostream>
-#include <fstream>
-
 #include <GLFW/glfw3.h>
+
+#include <fstream>
+#include <iostream>
 
 Shader* Shader::s_currentShader = nullptr;
 
@@ -18,18 +17,6 @@ void Shader::unbindShader()
 	glUseProgram(0);
 }
 
-Shader::Shader() :
-	m_isInitialized(false),
-	m_programID(0)
-{
-	m_shaders[0] = 0;
-	m_shaders[1] = 0;
-}
-
-Shader::~Shader()
-{
-}
-
 void Shader::use()
 {
 	if (!m_isInitialized)
@@ -37,10 +24,11 @@ void Shader::use()
 		LOG_ERROR("Shader::use() : This shader has not been sucessfully initialized!\n");
 		return;
 	}
+
 	if (s_currentShader != this)
 	{
 		s_currentShader = this;
-		glUseProgram(m_programID);
+		glUseProgram(m_glProgramID);
 	}
 }
 
@@ -64,23 +52,23 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 		const GLchar* source[] = { sources[i].c_str() };
 
 		/* Create shader object. */
-		m_shaders[i] = glCreateShader((GLenum)type[i]);
+		m_glShader[i] = glCreateShader((GLenum)type[i]);
 
 		/* Load the shader source for the shader object. */
-		glShaderSource(m_shaders[i], 1, source, NULL);
+		glShaderSource(m_glShader[i], 1, source, NULL);
 
 		/* Compile the shader. */
-		glCompileShader(m_shaders[i]);
+		glCompileShader(m_glShader[i]);
 
 		/* Check for errors */
 		GLint compileStatus;
-		glGetShaderiv(m_shaders[i], GL_COMPILE_STATUS, &compileStatus);
+		glGetShaderiv(m_glShader[i], GL_COMPILE_STATUS, &compileStatus);
 		if (compileStatus != GL_TRUE)
 		{
 			GLint logLength;
-			glGetShaderiv(m_shaders[i], GL_INFO_LOG_LENGTH, &logLength);
+			glGetShaderiv(m_glShader[i], GL_INFO_LOG_LENGTH, &logLength);
 			GLchar* infoLog = new GLchar[logLength];
-			glGetShaderInfoLog(m_shaders[i], logLength, NULL, infoLog);
+			glGetShaderInfoLog(m_glShader[i], logLength, NULL, infoLog);
 			LOG_ERROR("Shader Compilation error: %s", infoLog);
 
 			std::cerr << infoLog << std::endl;
@@ -102,7 +90,7 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 	GLuint program = glCreateProgram();
 
 	/* Attach the appropriate shader objects. */
-	for (GLuint shader : m_shaders)
+	for (GLuint shader : m_glShader)
 	{
 		glAttachShader(program, shader);
 	}
@@ -127,11 +115,11 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 		return false;
 	}
 
-	m_programID = program;
+	m_glProgramID = program;
 
-	for (GLuint shader : m_shaders)
+	for (GLuint shader : m_glShader)
 	{
-		glDetachShader(m_programID, shader);
+		glDetachShader(m_glProgramID, shader);
 		glDeleteShader(shader);
 	}
 	checkGL();
@@ -146,41 +134,42 @@ void Shader::destroy()
 {
 	if (m_isInitialized)
 	{
-		glDeleteShader(m_shaders[0]);
-		glDeleteShader(m_shaders[1]);
+		glDeleteShader(m_glShader[0]);
+		glDeleteShader(m_glShader[1]);
 	}
+
 	m_isInitialized = false;
-	m_shaders[0] = 0;
-	m_shaders[1] = 0; 
+	m_glShader[0] = 0;
+	m_glShader[1] = 0; 
 }
 
-// TODO Prevent rewriting identical values
+// TODO Prevent overwriting identical values
 void Shader::setFloat(const char* name, float value)
 {
-	glUniform1f(glGetUniformLocation(m_programID, name), value);
+	glUniform1f(glGetUniformLocation(m_glProgramID, name), value);
 }
 
 void Shader::setInt(const char* name, int value)
 {
-	glUniform1i(glGetUniformLocation(m_programID, name), value);
+	glUniform1i(glGetUniformLocation(m_glProgramID, name), value);
 }
 
 void Shader::setVec2f(const char* name, const glm::vec2& vector)
 {
-	glUniform2f(glGetUniformLocation(m_programID, name), vector.x, vector.y);
+	glUniform2f(glGetUniformLocation(m_glProgramID, name), vector.x, vector.y);
 }
 
 void Shader::setVec3f(const char* name, const glm::vec3& vector)
 {
-	glUniform3f(glGetUniformLocation(m_programID, name), vector.x, vector.y, vector.z);
+	glUniform3f(glGetUniformLocation(m_glProgramID, name), vector.x, vector.y, vector.z);
 }
 
 void Shader::setVec4f(const char* name, const glm::vec4& vector)
 {
-	glUniform4f(glGetUniformLocation(m_programID, name), vector.x, vector.y, vector.z, vector.w);
+	glUniform4f(glGetUniformLocation(m_glProgramID, name), vector.x, vector.y, vector.z, vector.w);
 }
 
 void Shader::setMatrix4(const char* name, const glm::mat4& matrix)
 {
-	glUniformMatrix4fv(glGetUniformLocation(m_programID, name), 1, GL_FALSE, glm::value_ptr(matrix));
+	glUniformMatrix4fv(glGetUniformLocation(m_glProgramID, name), 1, GL_FALSE, glm::value_ptr(matrix));
 }

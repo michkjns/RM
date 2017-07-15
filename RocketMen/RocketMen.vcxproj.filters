@@ -144,12 +144,12 @@
     <ClCompile Include="src\core\entity_factory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitstream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\includes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\game_time.h">
@@ -276,6 +276,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\core\entity_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\entity_type.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

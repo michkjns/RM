@@ -1,21 +1,23 @@
 
 #pragma once
 
+#include <common.h>
+
 class Shader
 {
 public:
 	enum class EType
 	{
 		FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
-		VERTEX_SHADER = GL_VERTEX_SHADER,
+		VERTEX_SHADER   = GL_VERTEX_SHADER,
 	//	GEOMETRY_SHADER = GL_GEOMETRY_SHADER
 	};
 
 	static void unbindShader();
 
 public:
-	Shader();
-	~Shader();
+	Shader() { }
+	~Shader() = default;
 
 	void use();
 	bool isUsed() const;
@@ -23,8 +25,7 @@ public:
 	bool compile( const std::string& vertexShader, 
 				 const std::string& fragmentShader);
 
-	/** Clears the isInitialized flag,
-		to prevent from the destructor deleting
+	/** Clears the isInitialized flag, to prevent from the destructor deleting
 		the gl shaders. */
 	void destroy();
 
@@ -37,8 +38,8 @@ public:
 
 private:
 	bool m_isInitialized;
-	GLuint m_programID;
-	GLuint m_shaders[2];
+	GLuint m_glProgramID;
+	GLuint m_glShader[2];
 
 	static Shader* s_currentShader;
 

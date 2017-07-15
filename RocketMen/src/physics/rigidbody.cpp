@@ -10,7 +10,7 @@
 
 extern b2World g_boxWorld;
 
-extern Vector2 toglm(const b2Vec2& a);
+extern Vector2 toVector2(const b2Vec2& a);
 extern b2Vec2  tob2(const Vector2& a);
 
 Rigidbody::Rigidbody()
@@ -35,7 +35,7 @@ void Rigidbody::setPosition(const Vector2& position)
 
 Vector2 Rigidbody::getPosition() const
 {
-	return toglm(m_impl->GetPosition());
+	return toVector2(m_impl->GetPosition());
 }
 
 void Rigidbody::setAngle(float angle)
@@ -60,7 +60,7 @@ void Rigidbody::setLinearVelocity(Vector2& vel)
 
 Vector2 Rigidbody::getLinearVelocity() const
 {
-	return toglm(m_impl->GetLinearVelocity());
+	return toVector2(m_impl->GetLinearVelocity());
 }
 
 void Rigidbody::applyLinearImpulse(const Vector2& force, const Vector2& position)
@@ -70,7 +70,7 @@ void Rigidbody::applyLinearImpulse(const Vector2& force, const Vector2& position
 
 Vector2 Rigidbody::getWorldCenter() const
 {
-	return toglm(m_impl->GetWorldCenter());
+	return toVector2(m_impl->GetWorldCenter());
 }
 
 float Rigidbody::getMass() const

@@ -135,9 +135,12 @@ Vector3 Camera::getEulerAngles() const
 
 Vector2 Camera::screenToWorld(const Vector2& screenPoint)
 {
+	Renderer* renderer = Renderer::get();
+	assert(renderer);
+
 	const Vector2 ratio = Vector2(1.f / (m_pixelsPerMeter * m_scale.x),
 								  -1.f / (m_pixelsPerMeter * m_scale.y));
-	const Vector2 view = Renderer::get()->getScreenSize();
+	const Vector2i view = Renderer::get()->getScreenSize();
 	const Vector2 worldPos = Vector2(screenPoint.x * ratio.x - (view.x * ratio.x / 2.f),
 									 screenPoint.y * ratio.y - (view.y * ratio.y / 2.f))
 		 + Vector2(m_position.x, m_position.y) / 2.f;

@@ -14,8 +14,9 @@ namespace network
 	{
 		/** Number of messages in packet */
 		int32_t  messageCount;
-		uint32_t sequenceNumber;
-		uint32_t ack;
+		uint32_t sequence;
+		uint32_t ackSequence;
+		uint32_t ackBits;
 		uint16_t dataLength;
 		uint32_t hash;
 	};

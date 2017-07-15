@@ -100,7 +100,7 @@ bool Socket_impl::initialize(uint32_t port, bool isHost)
 		initializeWSA();
 	}
 
-	if (m_type == NetProtocol::PROTOCOL_UDP)
+	if (m_type == NetProtocol::UDP)
 	{
 		m_isInitialized = initializeUDP(port, isHost);
 	}
@@ -120,7 +120,7 @@ bool Socket_impl::isInitialized() const
 
 bool Socket_impl::send(const Address& adress, const void* buffer, size_t bufferLength)
 {
-	if (m_type == NetProtocol::PROTOCOL_UDP)
+	if (m_type == NetProtocol::UDP)
 	{
 		return sendUDP(adress, buffer, bufferLength);
 	}
@@ -159,7 +159,7 @@ bool Socket_impl::receive(Address& address, char* buffer, int32_t& length)
 {
 	assert(m_isInitialized);
 	
-	if (m_type == NetProtocol::PROTOCOL_UDP)
+	if (m_type == NetProtocol::UDP)
 	{
 		return receiveUDP(address, buffer, length);
 	}
@@ -222,7 +222,7 @@ bool Socket_impl::sendUDP(const Address& adress, const void* buffer, const size_
 
 	if (dataSent == SOCKET_ERROR)
 	{
-		LOG_ERROR("Send failed. Error Code : %d\n", WSAGetLastError());
+		LOG_ERROR("Socket: Send failed. Error Code : %d\n", WSAGetLastError());
 		__debugbreak();
 		return false;
 	}

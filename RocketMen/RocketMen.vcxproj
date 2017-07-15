@@ -152,6 +152,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\circular_buffer.cpp" />
+    <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\core\action_listener.cpp" />
     <ClCompile Include="src\core\entity_factory.cpp" />
     <ClCompile Include="src\game\character.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="src\circular_buffer.h" />
     <ClInclude Include="src\core\action_listener.h" />
     <ClInclude Include="src\core\entity_factory.h" />
+    <ClInclude Include="src\core\entity_type.h" />
     <ClInclude Include="src\game\character.h" />
     <ClInclude Include="src\core\action.h" />
     <ClInclude Include="src\core\action_buffer.h" />
@@ -216,7 +218,7 @@
     <ClInclude Include="src\core\core.h" />
     <ClInclude Include="src\core\debug.h" />
     <ClInclude Include="src\core\game.h" />
-    <ClInclude Include="src\includes.h" />
+    <ClInclude Include="src\common.h" />
     <ClInclude Include="src\network\address.h" />
     <ClInclude Include="src\crc\crc.h" />
     <ClInclude Include="src\network\network_interface.h" />

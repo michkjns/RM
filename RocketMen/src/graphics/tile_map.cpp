@@ -1,12 +1,9 @@
 
-#include <includes.h>
-
 #include <graphics/tile_map.h>
 
-#include <graphics/texture.h>
+#include <core/debug.h>
 #include <core/resource_manager.h>
-
-#include <assert.h>
+#include <graphics/texture.h>
 
 TileMap::TileMap() :
 	m_tileSheet(""),
@@ -32,7 +29,7 @@ bool TileMap::initialize(std::string tileSheet,
 {
 	if (map == nullptr || name == nullptr)
 	{
-		LOG_ERROR("TileMap::initialize: Invalid arguments.");
+       	LOG_ERROR("TileMap::initialize: Invalid arguments.");
 		assert(map != nullptr); assert(name != nullptr);
 		return false;
 	}

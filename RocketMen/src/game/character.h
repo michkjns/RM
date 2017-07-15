@@ -2,6 +2,7 @@
 #pragma once
 
 #include <core/action_listener.h>
+#include <core/entity.h>
 #include <core/entity_factory.h>
 
 namespace rm
@@ -9,7 +10,7 @@ namespace rm
 	class Character : public Entity
 	{
 	public:
-		DefineEntityType(EntityType::Character);
+		DEFINE_ENTITY_TYPE(EntityType::Character);
 
 	public:
 		Character();

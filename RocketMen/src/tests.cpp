@@ -78,129 +78,72 @@ bool streamTests()
 	packet2.value2  = 1234567;
 	packet2.vector3 = Vector2(0.545f, -0.1f);
 	packet2.vector4 = Vector2(0.001f, -5.01f);
-	WriteStream ws = {};
-	ReadStream  rs = {};
-
-	ws.m_buffer = new uint32_t[256];
-	ws.m_bufferLength = 256;
-
-	rs.m_buffer = new uint32_t[256];
-	rs.m_bufferLength = 256;
-
-
+	WriteStream writeStream(256);
+	ReadStream  readStream(256);
+	
 	packet.value = true;
-	packet.serialize(ws);
-	packet2.serialize(ws);
-	memcpy(rs.m_buffer, ws.m_buffer, ws.m_bufferLength);
+	packet.serialize(writeStream);
+	packet2.serialize(writeStream);
+	memcpy(readStream.getBuffer(), writeStream.getBuffer(), writeStream.getLength());
 
 	SamplePacket  r_packet;
 	SamplePacket2 r_packet2;
-//	r_packet.rocket = new Rocket();
-	r_packet.serialize(rs);
-	r_packet2.serialize(rs);
+	r_packet.serialize(readStream);
+	r_packet2.serialize(readStream);
 
-	if (r_packet.value != packet.value)
+	if (!assert(r_packet.value == packet.value))
 	{
-		assert(false);
-		return false;
-	}
-	if(r_packet.value2 != packet.value2)
-	{
-		assert(false);
-		return false;
-	}
-	if(r_packet2.value != packet2.value)
-	{
-		assert(false);
 		return false;
 	}
 
-	if(r_packet2.fvalue != packet2.fvalue)
+	if (!assert(r_packet.value == packet.value))
 	{
-		assert(false);
+		return false;
+	}
+	if(!assert(r_packet.value2 == packet.value2))
+	{
+		return false;
+	}
+	if(!assert(r_packet2.value == packet2.value))
+	{
 		return false;
 	}
 
-	if(glm::distance(r_packet2.vector, packet2.vector) > 0.01f)
+	if(!assert(r_packet2.fvalue == packet2.fvalue))
 	{
-		assert(false);
 		return false;
 	}
 
-	if(glm::distance(r_packet2.vector2, packet2.vector2) > 0.1f)
+	if(!assert(glm::distance(r_packet2.vector, packet2.vector) < 0.01f))
 	{
-		assert(false);
 		return false;
 	}
 
-	if(r_packet2.fvalue2 != packet2.fvalue2)
+	if(!assert(glm::distance(r_packet2.vector2, packet2.vector2) < 0.1f))
 	{
-		assert(false);
 		return false;
 	}
 
-	if(r_packet2.value2 != packet2.value2)
+	if(!assert(r_packet2.fvalue2 == packet2.fvalue2))
 	{
 		assert(false);
 		return false;
 	}
 
-	if (glm::distance(r_packet2.vector3, packet2.vector3) > 0.01f)
+	if(!assert(r_packet2.value2 == packet2.value2))
 	{
-		assert(false);
 		return false;
 	}
 
-	if (glm::distance(r_packet2.vector4, packet2.vector4) > 0.01f)
+	if (!assert(glm::distance(r_packet2.vector3, packet2.vector3) < 0.01f))
 	{
-		assert(false);
 		return false;
 	}
 
-	delete[] ws.m_buffer;
-	delete[] rs.m_buffer;
-
-	//ws = {};
-	//rs = {};
-
-	//ws.m_buffer = new uint32_t[256];
-	//ws.m_bufferLength = 256;
-
-	//rs.m_buffer = new uint32_t[256];
-	//rs.m_bufferLength = 256;
-
-	//Rocket* rocket1 = new Rocket();
-	//rocket1->getTransform().setLocalPosition(Vector2(1.0f, 2.0f));
-	//rocket1->initialize(&character, Vector2(1.0f, 0.0f), 20.0f, true);
-	//rocket1->setNetworkID(0);
-
-	//Rocket* rocket2 = new Rocket();
-	//rocket1->serializeFull(ws);
-	//memcpy(rs.m_buffer, ws.m_buffer, ws.m_bufferLength);
-	//rocket2->serializeFull(rs);
-
-	//Vector2 pos1 = rocket1->getTransform().getLocalPosition();
-	//Vector2 pos2 = rocket2->getTransform().getLocalPosition();
-	//Vector2 vel1 = rocket1->getRigidbody()->getLinearVelocity();
-	//Vector2 vel2 = rocket2->getRigidbody()->getLinearVelocity();
-
-	//if (glm::distance( pos1, pos2)> 0.01f)
-	//{
-	//	assert(false);
-	//	return false;
-	//}
-
-	//if (glm::distance(vel1, vel2)> 0.01f)
-	//{
-	//	assert(false);
-	//	return false;
-	//}
-
-	//delete[] ws.m_buffer;
-	//delete[] rs.m_buffer;
-	//
-	//rocket1->kill();
-	//rocket2->kill();
+	if (!assert(glm::distance(r_packet2.vector4, packet2.vector4) < 0.01f))
+	{
+		return false;
+	}
 
 	return true;
 }

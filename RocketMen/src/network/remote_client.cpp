@@ -4,29 +4,57 @@
 
 using namespace network;
 
-bool RemoteClient::isUsed() const
+RemoteClient::RemoteClient() :
+	m_address((uint32_t)0, 0),
+	m_id(INDEX_NONE),
+	m_numPlayers(0),
+	m_duplicatePeers(0),
+	m_nextNetworkID(0),
+	m_nextProcessed(0),
+	m_timeFromLastMessage(0.f)
 {
-	return (m_id >= 0);
+	std::fill(m_recentNetworkIDs, m_recentNetworkIDs + s_networkIDBufferSize, INDEX_NONE);
+
+	std::fill(m_recentlyProcessed, m_recentlyProcessed +
+			  s_sequenceMemorySize, INDEX_NONE);
 }
 
-void RemoteClient::queueMessage(const NetworkMessage& message)
+bool RemoteClient::isUsed() const
+{
+	return (m_id > INDEX_NONE);
+}
+
+void RemoteClient::queueMessage(const NetworkMessage& message, float time)
 {
 	for (NetworkMessage& msg : m_messageBuffer)
 	{
-		if (msg.type == MessageType::MESSAGE_CLEAR)
+		if (msg.type == MessageType::Clear)
 		{
 			msg.type       = message.type;
 			msg.data.reset();
 			msg.data.writeBuffer(message.data.getBuffer(), message.data.getLength());
-
 			msg.isReliable = message.isReliable;
 			msg.isOrdered  = message.isOrdered;
-			msg.sequenceNr = ++m_sequenceCounter;
-			return;
+			break;
 		}
 	}
 
-	LOG_WARNING("Message Queue is full! Message discarded.");
+	if (message.isReliable)
+	{
+		for (NetworkMessage& msg : m_reliableBuffer)
+		{
+			if (msg.type == MessageType::Clear)
+			{
+				msg.type = message.type;
+				msg.data.reset();
+				msg.data.writeBuffer(message.data.getBuffer(), message.data.getLength());
+				msg.isReliable = message.isReliable;
+				msg.isOrdered = message.isOrdered;
+				msg.timeOfCreation = time;
+				break;
+			}
+		}
+	}
 }
 
 bool network::operator==(const RemoteClient& a, const RemoteClient& b)

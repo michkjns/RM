@@ -1,12 +1,9 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include <network/address.h>
 
-class Entity;
-struct EntityInitializer;
+#include <cstdint>
 
 namespace network {
 	class Client;
@@ -17,24 +14,21 @@ class Network
 {
 public:
 	static bool isClient();
+	static bool isServer();
 
-	static void joinGame(const network::Address& address,
-					 uint32_t numPlayers = 1);
+	static void connect(const network::Address& address);
+	//static void disconnect();
 
-	static void leaveGame();
+	static void generateNetworkID(class Entity* entity);
 
-	static void generateNetworkID(Entity* entity);
-
-	static void setLocalPlayers(uint32_t numPlayers);
+	static bool addLocalPlayer(int32_t controllerID);
 	static uint32_t getNumLocalPlayers();
 	static bool isLocalPlayer(int32_t playerID);
 
-	static bool requestEntity(Entity* entity);
+	static bool requestEntity(class Entity* entity);
 	static void destroyEntity(int32_t networkID);
 
-public:
-	static bool isServer();
-	static void createGame();
+//	static void createGame();
 
 protected:
 	static void setClient(network::Client* client);

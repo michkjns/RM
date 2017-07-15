@@ -3,35 +3,38 @@
 
 #include <network/address.h>
 #include <bitstream.h>
+#include <climits>
 
 namespace network
 {
 	static const int32_t s_maxPendingMessages = 64;
 
+	// TODO: Split server->client and client->server message types..?
 	enum class MessageType : int8_t
 	{
-		MESSAGE_CLEAR = 0,
-		MESSAGE_ACK,
+		Clear = 0,
+		Ack,
+		Ping,
 
 		// Client to server
-		CLIENT_CONNECT_REQUEST,
-		CLIENT_DISCONNECT,
+		ClientConnectRequest,
+		ClientDisconnect,
 
 		// Server to client
-		CLIENT_CONNECT_ACCEPT,
-		PLAYER_JOIN_ACCEPT,
-		SERVER_GAMESTATE,
-		SPAWN_ENTITY,
-		APPROVE_ENTITY,
-		DESTROY_ENTITY,
-		GAME_EVENT,
+		AcceptClient,
+		AcceptPlayer,
+		Gamestate,
+		SpawnEntity,
+		AcceptEntity,
+		DestroyEntity,
+		GameEvent,
 
 		// Client to server
-		PLAYER_INTRO,
-		PLAYER_INPUT,
-		ENTITY_REQUEST,
+		IntroducePlayer,
+		PlayerInput,
+		RequestEntity,
 
-		NUM_COMMANDS
+		NUM_MESSAGE_TYPES
 	};
 
 	struct NetworkMessage
@@ -40,7 +43,8 @@ namespace network
 		BitStream   data;
 		bool        isReliable;
 		bool        isOrdered;
-		int32_t     sequenceNr;
+		int32_t     sequenceNr; // Packet seq
+		float       timeOfCreation;
 	};
 
 	struct IncomingMessage
@@ -50,7 +54,7 @@ namespace network
 		bool        isReliable;
 		bool        isOrdered;
 		Address     address; // sender address
-		int32_t     sequenceNr;
+		int32_t     sequence; 
 	};
 
 	//inline void destroyMessage(NetworkMessage& message)

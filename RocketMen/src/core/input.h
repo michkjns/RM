@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <includes.h>
+#include <common.h>
 
 #include <core/action_buffer.h>
 #include <core/keys.h>
@@ -24,10 +24,10 @@ public:
 	static bool getKeyDown(input::Key key);
 
 	/** @return float2 position of the mouse cursor */
-	static float2 getMousePosition();
+	static Vector2 getMousePosition();
 	
 	/** @return float2 relative position of the mouse cursor */
-	static float2 getMouseMovement();
+	static Vector2 getMouseMovement();
 
 	/** @return true if button is held down */
 	static bool getMouse(input::MouseButton button);

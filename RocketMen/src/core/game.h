@@ -1,18 +1,21 @@
 
 #pragma once
 
-#define GAME_VERSION 1.0
-#define GAME_NAME    "Untitled Game"
-
 #include <game_time.h>
 
 #include <cstdint>
 
-class ActionBuffer;
+#define DECLARE_GAME_INFO(GAME_NAME, GAME_VERSION) \
+virtual const char* const getName()    const override { return GAME_NAME; } \
+virtual const char* const getVersion() const override { return GAME_VERSION; }
+
 class Game
 {
 public:
-	virtual bool initialize() = 0;
+	/** Initialize 
+	*	Use to initialize the game class
+	*/
+	virtual bool initialize();
 	
 	/** Fixed timestep update
 	*	Use for game logic affecting physics
@@ -31,11 +34,14 @@ public:
 	virtual void onPlayerJoin() = 0;
 
 public:
+	virtual const char* const getName()    const;
+	virtual const char* const getVersion() const;
+
 	uint64_t getTimestep();
 	void     setTimestep(uint64_t timestep);
 
 	/** Processes the actionbuffer and performs action callbacks */
-	void     processActions(ActionBuffer& actions);
+	void     processActions(class ActionBuffer& actions);
 	
 private:
 	uint64_t m_timestep;

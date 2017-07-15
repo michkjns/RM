@@ -1,10 +1,24 @@
 
 #include <bitstream.h>
 
+#include <common.h>
 #include <utility.h>
 
 #include <bitset>
 #include <assert.h>
+
+WriteStream::WriteStream(size_t size)
+{
+	assert(size > 0);
+
+	m_bufferLength = static_cast<int32_t>(size);
+	m_buffer = new uint32_t[size];
+}
+
+WriteStream::~WriteStream()
+{
+	delete[] m_buffer;
+}
 
 /** Write scratch to buffer */
 void WriteStream::flush(bool increment)
@@ -38,7 +52,7 @@ void WriteStream::serializeBits(uint32_t value, uint32_t numBits)
 	
 	flush(m_scratchBits >= 32);
 
-	OnDebug(
+	DEBUG_ONLY(
 		m_bitsWritten += numBits;
 	);
 }
@@ -53,7 +67,7 @@ void WriteStream::serializeBool(bool& value)
 	
 	flush(m_scratchBits >= 32);
 
-	OnDebug(
+	DEBUG_ONLY(
 		m_bitsWritten += 1;
 	);
 }
@@ -98,7 +112,7 @@ void WriteStream::serializeData(const uint8_t* data, int32_t dataLength)
 		// Copy remaining
 		memcpy(m_buffer + m_wordIndex, data + bytesToWrite, dataLength - bytesToWrite);
 		m_wordIndex += bytesToCopy;
-OnDebug(
+DEBUG_ONLY(
 		m_bitsWritten += (dataLength-bytesToWrite) * 8;
 );
 	}
@@ -109,6 +123,29 @@ OnDebug(
 			serializeBits(data[i], 8);
 		}
 	}
+}
+
+size_t WriteStream::getLength() const
+{
+	return (m_wordIndex + 1) * (sizeof(uint32_t) / sizeof(uint8_t));
+}
+
+uint32_t* WriteStream::getBuffer() const
+{
+	return m_buffer;
+}
+
+ReadStream::ReadStream(size_t size)
+{
+	assert(size > 0);
+
+	m_bufferLength = static_cast<int32_t>(size);
+	m_buffer = new uint32_t[size];
+}
+
+ReadStream::~ReadStream()
+{
+	delete[] m_buffer;
 }
 
 /** Load next word to scratch */
@@ -142,7 +179,7 @@ void ReadStream::serializeBits(uint32_t& value, uint32_t numBits)
 	m_scratch >>= numBits;
 	m_scratchBits-= numBits;
 
-	OnDebug(
+	DEBUG_ONLY(
 		m_bitsRead += numBits;
 	);
 }
@@ -155,7 +192,7 @@ void ReadStream::serializeBool(bool& dest)
 	m_scratch >>= 1;
 	m_scratchBits--;
 
-	OnDebug(
+	DEBUG_ONLY(
 		m_bitsRead += 1;
 	);
 }
@@ -198,7 +235,13 @@ void ReadStream::serializeData(uint8_t* dest, int32_t length)
 			}
 		}
 	}
-};
+}
+
+uint32_t* ReadStream::getBuffer() const
+{
+	return m_buffer;
+}
+
 
 
 

@@ -1,10 +1,10 @@
 
 #pragma once
 
+#include <common.h>
 #include <physics/rigidbody.h>
 #include <physics/staticbody.h>
 
-#include <cstdint>
 #include <vector>
 
 namespace physics
@@ -52,7 +52,7 @@ public:
 	static void        blastExplosion(Vector2 position, float radius, 
 									  float power);
 
-	static void        generateWorld(std::string tilemap);
+	static void        loadCollisionFromTilemap(std::string tilemap);
 	static void        drawDebug();
 
 	static void        destroyBodies();

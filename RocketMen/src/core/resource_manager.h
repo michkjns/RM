@@ -1,6 +1,7 @@
 
 #pragma once
 
+//#include <common.h>
 #include <graphics/texture.h>
 #include <graphics/shader.h>
 #include <graphics/tile_map.h>
@@ -44,7 +45,7 @@ public:
 private:
 	ResourceManager() {}
 
-	static std::string loadShaderFromFile(const char* shaderFile);
+	static std::string readFileToString(const char* shaderFile);
 	
 	static std::map<std::string, Shader>  m_shaders;
 	static std::map<std::string, Texture> m_textures;

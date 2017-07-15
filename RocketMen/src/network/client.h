@@ -23,7 +23,6 @@ namespace network
 	{
 		int32_t playerID;
 		int32_t controllerID;
-		bool    isUsed;
 	};
 
 	struct NetworkSession
@@ -31,8 +30,14 @@ namespace network
 		Address  serverAddress;
 		uint32_t sequenceCounter;
 		uint32_t pendingMessages;
+		uint32_t pendingReliable;
 		bool     isActive;
-		std::array<NetworkMessage, 64> messageBuffer;
+
+		std::array<NetworkMessage, s_maxPendingMessages> 
+			messageBuffer;
+		
+		std::array<NetworkMessage, s_maxPendingMessages>
+			reliableBuffer;
 	};
 
 	class Client
@@ -40,16 +45,17 @@ namespace network
 	private:
 		static const uint32_t s_sequenceMemorySize = 256;
 		static const uint32_t s_recentlyDestroyedSize = 32;
+
 	public:
 		Client(Time& time, Game* game);
 		~Client();
 
 		enum class State
 		{
-			STATE_DISCONNECTED,
-			STATE_CONNECTING,
-			STATE_CONNECTED,
-			STATE_DISCONNECTING
+			DISCONNECTED,
+			CONNECTING,
+			CONNECTED,
+			DISCONNECTING
 		};
 
 	public:
@@ -59,18 +65,19 @@ namespace network
 		void fixedUpdate(ActionBuffer& actions);
 		void connect(const Address& address);
 		void queueMessage(const NetworkMessage& message);
-		void setLocalPlayers(uint32_t numPlayers);
+		void clearLocalPlayers();
+		bool addLocalPlayer(int32_t controllerID);
 		bool requestEntity(Entity* entity);
 
 		uint32_t getNumLocalPlayers() const;
-		bool     isLocalPlayer(int32_t playerID) const;
+		bool isLocalPlayer(int32_t playerID) const;
 
 	private:
 		void onHandshake(IncomingMessage& msg);
-		void onAckMessage(const IncomingMessage& msg);
-		void onPlayerAccepted(IncomingMessage& msg);
+		void onAckMessage(IncomingMessage& msg);
+		void onAcceptPlayer(IncomingMessage& msg);
 		void onSpawnEntity(IncomingMessage& msg);
-		void onApproveEntity(IncomingMessage& msg);
+		void onAcceptEntity(IncomingMessage& msg);
 		void onDestroyEntity(IncomingMessage& msg);
 		void onGameState(IncomingMessage& msg);
 
@@ -81,6 +88,7 @@ namespace network
 		void setState(State state);
 		void sendMessages();
 		void clearSession();
+		int32_t requestTempNetworkID();
 
 		NetworkInterface m_networkInterface;
 		Game*            m_game;
@@ -94,6 +102,8 @@ namespace network
 		float            m_maxMessageSentTime;
 		uint32_t         m_connectionAttempt;
 		bool             m_isInitialized;
+		int32_t          m_numLocalPlayers;
+		int32_t          m_sequenceCounter;
 
 		CircularBuffer<int32_t, s_sequenceMemorySize> m_recentlyProcessed;
 
@@ -103,7 +113,6 @@ namespace network
 		CircularBuffer<int32_t, s_maxSpawnPredictedEntities>
 		m_recentlyPredictedSpawns;
 
-		std::vector<int32_t> m_reliableAckList;
 		std::array<LocalPlayer, s_maxPlayersPerClient> m_localPlayers;	
 	};
 }; //namespace network

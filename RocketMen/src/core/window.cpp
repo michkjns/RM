@@ -1,63 +1,62 @@
 
-#include <includes.h>
 #include <core/window.h>
 
-#include <assert.h>
-#include <stdio.h>
+#include <core/debug.h>
 #include <GLFW/glfw3.h>
 
-void onResize(GLFWwindow* window, int32_t width, int32_t height);
+void onResizeCallback(GLFWwindow* window, int32_t width, int32_t height);
 
-class Window_impl : public Window
+class Window_glfw : public Window
 {
 public:
-	Window_impl();
-	~Window_impl();
+	Window_glfw();
+	~Window_glfw();
 
-	bool initialize(uint32_t width, uint32_t height) override;
-	void terminate()   override;
+	bool initialize(const char* title, Vector2i size) override;
+	void terminate() override;
+	void setTitle(const char* title) override;
 	void swapBuffers() override;
-	bool pollEvents()  override;
+	bool pollEvents() override;
+	void onResize(GLFWwindow* window, Vector2i newSize) override;
 
+	Vector2i     getSize()   const override;
 	unsigned int getWidth()  const override;
 	unsigned int getHeight() const override;
 
-	void* getGLFWwindow()    const override;
+	GLFWwindow* getGLFWwindow() const override;
 
 private:
-	GLFWwindow*  m_glfwWindow;
-	uint32_t     m_width;
-	uint32_t     m_height;
+	GLFWwindow* m_glfwWindow;
+	const char* m_title;
+	Vector2i    m_size;
 };
 
-Window_impl::Window_impl() :
-	m_glfwWindow(nullptr),
-	m_width(600),
-	m_height(480)
+Window_glfw::Window_glfw() :
+	m_glfwWindow(nullptr)
 {
 }
 
-Window_impl::~Window_impl()
+Window_glfw::~Window_glfw()
 {
 }
 
-void* Window_impl::getGLFWwindow() const
+GLFWwindow* Window_glfw::getGLFWwindow() const
 {
-	return (void*)m_glfwWindow;
+	return m_glfwWindow;
 }
 
 Window* Window::create()
 {
-	return new Window_impl();
+	return new Window_glfw();
 }
 
-bool Window_impl::initialize(uint32_t width, uint32_t height)
+bool Window_glfw::initialize(const char* title, Vector2i size)
 {
-	assert(width > 0);
-	assert(height > 0);
+	assert(title != nullptr);
+	assert(size.x > 0);
+	assert(size.y > 0);
 
-	m_width = width;
-	m_height = height;
+	m_size = size;
 
 	// Initialize the library
 	if (!glfwInit())
@@ -66,8 +65,7 @@ bool Window_impl::initialize(uint32_t width, uint32_t height)
 	}
 
 	// Create a windowed mode window and its OpenGL context
-	m_glfwWindow = glfwCreateWindow(m_width, m_height, "Rocket Men", NULL, NULL);
-	if (!m_glfwWindow)
+	if ((m_glfwWindow = glfwCreateWindow(m_size.x, m_size.y, title, NULL, NULL)) == false)
 	{
 		glfwTerminate();
 		LOG_ERROR("Window: Failed to initialize glfwWindow");
@@ -84,13 +82,13 @@ bool Window_impl::initialize(uint32_t width, uint32_t height)
 		glfwTerminate();
 		exit(-1);
 	}
-
-	glfwSetFramebufferSizeCallback(m_glfwWindow, onResize);
+	glfwSetWindowUserPointer(m_glfwWindow, this);
+	glfwSetFramebufferSizeCallback(m_glfwWindow, onResizeCallback);
 		
 	return true;
 }
 
-void Window_impl::terminate()
+void Window_glfw::terminate()
 {
 	LOG_INFO("Window: Terminating GLFW..");
 	glfwTerminate();
@@ -98,7 +96,7 @@ void Window_impl::terminate()
 	// Optional: glfwDestroyWindow(window);
 }
 
-void Window_impl::swapBuffers()
+void Window_glfw::swapBuffers()
 {
 	assert(m_glfwWindow);
 	GLenum error = glGetError();
@@ -110,29 +108,43 @@ void Window_impl::swapBuffers()
 	glfwSwapBuffers(m_glfwWindow);
 }
 
-bool Window_impl::pollEvents()
+bool Window_glfw::pollEvents()
 {
 	glfwPollEvents();
 
-	bool closeWindow = (glfwWindowShouldClose(m_glfwWindow) == 1);
-	if (closeWindow)
-	{
-		LOG_DEBUG("Window: GLFW says the window is closing..");
-	}
-	return closeWindow;
+	return (glfwWindowShouldClose(m_glfwWindow) == 1);
 }
 
-uint32_t Window_impl::getWidth() const
+void Window_glfw::onResize(GLFWwindow* glfwWindow, Vector2i newSize)
 {
-	return m_width;
+	assert(glfwWindow == m_glfwWindow);
+
+	glViewport(0, 0, newSize.x, newSize.y);
+	m_size = newSize;
 }
 
-uint32_t Window_impl::getHeight() const
+Vector2i Window_glfw::getSize() const
 {
-	return m_height;
+	return m_size;
 }
 
-void onResize(GLFWwindow* window, int32_t width, int32_t height)
+uint32_t Window_glfw::getWidth() const
 {
-	glViewport(0, 0, width, height);
+	return m_size.x;
 }
+
+uint32_t Window_glfw::getHeight() const
+{
+	return m_size.y;
+}
+
+void Window_glfw::setTitle(const char* title)
+{
+	glfwSetWindowTitle(m_glfwWindow, title);
+}
+
+void onResizeCallback(GLFWwindow* window, int32_t width, int32_t height)
+{
+	static_cast<Window*>(glfwGetWindowUserPointer(window))->onResize(window, Vector2i(width, height));
+}
+

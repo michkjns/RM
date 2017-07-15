@@ -1,9 +1,9 @@
 
 #include <core/input.h>
-#include <includes.h>
+#include <common.h>
 #include <core/window.h>
-
 #include <GLFW/glfw3.h>
+#include <utility.h>
 
 #include <assert.h>
 #include <algorithm>
@@ -33,14 +33,17 @@ static std::unordered_map<MouseButton, size_t> s_mouseMap;
 GLFWwindow* s_glfwWindow = nullptr;
 Input*      s_instance = nullptr;
 
-//==========================================================================
+// ============================================================================
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 
 //	LOG_DEBUG("%i", key);
 
-	if (key == -1) 
-		key = 347;
+	if (key == -1)
+	{
+		key = 347; // TODO what is the meaning of this
+	}
+
 	if (action == GLFW_PRESS)
 	{
 		s_keyState[key]     = true;
@@ -101,7 +104,7 @@ bool Input::initialize(Window* window)
 {
 	if (window)
 	{
-		s_glfwWindow = (GLFWwindow*)window->getGLFWwindow();
+		s_glfwWindow = window->getGLFWwindow();
 		assert(s_glfwWindow != nullptr);
 
 		glfwSetKeyCallback(s_glfwWindow, key_callback);
@@ -142,14 +145,14 @@ bool Input::getKeyDown(Key key)
 	return s_keyStateDown[(int)key];
 }
 
-float2 Input::getMousePosition()
+Vector2 Input::getMousePosition()
 {
-	return float2(s_mousePosx, s_mousePosy);
+	return Vector2(s_mousePosx, s_mousePosy);
 }
 
-float2 Input::getMouseMovement()
+Vector2 Input::getMouseMovement()
 {
-	return float2(s_mousePosxRel, s_mousePosyRel);
+	return Vector2(s_mousePosxRel, s_mousePosyRel);
 }
 
 bool Input::getMouse(MouseButton button)
@@ -196,13 +199,13 @@ ActionBuffer& Input::getActions()
 Input* Input::create()
 {
 	if (s_instance == nullptr)
+	{
 		s_instance = new Input();
-
+	}
 	return s_instance;
 }
 
 void Input::destroy()
 {
-	if (s_instance)
-		delete s_instance;
+	delete s_instance;
 }

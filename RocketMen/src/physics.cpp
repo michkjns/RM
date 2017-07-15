@@ -1,6 +1,7 @@
 
 #include <physics.h>
 
+#include <core/debug.h>
 #include <core/entity.h>
 #include <core/resource_manager.h>
 #include <graphics/camera.h>
@@ -17,11 +18,15 @@ static std::vector<Staticbody*> s_staticbodies;
 
 #ifdef PHYSICS_BOX2D
 
-Vector2 toglm(const b2Vec2& a) {
+/** b2Vec2 to Vector2 */
+Vector2 toVector2(const b2Vec2& a)
+{
 	return Vector2(a.x, a.y);
 }
 
-b2Vec2 tob2(const Vector2& a) {
+/** Vector2 to b2Vec2 */
+b2Vec2 tob2(const Vector2& a) 
+{
 	return b2Vec2(a.x, a.y);
 }
 
@@ -39,14 +44,15 @@ public:
 	void DrawTransform(const b2Transform& xf) {}
 };
 
-//==============================================================================
+// ============================================================================
+
 class ContactListener : public b2ContactListener
 {
 	void BeginContact(b2Contact* contact);
 	void EndContact(b2Contact* contact);
 };
 
-//==============================================================================
+// ============================================================================
 
 class QueryCallback : public b2QueryCallback 
 {
@@ -61,7 +67,7 @@ public:
 static PhysicsDraw     s_debugDrawInterface;
 static ContactListener s_contactListener;
 
-//==============================================================================
+// ============================================================================
 
 void Physics::initialize()
 {
@@ -78,8 +84,8 @@ void Physics::step(float timestep)
 
 Rigidbody* Physics::createCharacterBody(const Vector2& dimensions, Entity* owner)
 {
-	Rigidbody* rb = new Rigidbody();
-	rb->getImpl()->SetFixedRotation(true);
+	Rigidbody* rigidBody = new Rigidbody();
+	rigidBody->getImpl()->SetFixedRotation(true);
 
 	b2PolygonShape dynamicBox;
 	dynamicBox.SetAsBox(dimensions.x / 2.0f, dimensions.y / 2.0f);
@@ -90,16 +96,16 @@ Rigidbody* Physics::createCharacterBody(const Vector2& dimensions, Entity* owner
 	fixtureDef.friction    = 5.0f;
 
 
-	rb->getImpl()->CreateFixture(&fixtureDef);
-	rb->getImpl()->SetUserData(owner);
+	rigidBody->getImpl()->CreateFixture(&fixtureDef);
+	rigidBody->getImpl()->SetUserData(owner);
 
-	s_rigidbodies.push_back(rb);
+	s_rigidbodies.push_back(rigidBody);
 	return s_rigidbodies.back();
 }
 
 Rigidbody* Physics::createBoxRigidbody(const Vector2& dimensions, const Fixture& fixture, Entity* owner)
 {
-	Rigidbody* rb = new Rigidbody();
+	Rigidbody* rigidBody = new Rigidbody();
 	
 	b2PolygonShape dynamicBox;
 	dynamicBox.SetAsBox(dimensions.x / 2.0f, dimensions.y / 2.0f);
@@ -112,16 +118,16 @@ Rigidbody* Physics::createBoxRigidbody(const Vector2& dimensions, const Fixture&
 	fixtureDef.isSensor    = fixture.isSensor;
 	fixtureDef.userData    = owner;
 
-	rb->getImpl()->CreateFixture(&fixtureDef);
-	rb->getImpl()->SetUserData(owner);
+	rigidBody->getImpl()->CreateFixture(&fixtureDef);
+	rigidBody->getImpl()->SetUserData(owner);
 
-	s_rigidbodies.push_back(rb);
+	s_rigidbodies.push_back(rigidBody);
 	return s_rigidbodies.back();
 }
 
 Staticbody* Physics::createStaticBody(const Vector2& position, const Vector2& dimensions, const Fixture& fixture)
 {
-	Staticbody* sb = new Staticbody(position);
+	Staticbody* staticBody = new Staticbody(position);
 
 	b2PolygonShape staticBox;
 	staticBox.SetAsBox(dimensions.x / 2.0f, dimensions.y / 2.0f);
@@ -132,30 +138,28 @@ Staticbody* Physics::createStaticBody(const Vector2& position, const Vector2& di
 	fixtureDef.friction    = fixture.friction;
 	fixtureDef.restitution = fixture.restitution;
 
-	sb->getImpl()->CreateFixture(&fixtureDef);
+	staticBody->getImpl()->CreateFixture(&fixtureDef);
 
-
-	s_staticbodies.push_back(sb);
-	return sb;
+	s_staticbodies.push_back(staticBody);
+	return staticBody;
 }
 
-bool Physics::destroyRigidbody(Rigidbody* rb)
+bool Physics::destroyRigidbody(Rigidbody* rigidBody)
 {
-	if (!rb) 
-		return false;
+	assert(rigidBody != nullptr);
 
 	for (auto it = s_rigidbodies.begin(); it != s_rigidbodies.end(); it++)
 	{
-		if ((*it) == rb)
+		if ((*it) == rigidBody)
 		{
-			g_boxWorld.DestroyBody(static_cast<b2Body*>(rb->getImpl()));
+			g_boxWorld.DestroyBody(static_cast<b2Body*>(rigidBody->getImpl()));
 			delete (*it);
 			s_rigidbodies.erase(it);
 			return true;
 		}
 	}
 
-	/** Rigidbody rb not found! */
+	/** rigidbody not found! */
 	assert(false);
 	return false;
 }
@@ -165,12 +169,12 @@ void _applyBlastImpulse(b2Body* body, b2Vec2 pos, float force)
 	b2Vec2 blastDir = body->GetWorldCenter() - pos;
 	float distance = blastDir.Normalize();
 
-	if (distance == 0)
-		return;
-
-	float invDistance = 1 / distance;
-	float impulseMag = force * invDistance * invDistance;
-	body->ApplyLinearImpulse(impulseMag * blastDir, body->GetWorldCenter(), true);
+	if (distance != 0)
+	{
+		float invDistance = 1 / distance;
+		float impulseMag = force * invDistance * invDistance;
+		body->ApplyLinearImpulse(impulseMag * blastDir, body->GetWorldCenter(), true);
+	}
 }
 
 void Physics::blastExplosion(Vector2 position, float radius, float power)
@@ -181,43 +185,48 @@ void Physics::blastExplosion(Vector2 position, float radius, float power)
 	aabb.upperBound = tob2(position) + b2Vec2(radius, radius);
 	g_boxWorld.QueryAABB(&queryCallback, aabb);
 
-	for (int i = 0; i < queryCallback.foundBodies.size(); i++) {
+	for (int i = 0; i < queryCallback.foundBodies.size(); i++) 
+	{
 		b2Body* body = queryCallback.foundBodies[i];
 		b2Vec2 bodyCom = body->GetWorldCenter();
 
-		//ignore bodies outside the blast range
-		if ((bodyCom - tob2(position)).Length() >= radius)
-			continue;
-		 
-		_applyBlastImpulse(body, tob2(position), glm::min(power, 2.0f));
-		LOG_DEBUG("%f", power);
+		if ((bodyCom - tob2(position)).Length() < radius)
+		{
+			_applyBlastImpulse(body, tob2(position), glm::min(power, 2.0f));
+		}
 	}
 
 }
 
-bool Physics::destroyStaticbody(Staticbody* sb)
+bool Physics::destroyStaticbody(Staticbody* staticBody)
 {
-	if (!sb)
-		return false;
+	assert(staticBody != nullptr);
 
 	for (auto it = s_staticbodies.begin(); it != s_staticbodies.end(); it++)
 	{
-		if ((*it) == sb)
+		if ((*it) == staticBody)
 		{
-			g_boxWorld.DestroyBody(static_cast<b2Body*>(sb->getImpl()));
+			g_boxWorld.DestroyBody(static_cast<b2Body*>(staticBody->getImpl()));
 			s_staticbodies.erase(it);
 			return true;
 		}
 	}
 
-	/** Staticbody sb not found! */
+	/** staticBody not found! */
 	assert(false);
 	return false;
 }
 
-void Physics::generateWorld(std::string tilemapName)
+void Physics::loadCollisionFromTilemap(std::string tilemapName)
 {
 	TileMap& tilemap = ResourceManager::getTileMap(tilemapName.c_str());
+
+	if (tilemap.isInitalized() == false)
+	{
+		LOG_ERROR("Physics::loadCollisionFromTilemap - Invalid tilemap");
+		ensure(false);
+		return;
+	}
 
 	struct Rect
 	{
@@ -323,69 +332,69 @@ void Physics::destroyBodies()
 	}
 }
 
-//==============================================================================
+// ============================================================================
 
 void PhysicsDraw::DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
-	if(Renderer::get())
-		Renderer::get()->drawPolygon(
-		    (Vector2*)(vertices), vertexCount, Color(color.r, color.g, color.b, color.a));
+	if (Renderer* renderer = Renderer::get())
+	{
+		renderer->drawPolygon((Vector2*)vertices, vertexCount, Color(color.r, color.g, color.b, color.a));
+	}
 }
 
 void PhysicsDraw::DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
 {
-	if (Renderer::get())
-		Renderer::get()->drawPolygon(
-		    (Vector2*)vertices, vertexCount, Color(color.r, color.g, color.b, color.a));
+	if (Renderer* renderer = Renderer::get())
+	{
+		renderer->drawPolygon((Vector2*)vertices, vertexCount, Color(color.r, color.g, color.b, color.a));
+	}
 }
 
 void PhysicsDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) 
 {
-	if (Renderer::get())
-		Renderer::get()->drawLineSegment(
-		    toglm(p1), toglm(p2), Color(color.r, color.g, color.b, color.a));
+	if (Renderer* renderer = Renderer::get())
+	{
+		renderer->drawLineSegment(toVector2(p1), toVector2(p2), Color(color.r, color.g, color.b, color.a));
+	}
 }
 
-//==============================================================================
+// ============================================================================
 
 void ContactListener::BeginContact(b2Contact* contact)
 {
-//	LOG_DEBUG("ContactListenerL::startContact");
-
-	if (!Network::isServer())
+	if (Network::isServer())
 	{
-		return;
+		Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
+		Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());
+	
+		if (entityA)
+		{
+			static_cast<Entity*>(entityA)->startContact(entityB);
+		}
+	
+		if (entityB)
+		{
+			static_cast<Entity*>(entityB)->startContact(entityA);
+		}	
 	}
 
-	Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
-	Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());
-
-	if (entityA)
-	{
-		static_cast<Entity*>(entityA)->startContact(entityB);
-	}
-
-	if (entityB)
-	{
-		static_cast<Entity*>(entityB)->startContact(entityA);
-	}
 }
 
 void ContactListener::EndContact(b2Contact* contact)
 {
-	if (!Network::isServer())
-		return;
-
-	Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
-	Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());
-	if (entityA)
+	if (Network::isServer())
 	{
-		static_cast<Entity*>(entityA)->endContact(entityB);
-	}
+		Entity* entityA = static_cast<Entity*>(contact->GetFixtureA()->GetBody()->GetUserData());
+		Entity* entityB = static_cast<Entity*>(contact->GetFixtureB()->GetBody()->GetUserData());
+		if (entityA)
+		{
+			static_cast<Entity*>(entityA)->endContact(entityB);
+		}
 
-	if (entityB)
-	{
-		static_cast<Entity*>(entityB)->endContact(entityA);
+		if (entityB)
+		{
+			static_cast<Entity*>(entityB)->endContact(entityA);
+		}
 	}
 }
 

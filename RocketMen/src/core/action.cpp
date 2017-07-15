@@ -1,7 +1,8 @@
 
 #include <core/action.h>
 
-#include <includes.h>
+#include <common.h>
+#include <utility.h>
 
 using namespace input;
 

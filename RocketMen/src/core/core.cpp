@@ -1,21 +1,19 @@
 
 #include <core/core.h>
 
-#include <graphics/check_gl_error.h>
-#include <network/client.h>
+#include <core/debug.h>
 #include <core/game.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
 #include <core/entity.h>
+#include <graphics/check_gl_error.h>
 #include <graphics/renderer.h>
 #include <network.h>
 #include <network/address.h>
-#include <physics.h>
+#include <network/client.h>
 #include <network/server.h>
+#include <physics.h>
 #include <time.h>
-
-#include <assert.h>
-#include <cstdint>
 
 extern "C" void crcInit(void);
 
@@ -24,38 +22,29 @@ using namespace network;
 static bool s_enableDebugDraw = true;
 
 Core::Core() :
-	m_client(nullptr),
 	m_game(nullptr),
 	m_renderer(nullptr),
-	m_server(nullptr),
 	m_window(nullptr),
+	m_client(nullptr),
+	m_server(nullptr),
 	m_input(nullptr),
 	m_physics(nullptr),		
-	m_timestep(33333ULL / 2),
-	m_enableDebug(false)
+	m_timestep(33333ULL / 2)
 {
 
 }
 
 Core::~Core()
 {
-	if(m_client)   delete m_client;
-	if(m_server)   delete m_server;
-	if(m_renderer) delete m_renderer;
-
-	delete m_window;
 }
 
 bool Core::initialize(Game* game, int argc, char* argv[])
 {
-	if (game == nullptr) {
-		LOG_ERROR("Core::initialize: game is null"); assert(false);	return false;
-	}
+	assert(game != nullptr);
 
 	crcInit();
 
 	bool runDedicated = false;
-	bool enableDebug  = true;
 	for (int i = 0; i < argc; i++)
 	{
 		const char* arg = argv[i];
@@ -63,32 +52,30 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		{
 			runDedicated = true;
 		}
-		if (strcmp(arg, "--debug") == 0)
+		if (strcmp(arg, "-v") == 0 || strcmp(arg, "--verbosity") == 0)
 		{
-			enableDebug = true;
+			if (i < argc - 1)
+			{
+				int32_t verbosity = atoi(argv[i + 1]);
+				verbosity = std::max(0, std::min((int)Debug::Verbosity::Debug, verbosity));
+				Debug::setVerbosity(static_cast<Debug::Verbosity>(verbosity));
+			}
 		}
 	}
-#ifdef _DEBUG
-	//m_enableDebug = true;
-#endif
 
 	m_game = game;
 
-	if((!runDedicated) || (runDedicated && enableDebug))
+	if((!runDedicated) || (runDedicated && Debug::getVerbosity() == Debug::Verbosity::Debug))
 	{
 		LOG_INFO("Core: Creating window..");
 		m_window = Window::create();
-		m_window->initialize(g_defaultWidth, g_defaultHeight);
-
+		std::string windowTitle(m_game->getName());
+		windowTitle.append(runDedicated ? " - Dedicated Server" : " - Client");
+		m_window->initialize(windowTitle.c_str(), g_defaultWindowSize);
+		
 		LOG_INFO("Core: Creating renderer..");
 		m_renderer = Renderer::create();
 		m_renderer->initialize(m_window);
-	}
-
-	if (m_enableDebug)
-	{
-		LOG_INFO("Debug logging enabled");
-		Debug::setVerbosity(Debug::Verbosity::LEVEL_DEBUG);
 	}
 
 	if (runDedicated)
@@ -100,6 +87,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 			LOG_INFO("Server: Server succesfully initialized");
 			Network::setServer(m_server);
 		}
+
 		m_server->host(g_defaultPort);
 	}
 	else
@@ -107,12 +95,12 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		LOG_INFO("Core: Creating client..");
 		m_client = new Client(m_gameTime, m_game);
 		m_client->initialize();
+		Network::setClient(m_client);
 		
 		LOG_INFO("Core: Initializing input");
 		m_input = Input::create();
 		m_input->initialize(m_window);
 
-		Network::setClient(m_client);
 	}
 
 	if (!loadResources())
@@ -162,6 +150,7 @@ void Core::run()
 
 	if (m_client)
 	{
+		LOG_INFO("Client: Attempting to connect to localhost");
 		m_client->connect(network::Address(g_localHost, g_defaultPort));
 	}
 
@@ -205,7 +194,9 @@ void Core::run()
 		float newTime = m_gameTime.getSeconds();
 		float frameTime = newTime - currTime;
 		if (frameTime > 0.25f)
+		{
 			frameTime = 0.25f;
+		}
 		currTime = newTime;
 		accumulator += frameTime;
 
@@ -258,36 +249,50 @@ void Core::run()
 		}
 	}
 
-	LOG_DEBUG("Core: main loop ended..");
+	LOG_DEBUG("Core: main loop canceled..");
 }
 
 void Core::destroy()
 {
 	LOG_INFO("Core: Shutting down..");
 
-	LOG_INFO("Core: Terminating game..");
-	m_game->terminate();
-
-	LOG_INFO("Core: Killing entities..");
+	LOG_INFO("Core: Cleaning up entities..");
 	Entity::killEntities();
 	Entity::flushEntities();
-
-	if (m_renderer != nullptr)
-	{
-		LOG_INFO("Core: Terminating renderer..");
-		m_renderer->destroy();
-	}
-
-	LOG_INFO("Core: Cleaning up resources..");
-	ResourceManager::clear();
 
 	LOG_INFO("Core: Terminating physics..");
 	Physics::destroyBodies();
 	delete m_physics;
 
+	LOG_INFO("Core: Cleaning up resources..");
+	ResourceManager::clear();
+
 	LOG_INFO("Core: Terminating input system..");
 	m_input->destroy();
 
+	if (m_client != nullptr)
+	{
+		Network::setClient(nullptr);
+		delete m_client;
+	}
+
+	if (m_server != nullptr)
+	{
+		Network::setServer(nullptr);
+		delete m_server;
+	}
+
+	if (m_renderer != nullptr)
+	{
+		LOG_INFO("Core: Terminating renderer..");
+		m_renderer->destroy();
+		delete m_renderer;
+	}
+
+	LOG_INFO("Core: Terminating game..");
+	m_game->terminate();
+
 	LOG_INFO("Core: Terminating window..");
 	m_window->terminate();
+	delete m_window;
 }

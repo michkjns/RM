@@ -6,7 +6,6 @@
 #include <network/remote_client.h>
 
 #include <array>
-#include <cstdint>
 
 class Game;
 class Entity;
@@ -33,14 +32,14 @@ namespace network
 		void setReliableSendRate(float timesPerSecond);
 
 		void generateNetworkID(Entity* entity);
-		void registerLocalClient(int32_t clientID);
+		void registerLocalClientID(int32_t clientID);
 		void destroyEntity(int32_t networkID);
 
 	private:
-		void onClientConnect(const IncomingMessage& msg);
+		void onClientConnect(IncomingMessage& msg);
 		void onClientDisconnect(const IncomingMessage& msg);
 
-		void onAckMessage(const IncomingMessage& msg);
+		void onAckMessage(IncomingMessage& msg, RemoteClient* client);
 		void onPlayerIntroduction(IncomingMessage& msg);
 		void onEntityRequest(IncomingMessage& msg);
 
@@ -54,7 +53,7 @@ namespace network
 		void sendMessages();
 
 		/** Finds unused remote client slot */
-		RemoteClient* FindUnusedClient();
+		RemoteClient* findUnusedClient();
 
 		/** Gets remote client by address */
 		RemoteClient* getClient(const Address& address);
@@ -65,10 +64,11 @@ namespace network
 		Time&            m_gameTime;
 		int32_t          m_clientIDCounter;
 		int32_t          m_playerIDCounter;
-		int32_t          m_objectIDCounter;
+		int32_t          m_networkIDCounter;
 		uint32_t         m_numConnectedClients;
 		uint32_t         m_lastOrderedMessaged;
 		int32_t          m_localClientID;
+		uint32_t		 m_sequenceCounter;
 
 		/* Time since last snapshot */
 		float m_snapshotTime;
