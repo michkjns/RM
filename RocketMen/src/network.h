@@ -8,7 +8,7 @@
 namespace network {
 	class Client;
 	class Server;
-};
+}; // namespace network
 
 class Network
 {
@@ -17,7 +17,8 @@ public:
 	static bool isServer();
 
 	static void connect(const network::Address& address);
-	//static void disconnect();
+	static void disconnect();
+
 
 	static void generateNetworkID(class Entity* entity);
 
@@ -28,13 +29,11 @@ public:
 	static bool requestEntity(class Entity* entity);
 	static void destroyEntity(int32_t networkID);
 
-//	static void createGame();
-
 protected:
 	static void setClient(network::Client* client);
 	static void setServer(network::Server* server);
 
-	static network::Server* getLocalServer();
+	static class network::Server* getLocalServer();
 
 public:
 	friend class Core;

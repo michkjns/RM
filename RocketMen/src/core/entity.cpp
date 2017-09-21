@@ -16,7 +16,7 @@ static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
 static uint32_t s_entityID;
 
-inline bool entityExists(Entity* entity)
+inline bool isReplicated(Entity* entity)
 {
 	for (const auto& ent : s_entities)
 	{
@@ -40,7 +40,7 @@ Entity::~Entity()
 
 void Entity::initialize(bool replicate)
 {
- 	if (!entityExists(this))
+ 	if (!isReplicated(this))
 	{
 		m_id = ++s_entityID;
 		s_newEntities.push_back(this);

@@ -1,9 +1,10 @@
 
 #pragma once
 
-#include <network/address.h>
 #include <game_time.h>
+#include <network/address.h>
 #include <network/packet.h>
+#include <network/sequence_buffer.h>
 
 #include <cstdint>
 #include <vector>
@@ -12,9 +13,10 @@
 namespace network
 {
 	/** Common vars shared by Server and Client */
-	static const uint32_t s_maxDuplicatePeers    = 4;
-	static const uint32_t s_maxPlayersPerClient  = 4;
-	static const float    s_snapshotCreationRate = 1/20.f;
+	static const uint32_t s_maxDuplicatePeers     = 4;
+	static const uint32_t s_maxPlayersPerClient   = 4;
+	static const float    s_snapshotCreationRate  = 1/20.f;
+	static const uint32_t s_sentPacketsBufferSize = 1024;
 	//==========================================================================
 
 	class Socket;
@@ -34,12 +36,11 @@ namespace network
 			Hosting
 		};
 
-		void update(float deltaTime);
+		void update(const Time& time);
 		void connect(const Address& destination, const Time& time);
-		void host(uint32_t port);
-		
-		/** Sends message directly, ignoring reliability */
-		void sendMessage(const Address& destination, NetworkMessage& message);
+		bool listen(uint32_t port);
+		void sendMessages(OutgoingMessage* messages, uint32_t numMessages,
+			              const Address& destination);
 
 		void sendPacket(const Address& destination, Packet* packet);
 
@@ -53,20 +54,26 @@ namespace network
 		std::queue<IncomingMessage>& getOrderedMessages();
 
 		void clearBuffers();
-	private:
-		/** Directly sends a packet */
+		void disconnect(const Address& address);
+		SequenceBuffer<SentMessage>& getAcks();
 
+	private:
 		void receivePackets();
+		void readAcks(Sequence baseSequence, uint32_t ackBits);
 		void setState(State state);
 
-		std::vector<Packet>         m_outgoingPackets;
-		std::queue<IncomingMessage> m_incomingMessages;
-		std::queue<IncomingMessage> m_incomingMessagesOrdered;
+		std::vector<Packet>            m_outgoingPackets;
+		std::queue<IncomingMessage>    m_incomingMessages;
+		std::queue<IncomingMessage>    m_incomingMessagesOrdered;
+		SequenceBuffer<SentPacketData> m_sentPackets;
+		SequenceBuffer<SentMessage>    m_acks;
 
-		Socket* m_socket;
-		float   m_stateTimer;
-		State   m_state;
-		int32_t m_receivedMessageCount;
+		Socket*  m_socket;
+		float    m_stateTime;
+		State    m_state;
+		int32_t  m_receivedMessageCount;
+		Sequence m_sequenceCounter;
+		Address  m_remoteAddress;
 	};
 
 } // namespace network

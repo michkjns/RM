@@ -2,7 +2,6 @@
 #include <network/network_interface.h>
 
 #include <core/debug.h>
-//#include <crc/crc.h>
 #include <network/packet.h>
 #include <network/network_message.h>
 #include <network/socket.h>
@@ -10,20 +9,36 @@
 #include <array>
 #include <assert.h>
 #include <algorithm>
+#include <map>
 
 using namespace network;
 
 extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 static const uint32_t s_maxPeers          = 8;
-static const uint32_t s_maxDuplicatePeers = 8; // Maximum peers allowed to have the same address
-static const float    s_connectionTimeout = 30.0f; // Seconds to wait until timeout
-//==============================================================================
+static const uint32_t s_maxDuplicatePeers = 8;     // Maximum peers allowed to have the same address
+static const float    s_timeoutSeconds = 30.0f;
 
-NetworkInterface::NetworkInterface() : 
-	m_stateTimer(0.0f),
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c%c%c%c%c"
+#define BYTE_TO_BINARY(char)  \
+  (char & 0x80 ? '1' : '0'), \
+  (char & 0x40 ? '1' : '0'), \
+  (char & 0x20 ? '1' : '0'), \
+  (char & 0x10 ? '1' : '0'), \
+  (char & 0x08 ? '1' : '0'), \
+  (char & 0x04 ? '1' : '0'), \
+  (char & 0x02 ? '1' : '0'), \
+  (char & 0x01 ? '1' : '0')
+
+// ============================================================================
+
+NetworkInterface::NetworkInterface() :
+	m_sentPackets(s_sentPacketsBufferSize),
+	m_acks(s_maxPendingMessages),
+	m_stateTime(0.0f),
 	m_state(State::Disconnected),
-	m_receivedMessageCount(0)
+	m_receivedMessageCount(0),
+	m_sequenceCounter(0)
 {
 	m_socket = Socket::create(Socket::NetProtocol::UDP);
 	assert(m_socket);
@@ -31,7 +46,8 @@ NetworkInterface::NetworkInterface() :
 
 NetworkInterface::~NetworkInterface()
 {
-	if (m_socket) delete m_socket;
+	assert(m_socket);
+	delete m_socket;
 }
 
 void NetworkInterface::clearBuffers()
@@ -41,8 +57,7 @@ void NetworkInterface::clearBuffers()
 
 void NetworkInterface::receivePackets()
 {
-	if (!m_socket->isInitialized())
-		return assert(false);
+	assert(m_socket->isInitialized());
 
 	Address address;
 	char    buffer[g_maxPacketSize];
@@ -55,113 +70,157 @@ void NetworkInterface::receivePackets()
 	{
 		assert(length <= g_maxPacketSize);
 
-		Packet* packet = new Packet;
+		Packet packet;
 		uint32_t checksum;
 
 		// Reconstruct packet
 		BitStream stream;
 		stream.writeBuffer(buffer, length);
 		checksum = stream.readInt32();
-		stream.readBytes((char*)&packet->header, sizeof(PacketHeader));
-		stream.readBytes(packet->getData(), packet->header.dataLength);
+		stream.readBytes((char*)&packet.header, sizeof(PacketHeader));
+		stream.readBytes(packet.getData(), packet.header.dataLength);
 		
+		//if (m_state == NetworkInterface::State::Connected)
+		//{
+		//	char* data = new char[packet.header.dataLength + 1];
+		//	memcpy(data, packet.getData(), packet.header.dataLength);
+		//	data[packet.header.dataLength] = '\0';
+		//	std::string dataStr();
+		//	for (int i = 0; i < packet.header.dataLength; i++)
+		//	{
+		//		char byteStr[8];
+		//		sprintf_s(byteStr, 8, BYTE_TO_BINARY_PATTERN " ", BYTE_TO_BINARY(data[i]));
+		//		dataStr += std::string(byteStr);
+		//	}
+		//	LOG_DEBUG("%d: %s", packet.header.sequence, dataStr);
 
+		//	delete data;
+		//	delete dataStr;
+		//}
 		// Write protocol ID after packet to include in the checksum
-		memcpy(packet->getData() + packet->header.dataLength, &s_protocolID, sizeof(s_protocolID));
+		memcpy(packet.getData() + packet.header.dataLength, &g_protocolID, sizeof(g_protocolID));
 
-		if (checksum != crcFast((const unsigned char*)packet->getData(), 
-		                        packet->header.dataLength + sizeof(uint32_t)))
+		if (checksum != crcFast((const unsigned char*)packet.getData(), 
+		                        packet.header.dataLength + sizeof(uint32_t)))
 		{
-			LOG_DEBUG("Checksum mismatch; Packet discarded.");
-			delete packet;
+			LOG_DEBUG("NetworkInterface::receivePackets: Checksum mismatch; Packet discarded.");
 			continue;
 		}
 
-		if (packet->header.ackBits != 0 && 
-			packet->header.sequence > 0 && 
-			packet->header.ackSequence >= 0)
+		// Read acks
+		if (packet.header.ackBits != 0 &&
+			packet.header.sequence > 0 &&
+			packet.header.ackSequence >= 0)
 		{
-			IncomingMessage ackMsg = {};
-			ackMsg.type     = MessageType::Ack;
-			ackMsg.address  = address;
-			ackMsg.sequence = packet->header.sequence;
-			ackMsg.data.writeInt32(packet->header.ackSequence);
-			ackMsg.data.writeInt32(packet->header.ackBits);
-			m_incomingMessages.push(ackMsg);
+			readAcks(packet.header.ackSequence, packet.header.ackBits);
 		}
-		// Dissect packet
-		for (int32_t i = 0; i < packet->header.messageCount; i++)
-		{
-			IncomingMessage msg = packet->readMessage();
 
-			msg.address = address;
-			msg.sequence = m_receivedMessageCount++;
-			//if (msg.isOrdered && orderedMsgCount < s_maxPendingMessages)
-			//{
-			//	orderedMsgs[orderedMsgCount++] = msg;
-			//}
-			//else
+		// Read messages
+		for (int32_t i = 0; i < packet.header.messageCount; i++)
+		{
+			IncomingMessage message = packet.readNextMessage();
+
+			message.address = address;
+			message.sequence = m_receivedMessageCount++;
+
+			if (message.type == MessageType::AcceptClient 
+				&& m_state == NetworkInterface::State::Connecting)
 			{
-				m_incomingMessages.push(msg);
+				setState(NetworkInterface::State::Connected);
 			}
+
+			m_incomingMessages.push(message);
 		}
-		
-		delete packet;
 	}
 
-	//if(orderedMsgCount > 0)
-	//{
-	//	std::sort(orderedMsgs.begin(), orderedMsgs.begin() + orderedMsgCount-1,
-	//			  [](IncomingMessage& a, IncomingMessage& b) {
-	//		return (a.sequence < b.sequence);
-	//	});
-	//}
 	for (uint32_t i = 0; i < orderedMsgCount; i++)
 	{
 		m_incomingMessagesOrdered.push(orderedMsgs[i]);
 	}
 }
 
+void NetworkInterface::readAcks(Sequence baseSequence, uint32_t ackBits)
+{
+	ensure(ackBits != 0);
+	ensure(sequenceLessThan(baseSequence, m_sequenceCounter));
+
+	m_sentPackets.getEntry(baseSequence)->acked = true;	
+
+	for (int32_t i = 0; i < 32; i++)
+	{
+		if ((ackBits & 1) << i)
+		{
+			const Sequence ackSequence = baseSequence - i;
+			if (SentPacketData* packetData = m_sentPackets.getEntry(ackSequence))
+			{
+				packetData->acked = true;
+				for (int16_t j = 0; j < packetData->numMessages; j++)
+				{
+					m_acks.getEntry(packetData->messageIDs[j])->acked = true;
+				}
+			}
+		}
+	}
+}
+
 void NetworkInterface::sendPacket(const Address& destination, Packet* packet)
 {
 	assert(packet != nullptr);
-
-	BitStream stream;
 	assert(g_maxBlockSize - packet->header.dataLength > sizeof(uint32_t));
 
 	// Write protocol ID after packet to include in the checksum
-	memcpy(packet->getData() + packet->header.dataLength, &s_protocolID, sizeof(s_protocolID));
+	memcpy(packet->getData() + packet->header.dataLength, &g_protocolID, sizeof(g_protocolID));
 	uint32_t checksum = crcFast((const unsigned char*)packet->getData(), 
 	                            packet->header.dataLength + sizeof(uint32_t));
+
+
+	//if (m_state == NetworkInterface::State::Hosting)
+	//{
+	//	char* data = new char[packet->header.dataLength+1];
+	//	memcpy(data, packet->getData(), packet->header.dataLength);
+	//	data[packet->header.dataLength] = '\0';
+	//	LOG_DEBUG("%d: %s", packet->header.sequence, data);
+	//}
+
+	BitStream stream;
 	stream.writeInt32(checksum);
 	stream.writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
 	stream.writeData(packet->getData(), packet->header.dataLength);
 	m_socket->send(destination, stream.getBuffer(), stream.getLength());
+	m_sentPackets.insert(packet->header.sequence);
 }
 
 void NetworkInterface::setState(State state)
 {
 	m_state = state;
-	m_stateTimer = 0.0f;
+	m_stateTime = 0.0f;
 }
 
-void NetworkInterface::update(float deltaTime)
+void NetworkInterface::update(const Time& time)
 {
-	m_stateTimer += deltaTime;
+	const float deltaTime = time.getDeltaSeconds();
+	m_stateTime += deltaTime;
 
-	receivePackets();
+	if (m_state != State::Disconnected)
+	{
+		receivePackets();
+	}
 
 	switch (m_state)
 	{
 		case State::Connecting:
 		{
-			if (m_stateTimer >= s_connectionTimeout)
+			if (m_stateTime >= s_timeoutSeconds)
 			{
 				return setState(State::Disconnected);
 			}
 			break;
 		}
-		default: break;
+		case State::Connected:
+		case State::Disconnected:
+		case State::Disconnecting:
+		case State::Hosting:
+			break;
 	}
 }
 
@@ -171,44 +230,85 @@ void NetworkInterface::connect(const Address& destination, const Time& time)
 	{
 		m_socket->initialize(destination.getPort());
 	}
-	
+
+	m_remoteAddress = destination;
+
+	OutgoingMessage message = {};
+	message.type = MessageType::RequestConnection;
+	message.data.writeInt32(rand());
+
+	Packet packet;
+	packet.header = {};
+	packet.writeMessage(message);
+
+	sendPacket(destination, &packet);
 	setState(State::Connecting);
 }
 
-void NetworkInterface::host(uint32_t port)
+bool NetworkInterface::listen(uint32_t port)
 {
-	if (m_socket->isInitialized())
-	{
-		delete m_socket;
-	}
+	assert(m_socket->isInitialized() == false);
 	
 	if (m_socket->initialize(port, true))
 	{
 		setState(State::Hosting);
+		return true;
+	}
+
+	return false;
+}
+
+void NetworkInterface::sendMessages(OutgoingMessage* messages, uint32_t numMessages,
+	const Address& destination)
+{
+	assert(m_state != State::Disconnected);
+
+	Packet packet;
+	packet.header = {};
+	packet.header.sequence = m_sequenceCounter++;
+
+	for (uint32_t i = 0; i < numMessages; i++)
+	{
+		OutgoingMessage& message = messages[i];
+		if (message.type != MessageType::None)
+		{
+			packet.writeMessage(message);
+			if (message.isReliable || message.isOrdered)
+			{
+				if (SentMessage* ack = m_acks.insert(message.sequence))
+				{
+					ack->acked = false;
+				}
+			}
+			message.type = MessageType::None;
+		}
+	}
+
+	if (!packet.isEmpty())
+	{
+		sendPacket(destination, &packet);
 	}
 }
 
-//void NetworkInterface::disconnect()
-//{
-//	if (m_state != State::STATE_HOSTING)
-//	{
-//		NetworkMessage message = {};
-//		message.type = MessageType::CLIENT_DISCONNECT;
-//		message.isReliable = true;
-//
-//		sendMessage(m_serverAddress, message);
-//
-//		setState(State::STATE_DISCONNECTING);
-//	}
-//}
-
-void NetworkInterface::sendMessage(const Address& destination, NetworkMessage& message)
+void NetworkInterface::disconnect(const Address& address)
 {
-	Packet* packet = new Packet;
-	    packet->header = {};
-	    packet->writeMessage(message);
-	    sendPacket(destination, packet);
-	delete packet;
+	if (m_state == State::Disconnected || m_state == State::Disconnecting)
+	{
+		ensure(false);
+		return;
+	}
+
+	OutgoingMessage message = {};
+	message.type = MessageType::Disconnect;
+	message.isReliable = true;
+	sendMessages(&message, 1, address);
+	
+	setState(State::Disconnecting);
+}
+
+SequenceBuffer<SentMessage>& network::NetworkInterface::getAcks() 
+{
+	return m_acks;
 }
 
 bool NetworkInterface::isConnecting() const

@@ -18,11 +18,12 @@
 const int32_t INDEX_NONE = -1;
 
 using Vector2i = glm::ivec2;
-using Vector2 = glm::vec2;
-using Vector3 = glm::vec3;
-using Vector4 = glm::vec4;
-using Color   = glm::vec4;
-using iColor  = glm::ivec4;
+using Vector2  = glm::vec2;
+using Vector3  = glm::vec3;
+using Vector4  = glm::vec4;
+using Color    = glm::vec4;
+using iColor   = glm::ivec4;
+using Sequence = uint16_t;
 
 #ifdef _DEBUG
 #define DEBUG_ONLY(x) x

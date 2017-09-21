@@ -29,13 +29,12 @@ namespace network
 		uint8_t     getC()       const;
 		uint8_t     getD()       const;
 		uint16_t    getPort()    const;
-		std::string toString()  const;
+		std::string toString()   const;
 
 		bool operator == (const Address& other) const;
 		bool operator != (const Address& other) const;
 
 	private:
-
 		uint32_t m_address;
 		uint16_t m_port;
 	};

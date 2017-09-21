@@ -20,6 +20,7 @@ namespace network
 
 		bool isUsed() const;
 		void queueMessage(const NetworkMessage& message, float time);
+		void queueMessage(const OutgoingMessage& message, float time);
 
 		Address	 m_address;
 		int32_t	 m_id;
@@ -27,13 +28,13 @@ namespace network
 		uint32_t m_duplicatePeers;
 		int32_t  m_recentNetworkIDs[s_networkIDBufferSize];
 		int32_t  m_recentlyProcessed[s_sequenceMemorySize];
-		int32_t  m_nextProcessed;
+		uint32_t m_nextMessageID;
 		int32_t  m_guid;
 		int8_t   m_nextNetworkID;
 		float    m_timeFromLastMessage;
 
-		std::array<NetworkMessage, s_maxPendingMessages> m_messageBuffer;
-		std::array<NetworkMessage, s_maxPendingMessages> m_reliableBuffer;
+		std::array<OutgoingMessage, s_maxPendingMessages> m_messageBuffer;
+		std::array<OutgoingMessage, s_maxPendingMessages> m_reliableBuffer;
 	
 		friend bool operator== (const RemoteClient& a, const RemoteClient& b);
 		friend bool operator!= (const RemoteClient& a, const RemoteClient& b);

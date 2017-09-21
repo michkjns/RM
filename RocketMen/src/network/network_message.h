@@ -3,22 +3,21 @@
 
 #include <network/address.h>
 #include <bitstream.h>
-#include <climits>
+#include <common.h>
+
+//#include <climits>
 
 namespace network
 {
 	static const int32_t s_maxPendingMessages = 64;
 
-	// TODO: Split server->client and client->server message types..?
 	enum class MessageType : int8_t
 	{
-		Clear = 0,
+		None = 0,
+
 		Ack,
 		Ping,
-
-		// Client to server
-		ClientConnectRequest,
-		ClientDisconnect,
+		Disconnect,
 
 		// Server to client
 		AcceptClient,
@@ -30,6 +29,7 @@ namespace network
 		GameEvent,
 
 		// Client to server
+		RequestConnection,
 		IntroducePlayer,
 		PlayerInput,
 		RequestEntity,
@@ -37,40 +37,64 @@ namespace network
 		NUM_MESSAGE_TYPES
 	};
 
+#ifdef _DEBUG
+		static const char* s_messageTypeString[static_cast<int32_t>(MessageType::NUM_MESSAGE_TYPES)] =
+		{
+			"None",
+			"Ack",
+			"Ping",
+			"Disconnect",
+			"AcceptClient",
+			"AcceptPlayer",
+			"Gamestate",
+			"SpawnEntity",
+			"AcceptEntity",
+			"GameEvent",
+			"RequestConnection",
+			"IntroducePlayer",
+			"PlayerInput",
+			"RequestEntity",
+			"NUM_MESSAGE_TYPES"
+		};
+
+		static const char* messageTypeAsString(MessageType type)
+		{
+			return s_messageTypeString[static_cast<int32_t>(type)];
+		}
+#endif
+
 	struct NetworkMessage
 	{
 		MessageType type;
 		BitStream   data;
-		bool        isReliable;
-		bool        isOrdered;
-		int32_t     sequenceNr; // Packet seq
-		float       timeOfCreation;
+		uint32_t    isReliable : 1;
+		uint32_t    isOrdered  : 1;
+	};
+
+	struct OutgoingMessage
+	{
+		Sequence    sequence;
+		float       timestamp;
+		MessageType type;
+		BitStream   data;
+		uint32_t    isReliable : 1;
+		uint32_t    isOrdered  : 1;
 	};
 
 	struct IncomingMessage
 	{
+		Sequence    sequence;
+		float       timestamp;
 		MessageType type;
 		BitStream   data;
-		bool        isReliable;
-		bool        isOrdered;
 		Address     address; // sender address
-		int32_t     sequence; 
+		uint32_t    isReliable : 1;
+		uint32_t    isOrdered  : 1;
 	};
 
-	//inline void destroyMessage(NetworkMessage& message)
-	//{
-	//	if (message.data != nullptr)
-	//	{
-	//		delete message.data;
-	//	}
-	//}
-
-	//inline void destroyMessage(IncomingMessage& message)
-	//{
-	//	if (message.data != nullptr)
-	//	{
-	//		delete message.data;
-	//	}
-	//}
+	struct SentMessage
+	{
+		bool acked;
+	};
 
 }; // namespace network

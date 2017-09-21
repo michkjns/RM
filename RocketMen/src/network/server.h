@@ -39,7 +39,6 @@ namespace network
 		void onClientConnect(IncomingMessage& msg);
 		void onClientDisconnect(const IncomingMessage& msg);
 
-		void onAckMessage(IncomingMessage& msg, RemoteClient* client);
 		void onPlayerIntroduction(IncomingMessage& msg);
 		void onEntityRequest(IncomingMessage& msg);
 
@@ -59,16 +58,16 @@ namespace network
 		RemoteClient* getClient(const Address& address);
 
 		NetworkInterface m_networkInterface;
-		Game*            m_game;
-		bool             m_isInitialized;
-		Time&            m_gameTime;
-		int32_t          m_clientIDCounter;
-		int32_t          m_playerIDCounter;
-		int32_t          m_networkIDCounter;
-		uint32_t         m_numConnectedClients;
-		uint32_t         m_lastOrderedMessaged;
-		int32_t          m_localClientID;
-		uint32_t		 m_sequenceCounter;
+		Game*      m_game;
+		bool       m_isInitialized;
+		Time&      m_gameTime;
+		int32_t    m_clientIDCounter;
+		int32_t    m_playerIDCounter;
+		int32_t    m_networkIDCounter;
+		uint32_t   m_numConnectedClients;
+		int32_t    m_localClientID;
+		Sequence   m_sequenceCounter;
+		Sequence   m_lastOrderedMessaged;
 
 		/* Time since last snapshot */
 		float m_snapshotTime;

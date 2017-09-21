@@ -182,6 +182,7 @@
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\core\resource_manager.cpp" />
     <ClCompile Include="src\game\rocketmen.cpp" />
+    <ClCompile Include="src\network\sequence_buffer.cpp" />
     <ClCompile Include="src\physics.cpp" />
     <ClCompile Include="src\physics\rigidbody.cpp" />
     <ClCompile Include="src\physics\staticbody.cpp" />
@@ -221,6 +222,7 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\network\address.h" />
     <ClInclude Include="src\crc\crc.h" />
+    <ClInclude Include="src\network\message_buffer.h" />
     <ClInclude Include="src\network\network_interface.h" />
     <ClInclude Include="src\network\network_message.h" />
     <ClInclude Include="src\network\packet.h" />
@@ -228,6 +230,7 @@
     <ClInclude Include="src\graphics\renderer.h" />
     <ClInclude Include="src\core\resource_manager.h" />
     <ClInclude Include="src\game\rocketmen.h" />
+    <ClInclude Include="src\network\sequence_buffer.h" />
     <ClInclude Include="src\physics.h" />
     <ClInclude Include="src\physics\rigidbody.h" />
     <ClInclude Include="src\physics\physics_box2d.h" />

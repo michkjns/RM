@@ -27,11 +27,13 @@ void Network::connect(const network::Address& address)
 	s_client->connect(address);
 }
 
-//void Network::disconnect()
-//{
-//	assert(s_client != nullptr);
-//	s_client->disconnect();
-//}
+void Network::disconnect()
+{
+	if (isClient())
+	{
+		s_client->disconnect();
+	}
+}
 
 void Network::generateNetworkID(Entity* entity)
 {

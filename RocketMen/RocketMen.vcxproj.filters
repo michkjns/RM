@@ -147,6 +147,9 @@
     <ClCompile Include="src\common.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\network\sequence_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitstream.h">
@@ -282,6 +285,12 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="src\common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\message_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\sequence_buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
