@@ -34,7 +34,7 @@ void Packet::writeMessage(const OutgoingMessage& message)
 		writeData(message.data.getBuffer(), message.data.getLength()); 
 
 #ifdef _DEBUG
-		LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
+	//	LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
 #endif
 	}
 	else
@@ -42,7 +42,7 @@ void Packet::writeMessage(const OutgoingMessage& message)
 		int32_t size = 0;
 		writeData(&size, sizeof(size));
 #ifdef _DEBUG
-		LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
+	//	LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
 #endif
 	}
 
@@ -88,7 +88,7 @@ IncomingMessage Packet::readNextMessage()
 	m_read += sizeof(dataSize);
 
 #ifdef _DEBUG
-	LOG_DEBUG("ReadNextMessage: ID: %d, Size: %d, %s", message.sequence, dataSize, messageTypeAsString(message.type));
+	//LOG_DEBUG("ReadNextMessage: ID: %d, Size: %d, %s", message.sequence, dataSize, messageTypeAsString(message.type));
 #endif
 
 	if (dataSize > 0)

@@ -390,7 +390,7 @@ void Server::processOutgoingMessages(float deltaTime)
 
 				if (currentTime - message.timestamp >= 1.0f)
 				{
-				//	client.queueMessage(message, currentTime);
+					client.queueMessage(message, currentTime);
 					message.type = MessageType::None;
 				}
 			}

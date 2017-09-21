@@ -316,16 +316,15 @@ void Client::onSpawnEntity(IncomingMessage& msg)
 
 void Client::onAcceptEntity(IncomingMessage& msg)
 {
-	LOG_DEBUG("OnAcceptEntity 1");
 	int32_t localID  = msg.data.readInt32();
 	int32_t remoteID = msg.data.readInt32();
 	Entity* entity   = nullptr;
 
-	if (int32_t index = m_recentlyPredictedSpawns.find(localID) != INDEX_NONE)
+	int32_t index = m_recentlyPredictedSpawns.find(localID);
+	if (index != INDEX_NONE)
 	{
 		m_recentlyPredictedSpawns[index] = 0;
 	}
-	LOG_DEBUG("OnAcceptEntity 2");
 	auto entities = Entity::getList();
 	if (Entity* entity = findPtrByPredicate(entities.begin(), entities.end(),
 		[localID](Entity* it) { return it->getNetworkID() == localID; } ))
@@ -342,7 +341,6 @@ void Client::onAcceptEntity(IncomingMessage& msg)
 	{
 		LOG_DEBUG("Client::onAcceptEntity: Unknown netID (%i)", localID);
 	}
-	LOG_DEBUG("OnAcceptEntity 3");
 }
 
 void Client::onDestroyEntity(IncomingMessage& msg)
