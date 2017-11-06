@@ -92,11 +92,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -105,11 +106,12 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -118,13 +120,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -135,13 +138,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -175,14 +179,17 @@
     <ClCompile Include="src\core\debug.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\crc\crc.c" />
-    <ClCompile Include="src\network\network_interface.cpp" />
+    <ClCompile Include="src\network\connection.cpp" />
+    <ClCompile Include="src\network\network_channel.cpp" />
     <ClCompile Include="src\network\network_message.cpp" />
     <ClCompile Include="src\network\packet.cpp" />
+    <ClCompile Include="src\network\reliable_ordered_channel.cpp" />
     <ClCompile Include="src\network\remote_client.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\core\resource_manager.cpp" />
     <ClCompile Include="src\game\rocketmen.cpp" />
     <ClCompile Include="src\network\sequence_buffer.cpp" />
+    <ClCompile Include="src\network\unreliable_channel.cpp" />
     <ClCompile Include="src\physics.cpp" />
     <ClCompile Include="src\physics\rigidbody.cpp" />
     <ClCompile Include="src\physics\staticbody.cpp" />
@@ -222,15 +229,21 @@
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\network\address.h" />
     <ClInclude Include="src\crc\crc.h" />
+    <ClInclude Include="src\network\common_network.h" />
+    <ClInclude Include="src\network\connection.h" />
+    <ClInclude Include="src\network\connection_callback.h" />
+    <ClInclude Include="src\network\message_type.h" />
     <ClInclude Include="src\network\message_buffer.h" />
-    <ClInclude Include="src\network\network_interface.h" />
+    <ClInclude Include="src\network\network_channel.h" />
     <ClInclude Include="src\network\network_message.h" />
     <ClInclude Include="src\network\packet.h" />
+    <ClInclude Include="src\network\reliable_ordered_channel.h" />
     <ClInclude Include="src\network\remote_client.h" />
     <ClInclude Include="src\graphics\renderer.h" />
     <ClInclude Include="src\core\resource_manager.h" />
     <ClInclude Include="src\game\rocketmen.h" />
     <ClInclude Include="src\network\sequence_buffer.h" />
+    <ClInclude Include="src\network\unreliable_channel.h" />
     <ClInclude Include="src\physics.h" />
     <ClInclude Include="src\physics\rigidbody.h" />
     <ClInclude Include="src\physics\physics_box2d.h" />

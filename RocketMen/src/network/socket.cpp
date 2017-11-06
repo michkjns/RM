@@ -12,23 +12,22 @@
 
 using namespace network;
 
-static bool      s_initializeWSA = true;
-static int       s_numSockets    = 0;
-static const int s_defaultPort	 = 1234;
-static WSADATA   s_wsa;
+static bool    s_initializedWSA = false;
+static int     s_numSockets = 0;
+static WSADATA s_wsa;
 
 static bool initializeWSA();
 static bool closeWSA();
 
 // Win32 Impl
-class Socket_impl : public Socket
+class Socket_win32 : public Socket
 {
 public:
-	Socket_impl(NetProtocol type);
-	~Socket_impl();
+	Socket_win32();
+	~Socket_win32();
 
-	bool initialize(uint32_t port, bool isHost)	override;
-	bool isInitialized()                  const override;
+	bool initialize(uint16_t port)	override;
+	bool isInitialized()      const override;
 
 	bool receive(Address& adress, char* buffer, int32_t& length) override;
 	bool send(const Address& adress, const void* buffer, const size_t bufferLength)	override;
@@ -40,38 +39,27 @@ public:
 	uint64_t getPacketsSent()     const override;
 
 private:
-	bool initializeUDP(uint16_t port, bool isHost /* = false */);
-	bool initializeTCP(uint16_t port, bool isHost /* = false */);
-
-	bool sendUDP(const Address& address, const void* buffer, const size_t bufferLength);
-	bool sendTCP(const Address& address, const void* buffer, const size_t bufferLength);
-
-	bool receiveUDP(Address& address, char* buffer, int32_t& length);
-	bool receiveTCP(Address& address, char* buffer, int32_t& length);
-
-	bool         m_isInitialized;
-	uint64_t     m_bytesReceived;
-	uint64_t     m_bytesSent;
-	uint64_t     m_packetsReceived;
-	uint64_t     m_packetsSent;
-	uint16_t     m_port;
-	NetProtocol  m_type;
+	bool     m_isInitialized;
+	uint64_t m_bytesReceived;
+	uint64_t m_bytesSent;
+	uint64_t m_packetsReceived;
+	uint64_t m_packetsSent;
+	uint16_t m_port;
 
 	SOCKET m_winSocket;
 };
 
-Socket_impl::Socket_impl(NetProtocol type) : 
+Socket_win32::Socket_win32() : 
 	m_isInitialized(false),
 	m_bytesReceived(0),
 	m_bytesSent(0),
 	m_packetsReceived(0),
 	m_packetsSent(0),
-	m_port(s_defaultPort),
-	m_type(type)
+	m_port(0)
 {
 }
 
-Socket_impl::~Socket_impl()
+Socket_win32::~Socket_win32()
 {
 	if (m_isInitialized)
 	{
@@ -82,143 +70,62 @@ Socket_impl::~Socket_impl()
 
 		if (s_numSockets == 0)
 		{
-			if (WSACleanup() != 0)
+			if (closeWSA())
 			{
-				LOG_ERROR("WSACleanup failed. Error Code : %d\n", WSAGetLastError());
+				s_initializedWSA = false;
+			}
+			else
+			{
 				assert(false);
 			}
-
-			s_initializeWSA = true;
 		}
 	}
 }
 
-bool Socket_impl::initialize(uint32_t port, bool isHost)
+bool Socket_win32::initialize(uint16_t port)
 {
-	if (s_initializeWSA)
+	if (!s_initializedWSA)
 	{
 		initializeWSA();
 	}
-
-	if (m_type == NetProtocol::UDP)
-	{
-		m_isInitialized = initializeUDP(port, isHost);
-	}
-	else
-	{
-		m_isInitialized = initializeTCP(port, isHost);
-	}
-
-	s_numSockets++;
-	return m_isInitialized;
-}
-
-bool Socket_impl::isInitialized() const
-{
-	return m_isInitialized;
-}
-
-bool Socket_impl::send(const Address& adress, const void* buffer, size_t bufferLength)
-{
-	if (m_type == NetProtocol::UDP)
-	{
-		return sendUDP(adress, buffer, bufferLength);
-	}
-	else
-	{
-		return sendTCP(adress, buffer, bufferLength);
-	}
-}
-
-uint32_t Socket_impl::getPort() const
-{
-	return m_port;
-}
-
-uint64_t Socket_impl::getBytesSent() const
-{
-	return m_bytesSent;
-}
-
-uint64_t Socket_impl::getBytesReceived() const
-{
-	return m_bytesReceived;
-}
-
-uint64_t Socket_impl::getPacketsReceived() const
-{
-	return m_packetsReceived;
-}
-
-uint64_t Socket_impl::getPacketsSent() const
-{
-	return m_packetsSent;
-}
-
-bool Socket_impl::receive(Address& address, char* buffer, int32_t& length)
-{
-	assert(m_isInitialized);
 	
-	if (m_type == NetProtocol::UDP)
-	{
-		return receiveUDP(address, buffer, length);
-	}
-	else
-	{
-		return receiveTCP(address, buffer, length);
-	}
-	return false;
-}
-
-bool Socket_impl::initializeUDP(uint16_t port, bool isHost)
-{
 	m_winSocket = socket(AF_INET, SOCK_DGRAM, 0);
 	unsigned long nonBlocking = 1;
 	ioctlsocket(m_winSocket, FIONBIO, &nonBlocking);
 	m_port = port;
 
-	if (isHost)
-	{
-		sockaddr_in localAddress;
-		localAddress.sin_family = AF_INET;
-		localAddress.sin_addr.s_addr = INADDR_ANY;
-		localAddress.sin_port = htons(m_port);
+	sockaddr_in localAddress;
+	localAddress.sin_family = AF_INET;
+	localAddress.sin_addr.s_addr = INADDR_ANY;
+	localAddress.sin_port = htons(m_port);
 
-		if (bind(m_winSocket, (sockaddr*)&localAddress, sizeof(localAddress)) != 0)
-		{
-			LOG_ERROR("WSA bind failed. Error Code : %d\n", WSAGetLastError());
-			return false;
-		}
+	if (bind(m_winSocket, (sockaddr*)&localAddress, sizeof(localAddress)) != 0)
+	{
+		LOG_ERROR("WSA bind failed. Error Code : %d\n", WSAGetLastError());
+		return false;
 	}
 
-	return true;
+	s_numSockets++;
+	m_isInitialized = true;
+	return m_isInitialized;
 }
 
-bool Socket_impl::initializeTCP(uint16_t port, bool isHost)
+bool Socket_win32::isInitialized() const
 {
-	// TODO
-	assert(false);
-	return false;
+	return m_isInitialized;
 }
 
-bool Socket_impl::sendTCP(const Address& adress, const void* buffer, const size_t bufferLength)
-{
-	// TODO
-	assert(false);
-	return false;
-}
-
-bool Socket_impl::sendUDP(const Address& adress, const void* buffer, const size_t bufferLength)
+bool Socket_win32::send(const Address& adress, const void* buffer, size_t bufferLength)
 {
 	sockaddr_in remoteAddress;
-	remoteAddress.sin_family		= AF_INET;
-	remoteAddress.sin_addr.s_addr	= htonl(adress.getAddress()	);
-	remoteAddress.sin_port			= htons(adress.getPort()	);
+	remoteAddress.sin_family = AF_INET;
+	remoteAddress.sin_addr.s_addr = htonl(adress.getAddress());
+	remoteAddress.sin_port = htons(adress.getPort());
 
 	int dataSent = sendto(m_winSocket, static_cast<const char*>(buffer),
-						  static_cast<int>(bufferLength), 0,
-						  reinterpret_cast<sockaddr*>(&remoteAddress), 
-						  static_cast<int>(sizeof(remoteAddress)));
+		static_cast<int>(bufferLength), 0,
+		reinterpret_cast<sockaddr*>(&remoteAddress),
+		static_cast<int>(sizeof(remoteAddress)));
 
 	if (dataSent == SOCKET_ERROR)
 	{
@@ -231,8 +138,32 @@ bool Socket_impl::sendUDP(const Address& adress, const void* buffer, const size_
 	return true;
 }
 
+uint32_t Socket_win32::getPort() const
+{
+	return m_port;
+}
 
-bool Socket_impl::receiveUDP(Address& address, char* buffer, int32_t& length)
+uint64_t Socket_win32::getBytesSent() const
+{
+	return m_bytesSent;
+}
+
+uint64_t Socket_win32::getBytesReceived() const
+{
+	return m_bytesReceived;
+}
+
+uint64_t Socket_win32::getPacketsReceived() const
+{
+	return m_packetsReceived;
+}
+
+uint64_t Socket_win32::getPacketsSent() const
+{
+	return m_packetsSent;
+}
+
+bool Socket_win32::receive(Address& address, char* buffer, int32_t& length)
 {
 	sockaddr_in remoteAddress;
 	int32_t remoteAddrSize = sizeof(remoteAddress);
@@ -259,7 +190,12 @@ bool Socket_impl::receiveUDP(Address& address, char* buffer, int32_t& length)
 			{
 				return false;
 			}
-
+			case WSAEINVAL:
+			{
+				LOG_ERROR("recvfrom failed. Error Code : Invalid argument (10022)");
+				assert(false);
+				return false;
+			}
 			default:
 			{
 				LOG_ERROR("recvfrom failed. Error Code : %d\n", error);
@@ -267,20 +203,11 @@ bool Socket_impl::receiveUDP(Address& address, char* buffer, int32_t& length)
 			}
 		}		
 	}
-	
-	return false;
 }
 
-bool Socket_impl::receiveTCP(Address& address, char* buffer, int32_t& length)
+Socket* Socket::create()
 {
-	// TODO
-	assert(false);
-	return false;
-}
-
-Socket* Socket::create(NetProtocol type)
-{
-	return new Socket_impl(type);
+	return new Socket_win32();
 }
 
 bool initializeWSA()
@@ -291,7 +218,7 @@ bool initializeWSA()
 		return false;
 	}
 
-	s_initializeWSA = false;
+	s_initializedWSA = true;
 	return true;
 }
 

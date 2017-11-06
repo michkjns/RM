@@ -51,6 +51,8 @@ public:
 	inline T& operator[](size_t i) { return m_buffer[i]; }
 	inline const T& operator[](size_t i) const { return m_buffer[i]; }
 
+	auto begin() { return m_buffer.begin(); }
+	auto end()   { return m_buffer.end(); }
 private:
 	std::array<T, N> m_buffer;
 	int32_t m_index;

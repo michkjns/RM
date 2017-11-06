@@ -17,7 +17,7 @@ bool Network::isClient()
 
 bool Network::isServer()
 {
-	return (s_server && s_server->isInitialized());
+	return (s_server != nullptr);
 }
 
 void Network::connect(const network::Address& address)
@@ -35,12 +35,12 @@ void Network::disconnect()
 	}
 }
 
-void Network::generateNetworkID(Entity* entity)
+void Network::generateNetworkId(Entity* entity)
 {
 	assert(entity != nullptr);
 	if (isServer())
 	{
-		s_server->generateNetworkID(entity);
+		s_server->generateNetworkId(entity);
 	}
 	else if (isClient())
 	{
@@ -52,13 +52,13 @@ void Network::generateNetworkID(Entity* entity)
 	}
 }
 
-bool Network::addLocalPlayer(int32_t controllerID) // TODO Create enum for controller IDs / input devices
+bool Network::addLocalPlayer(int32_t controllerId) // TODO Create enum for controller IDs / input devices
 {
 	assert(s_client);
 	assert(s_client->isInitialized());
-	if (ensure(controllerID >= 0))
+	if (ensure(controllerId >= 0))
 	{
-		return s_client->addLocalPlayer(controllerID);
+		return s_client->addLocalPlayer(controllerId);
 	}
 
 	return false;
@@ -74,12 +74,12 @@ uint32_t Network::getNumLocalPlayers()
 	return 0;
 }
 
-bool Network::isLocalPlayer(int32_t playerID)
+bool Network::isLocalPlayer(int32_t playerId)
 {
 	assert(s_client);
 	assert(s_client->isInitialized());
 
-	return s_client->isLocalPlayer(playerID);
+	return s_client->isLocalPlayer(playerId);
 }
 
 bool Network::requestEntity(Entity* entity)
@@ -90,11 +90,11 @@ bool Network::requestEntity(Entity* entity)
 	return s_client->requestEntity(entity);
 }
 
-void Network::destroyEntity(int32_t networkID)
+void Network::destroyEntity(int32_t networkId)
 {
 	if (s_server)
 	{
-		s_server->destroyEntity(networkID);
+		s_server->destroyEntity(networkId);
 	}
 }
 

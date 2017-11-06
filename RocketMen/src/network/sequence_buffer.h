@@ -14,58 +14,32 @@ public:
 
 	T*       insert(Sequence sequence);
 	bool     exists(Sequence sequence) const;
+	bool     isAvailable(Sequence sequence) const;
 	void     remove(Sequence sequence);
+	bool     isEmpty() const;
 	int32_t  getSize() const;
 	T*       getEntry(Sequence sequence) const;
 	Sequence getCurrentSequence() const;
-	T*       getAtIndex(int32_t index);
-private:
-	int32_t  getIndex(uint16_t sequence) const;
+	int32_t  getIndex(Sequence sequence) const;
+	T*       getAtIndex(int32_t index) const;
 
+private:
 	T*        m_buffer;
 	bool*     m_exist;
 	Sequence* m_sequences;
 	Sequence  m_currentSequence;
 	int32_t   m_size;
+	bool      m_firstEntry;
 };
-
-inline bool sequenceGreaterThan(Sequence s1, Sequence s2)
-{
-	return ((s1 > s2) && (s1 - s2 <= 32768)) ||
-		((s1 < s2) && (s2 - s1 > 32768));
-}
-
-inline bool sequenceLessThan(Sequence s1, Sequence s2)
-{
-	return ((s1 > s2) && (s1 - s2 <= 32768)) ||
-		((s1 < s2) && (s2 - s1 > 32768));
-}
-
-inline int32_t sequenceDifference(Sequence s1, Sequence s2)
-{
-	int32_t s1_32 = s1;
-	int32_t s2_32 = s2;
-	if (abs(s1_32 - s2_32) >= 32768)
-	{
-		if (s1_32 > s2_32)
-		{
-			s2_32 += 65536;
-		}
-		else
-		{
-			s1_32 += 65536;
-		}
-	}
-	return s1_32 - s2_32;
-}
 
 template<typename T>
 SequenceBuffer<T>::SequenceBuffer(int32_t size) :
 	m_currentSequence(0),
-	m_size(size)
+	m_size(size),
+	m_firstEntry(true)
 {
 	m_buffer    = new T[size];
-	m_exist     = new bool[size];
+	m_exist     = new bool[size]();
 	m_sequences = new Sequence[size];
 }
 
@@ -80,7 +54,12 @@ SequenceBuffer<T>::~SequenceBuffer()
 template<typename T>
 T* SequenceBuffer<T>::insert(Sequence sequence)
 {
-	if (sequenceLessThan(sequence, m_currentSequence - m_size))
+	if (m_firstEntry)
+	{
+		m_currentSequence = sequence + 1;
+		m_firstEntry = false;
+	}
+	else if (sequenceLessThan(sequence, m_currentSequence - static_cast<Sequence>(m_size)))
 	{
 		return nullptr;
 	}
@@ -103,6 +82,27 @@ bool SequenceBuffer<T>::exists(Sequence sequence) const
 }
 
 template<typename T>
+inline bool SequenceBuffer<T>::isAvailable(Sequence sequence) const
+{
+	return !exists(sequence);
+}
+
+
+template<typename T>
+bool SequenceBuffer<T>::isEmpty() const
+{
+	for (int32_t i = 0;  i < m_size; i++)
+	{
+		if (m_exist[i])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+template<typename T>
 void SequenceBuffer<T>::remove(Sequence sequence)
 {
 	m_exist[getIndex(sequence)] = false;
@@ -118,7 +118,7 @@ template<typename T>
 T* SequenceBuffer<T>::getEntry(Sequence sequence) const
 {
 	const int32_t index = getIndex(sequence);
-	if (m_sequences[index] == sequence)
+	if (exists(sequence) && m_sequences[index] == sequence)
 	{
 		return &m_buffer[index];
 	}
@@ -133,11 +133,11 @@ inline Sequence SequenceBuffer<T>::getCurrentSequence() const
 }
 
 template<typename T>
-inline T* SequenceBuffer<T>::getAtIndex(int32_t index)
+inline T* SequenceBuffer<T>::getAtIndex(int32_t index) const
 {
 	assert(index >= 0);
 	assert(index < m_size);
-	return m_exist[index] ? m_buffer[index] : nullptr;
+	return m_exist[index] ? &m_buffer[index] : nullptr;
 }
 
 template<typename T>

@@ -2,39 +2,40 @@
 #pragma once
 
 #include "address.h"
-#include "network_message.h"
 
 #include <array>
 #include <vector>
 
 namespace network
 {
+	class  Connection;
+	struct Message;
+
 	class RemoteClient
 	{
 	private:
-		static const uint32_t s_sequenceMemorySize  = 256;
-		static const int32_t  s_networkIDBufferSize = 16;
+		static const int32_t  s_networkIdBufferSize = 16;
 
 	public:
 		RemoteClient();
+		~RemoteClient();
 
-		bool isUsed() const;
-		void queueMessage(const NetworkMessage& message, float time);
-		void queueMessage(const OutgoingMessage& message, float time);
+		void initialize(int32_t id, Connection* connection);
+		void clear();
+		void setNumPlayers(uint32_t numPlayers);
 
-		Address	 m_address;
-		int32_t	 m_id;
-		uint32_t m_numPlayers;
-		uint32_t m_duplicatePeers;
-		int32_t  m_recentNetworkIDs[s_networkIDBufferSize];
-		int32_t  m_recentlyProcessed[s_sequenceMemorySize];
-		uint32_t m_nextMessageID;
-		int32_t  m_guid;
-		int8_t   m_nextNetworkID;
-		float    m_timeFromLastMessage;
+		bool        isUsed()        const;
+		bool        isAvailable()   const;
+		int32_t     getId()         const;
+		uint32_t    getNumPlayers() const;
+		Connection* getConnection() const;
 
-		std::array<OutgoingMessage, s_maxPendingMessages> m_messageBuffer;
-		std::array<OutgoingMessage, s_maxPendingMessages> m_reliableBuffer;
+	private:
+		Connection* m_connection;
+		int32_t	    m_id;
+		uint32_t    m_numPlayers;
+		int32_t     m_recentNetworkIds[s_networkIdBufferSize];
+		int8_t      m_nextNetworkId;
 	
 		friend bool operator== (const RemoteClient& a, const RemoteClient& b);
 		friend bool operator!= (const RemoteClient& a, const RemoteClient& b);

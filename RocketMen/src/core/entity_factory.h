@@ -11,7 +11,7 @@ class IEntityFactory
 public:
 	virtual EntityType getType() = 0;
 
-	virtual Entity* instantiate(ReadStream& rs, bool shouldReplicate) = 0;
+	virtual Entity* instantiate(ReadStream& rs) = 0;
 
 	virtual bool serializeFull(Entity* entity, WriteStream& stream) = 0;
 
@@ -38,7 +38,7 @@ public:
 		return T::getTypeStatic();
 	}
 
-	Entity* instantiate(ReadStream& rs, bool shouldReplicate) override
+	Entity* instantiate(ReadStream& rs) override
 	{
 		T* entity = new T();
 		if (!entity->serializeFull(rs))

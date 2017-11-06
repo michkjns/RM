@@ -1,100 +1,78 @@
 
 #pragma once
 
-#include <network/address.h>
 #include <bitstream.h>
 #include <common.h>
-
-//#include <climits>
+#include <network/address.h>
+#include <network/message_type.h>
 
 namespace network
 {
-	static const int32_t s_maxPendingMessages = 64;
+	static const int32_t s_messageQueueSize = 64;
 
-	enum class MessageType : int8_t
+	enum class ChannelType : uint8_t
 	{
-		None = 0,
-
-		Ack,
-		Ping,
-		Disconnect,
-
-		// Server to client
-		AcceptClient,
-		AcceptPlayer,
-		Gamestate,
-		SpawnEntity,
-		AcceptEntity,
-		DestroyEntity,
-		GameEvent,
-
-		// Client to server
-		RequestConnection,
-		IntroducePlayer,
-		PlayerInput,
-		RequestEntity,
-
-		NUM_MESSAGE_TYPES
+		Unreliable,
+		ReliableOrdered
 	};
 
-#ifdef _DEBUG
-		static const char* s_messageTypeString[static_cast<int32_t>(MessageType::NUM_MESSAGE_TYPES)] =
-		{
-			"None",
-			"Ack",
-			"Ping",
-			"Disconnect",
-			"AcceptClient",
-			"AcceptPlayer",
-			"Gamestate",
-			"SpawnEntity",
-			"AcceptEntity",
-			"GameEvent",
-			"RequestConnection",
-			"IntroducePlayer",
-			"PlayerInput",
-			"RequestEntity",
-			"NUM_MESSAGE_TYPES"
-		};
+	struct Message
+	{
+		MessageType type;
+		BitStream   data;
+	};
 
-		static const char* messageTypeAsString(MessageType type)
+	struct OutgoingMessage : public Message
+	{
+		Sequence sequence;
+		float    timeLastSent;
+	};
+
+	struct IncomingMessage : public Message
+	{
+		Sequence sequence;
+		Address  address;
+	};
+
+	inline ChannelType getMessageChannel(MessageType type)
+	{
+		switch (type)
 		{
-			return s_messageTypeString[static_cast<int32_t>(type)];
+			case MessageType::ClockSync:
+			case MessageType::Gamestate:
+			{
+				return ChannelType::Unreliable;
+			}
+			case MessageType::AcceptClient:
+			case MessageType::AcceptEntity:
+			case MessageType::AcceptPlayer:
+			case MessageType::DestroyEntity:
+			case MessageType::Disconnect:
+			case MessageType::GameEvent:
+			case MessageType::IntroducePlayer:
+			case MessageType::KeepAlive:
+			case MessageType::PlayerInput:
+			case MessageType::RequestConnection:
+			case MessageType::RequestEntity:
+			case MessageType::SpawnEntity:
+			{
+				return ChannelType::ReliableOrdered;
+			}
+			case MessageType::None:
+			case MessageType::NUM_MESSAGE_TYPES:
+			{
+				assert(false);
+				return ChannelType::Unreliable;
+			};
 		}
-#endif
+		assert(false);
 
-	struct NetworkMessage
-	{
-		MessageType type;
-		BitStream   data;
-		uint32_t    isReliable : 1;
-		uint32_t    isOrdered  : 1;
+		return ChannelType::Unreliable;
 	};
 
-	struct OutgoingMessage
+	inline ChannelType getMessageChannel(struct Message message)
 	{
-		Sequence    sequence;
-		float       timestamp;
-		MessageType type;
-		BitStream   data;
-		uint32_t    isReliable : 1;
-		uint32_t    isOrdered  : 1;
-	};
-
-	struct IncomingMessage
-	{
-		Sequence    sequence;
-		float       timestamp;
-		MessageType type;
-		BitStream   data;
-		Address     address; // sender address
-		uint32_t    isReliable : 1;
-		uint32_t    isOrdered  : 1;
-	};
-
-	struct SentMessage
-	{
-		bool acked;
-	};
+		return getMessageChannel(message.type);
+	}
 
 }; // namespace network

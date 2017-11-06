@@ -122,18 +122,14 @@ void Renderer_glfw::renderSprites()
 {
 	for (const auto& it : Entity::getList())
 	{
-		if (it->getSpriteName().empty())
-			continue;
+		if (!it->getSpriteName().empty())
+		{
+			glm::mat4 origin = glm::translate(it->getTransform().getWorldMatrix(), Vector3(-.5f, -.50f, 0.0f));
 
-		Texture& texture = ResourceManager::getTexture(it->getSpriteName());
-
-		glm::mat4 origin = glm::translate(it->getTransform().getWorldMatrix(), 
-		                                  Vector3(-.5f, -.50f, 0.0f));
-
-		m_spriteRenderer.render(origin,
-								Camera::mainCamera->getProjectionMatrix()
-								* Camera::mainCamera->getViewMatrix(),
-								it->getSpriteName());
+			m_spriteRenderer.render(origin,
+				Camera::mainCamera->getProjectionMatrix() * Camera::mainCamera->getViewMatrix(),
+				it->getSpriteName());
+		}
 	}
 }
 

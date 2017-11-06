@@ -29,7 +29,7 @@ public:
 
 	void setTransform(const Vector2& position, float angle);
 
-	void    setLinearVelocity(Vector2& vel);
+	void    setLinearVelocity(const Vector2& vel);
 	Vector2 getLinearVelocity() const;
 
 	void applyLinearImpulse(const Vector2& force, const Vector2& position);

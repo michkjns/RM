@@ -1,5 +1,7 @@
 
 #pragma once
+#pragma warning(default:4061)
+#pragma warning(default:4062)
 
 #include <cstdint>
 #include <stdio.h>
@@ -25,12 +27,6 @@ using Color    = glm::vec4;
 using iColor   = glm::ivec4;
 using Sequence = uint16_t;
 
-#ifdef _DEBUG
-#define DEBUG_ONLY(x) x
-#else
-#define DEBUG_ONLY(x) 
-#endif
-
 #ifdef assert
 #undef assert
 #endif
@@ -47,3 +43,32 @@ using Sequence = uint16_t;
 #define ensure(X) (LIKELY(!!(X)) || (__debugbreak(), !!(X)))
 
 #define assert(X) (bool)(X ? true : _assert(false), false)
+
+inline bool sequenceGreaterThan(Sequence s1, Sequence s2)
+{
+	return ((s1 > s2) && (s1 - s2 <= 32768)) ||
+		((s1 < s2) && (s2 - s1 > 32768));
+}
+
+inline bool sequenceLessThan(Sequence s1, Sequence s2)
+{
+	return sequenceGreaterThan(s2, s1);
+}
+
+inline int32_t sequenceDifference(Sequence s1, Sequence s2)
+{
+	int32_t s1_32 = s1;
+	int32_t s2_32 = s2;
+	if (abs(s1_32 - s2_32) >= 32768)
+	{
+		if (s1_32 > s2_32)
+		{
+			s2_32 += 65536;
+		}
+		else
+		{
+			s1_32 += 65536;
+		}
+	}
+	return s1_32 - s2_32;
+}

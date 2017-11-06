@@ -8,8 +8,9 @@
 using namespace network;
 using std::memcpy;
 
-Packet::Packet() :
-	m_read(0)
+Packet::Packet(ChannelType channel) :
+	m_read(0),
+	m_channel(channel)
 {
 	header = {};
 }
@@ -19,19 +20,19 @@ void Packet::writeMessage(const OutgoingMessage& message)
 	assert(header.dataLength + sizeof(MessageType) + sizeof(int32_t) +
 			   message.data.getLength() < g_maxPacketSize);
 
-	int8_t type = (message.isOrdered) ? -(int8_t)message.type : (int8_t)message.type;
-	writeData(&type, sizeof(type)); // negative=ordered
+	assert(getMessageChannel(message) == m_channel);
 
-	if (message.isOrdered)
-	{
-		writeData(&message.sequence, sizeof(message.sequence));
-	}
+	writeData(&message.type, sizeof(MessageType));
+
+	writeData(&message.sequence, sizeof(Sequence));
+	m_messageIDs[header.messageCount] = message.sequence;
 
 	if(message.data.getLength() > 0)
 	{
-		int32_t size = static_cast<int32_t>(message.data.getLength());
+		const int32_t size = static_cast<int32_t>(message.data.getLength());
+		assert(size < g_maxPacketSize);
 		writeData(&size, sizeof(size));
-		writeData(message.data.getBuffer(), message.data.getLength()); 
+		writeData(message.data.getBuffer(), size);
 
 #ifdef _DEBUG
 	//	LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
@@ -46,7 +47,6 @@ void Packet::writeMessage(const OutgoingMessage& message)
 #endif
 	}
 
-	m_messageIDs[header.messageCount] = message.sequence;
 	header.messageCount++;
 }
 
@@ -59,45 +59,38 @@ void Packet::writeData(const void* data, const size_t length)
 	header.dataLength += static_cast<uint16_t>(length);
 }
 
-IncomingMessage Packet::readNextMessage()
+IncomingMessage* Packet::readNextMessage()
 {
-	IncomingMessage message = {};
-	int8_t messageType = 0;
-	memcpy(&messageType, m_data + m_read, sizeof(int8_t));
+	IncomingMessage* message = new IncomingMessage();
+
+	memcpy(&message->type, m_data + m_read, sizeof(MessageType));
 	m_read += sizeof(MessageType);
 	
-	if (messageType < 0)
+	if (!ensure(message->type > MessageType::None && message->type < MessageType::NUM_MESSAGE_TYPES))
 	{
-		message.type = (MessageType)-messageType;
-		message.isOrdered = true;
-	}
-	else
-	{
-		message.type = (MessageType)messageType;
+		LOG_WARNING("Packet: Invalid message type found");
+		return nullptr;
 	}
 
-	if (message.isOrdered)
-	{
-		memcpy(&message.sequence, m_data + m_read, sizeof(message.sequence));
-		m_read += sizeof(message.sequence);
-	}
-
+	memcpy(&message->sequence, m_data + m_read, sizeof(Sequence));
+	m_read += sizeof(Sequence);
 
 	int32_t dataSize;
 	memcpy(&dataSize, m_data + m_read, sizeof(dataSize));
+	assert(dataSize < g_maxPacketSize);
 	m_read += sizeof(dataSize);
-
-#ifdef _DEBUG
-	//LOG_DEBUG("ReadNextMessage: ID: %d, Size: %d, %s", message.sequence, dataSize, messageTypeAsString(message.type));
-#endif
-
 	if (dataSize > 0)
 	{
-		message.data.writeData(reinterpret_cast<char*>(m_data + m_read), dataSize);
+		message->data.writeData(reinterpret_cast<char*>(m_data + m_read), dataSize);
 		m_read += dataSize;
 	}
 
 	return message;
+}
+
+void Packet::resetReading()
+{
+	m_read = 0;
 }
 
 char* Packet::getData() const
@@ -108,4 +101,9 @@ char* Packet::getData() const
 bool network::Packet::isEmpty() const
 {
 	return header.messageCount == 0;
+}
+
+ChannelType Packet::getChannel() const
+{
+	return m_channel;
 }

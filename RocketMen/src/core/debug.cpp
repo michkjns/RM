@@ -25,7 +25,6 @@ inline std::string verbosityToString(Debug::Verbosity verbosity)
 
 void Debug::openLog(const char* file)
 {
-	std::time_t t = std::time(NULL);
 	s_logFile.open(file, std::fstream::out);
 	if (s_logFile.fail())
 	{
@@ -52,7 +51,6 @@ void Debug::openLog(const char* file)
 
 void Debug::closeLog()
 {
-	std::time_t t = std::time(NULL);
 	time_t rawtime;
 	struct tm timeinfo;
 	time(&rawtime);

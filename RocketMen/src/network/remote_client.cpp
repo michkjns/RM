@@ -1,20 +1,48 @@
 
 #include <network/remote_client.h>
+
 #include <core/debug.h>
+#include <network/common_network.h>
+#include <network/connection.h>
 
 using namespace network;
 
 RemoteClient::RemoteClient() :
+	m_connection(nullptr),
 	m_id(INDEX_NONE),
 	m_numPlayers(0),
-	m_duplicatePeers(0),
-	m_nextMessageID(0),
-	m_guid(0),
-	m_timeFromLastMessage(0.f),
-	m_nextNetworkID(0)
+	m_nextNetworkId(0)
 {
-	std::fill(m_recentNetworkIDs,  m_recentNetworkIDs  + s_networkIDBufferSize, INDEX_NONE);
-	std::fill(m_recentlyProcessed, m_recentlyProcessed + s_sequenceMemorySize,  INDEX_NONE);
+	std::fill(m_recentNetworkIds,  m_recentNetworkIds  + s_networkIdBufferSize, INDEX_NONE);
+}
+
+RemoteClient::~RemoteClient()
+{
+}
+
+void RemoteClient::initialize(int32_t id, Connection* connection)
+{
+	assert(isAvailable());
+	assert(connection != nullptr);
+
+	m_connection = connection;
+	m_id         = id;
+	m_numPlayers = 0;
+}
+
+void RemoteClient::clear()
+{
+	m_id = INDEX_NONE;
+
+	assert(m_connection);
+	delete m_connection;
+	m_connection = nullptr;
+}
+
+void RemoteClient::setNumPlayers(uint32_t numPlayers)
+{
+	assert(numPlayers < s_maxPlayersPerClient);
+	m_numPlayers = numPlayers;
 }
 
 bool RemoteClient::isUsed() const
@@ -22,40 +50,24 @@ bool RemoteClient::isUsed() const
 	return (m_id > INDEX_NONE);
 }
 
-void RemoteClient::queueMessage(const NetworkMessage& inMessage, float currentTime)
+bool RemoteClient::isAvailable() const
 {
-	for (OutgoingMessage& message : m_messageBuffer)
-	{
-		if (message.type == MessageType::None)
-		{
-			message.data.reset();
-			message.data.writeBuffer(inMessage.data.getBuffer(), inMessage.data.getLength());
-			message.sequence         = m_nextMessageID++;
-			message.type       = inMessage.type;
-			message.isReliable = inMessage.isReliable;
-			message.isOrdered  = inMessage.isOrdered;
-			message.timestamp  = currentTime;
-
-#ifdef _DEBUG
-			if (message.type != MessageType::Gamestate)
-			{
-				LOG_DEBUG("Server: queueMessage: ID: %d, type: %s", message.sequence, messageTypeAsString(message.type));
-			}
-#endif // ifdef _DEBUG
-			break;
-		}
-	}
+	return m_id == INDEX_NONE;
 }
 
-void RemoteClient::queueMessage(const OutgoingMessage& inMessage, float time)
+int32_t RemoteClient::getId() const
 {
-	for (OutgoingMessage& message : m_messageBuffer)
-	{
-		if(message.type == MessageType::None)
-		{
-			message = inMessage;
-		}
-	}
+	return m_id;
+}
+
+uint32_t RemoteClient::getNumPlayers() const
+{
+	return m_numPlayers;
+}
+
+Connection* RemoteClient::getConnection() const 
+{
+	return m_connection;
 }
 
 bool network::operator==(const RemoteClient& a, const RemoteClient& b)

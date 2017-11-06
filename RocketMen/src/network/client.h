@@ -3,7 +3,9 @@
 
 #include <circular_buffer.h>
 #include <core/entity.h>
-#include <network/network_interface.h>
+#include <network/common_network.h>
+#include <network/connection.h>
+#include <network/connection_callback.h>
 #include <network/network_message.h>
 
 #include <array>
@@ -17,25 +19,10 @@ class ActionBuffer;
 
 namespace network 
 {
-	using NetworkMessageBuffer = 
-		std::array<OutgoingMessage, s_maxPendingMessages>;
-	
 	struct LocalPlayer
 	{
-		int32_t playerID;
-		int32_t controllerID;
-	};
-
-	struct NetworkSession
-	{
-		Address  serverAddress;
-		uint32_t pendingMessages;
-		uint32_t pendingReliable;
-		uint32_t nextMessageID;
-		bool     isActive;
-		
-		NetworkMessageBuffer outgoingMessages;
-		NetworkMessageBuffer outgoingReliableMessages;
+		int32_t playerId;
+		int32_t controllerId;
 	};
 
 	class Client
@@ -57,52 +44,56 @@ namespace network
 		};
 
 	public:
-		bool initialize();
+		bool initialize(uint16_t port);
 		bool isInitialized() const;
 		void update();
+		
+		void requestServerTime();
 		void fixedUpdate(ActionBuffer& actions);
 		void connect(const Address& address);
 		void disconnect();
-		void queueMessage(const NetworkMessage& message);
-		void queueMessage(const OutgoingMessage& message);
 		void clearLocalPlayers();
-		bool addLocalPlayer(int32_t controllerID);
+		bool addLocalPlayer(int32_t controllerId);
 		bool requestEntity(Entity* entity);
 
 		uint32_t getNumLocalPlayers() const;
-		bool isLocalPlayer(int32_t playerID) const;
+		bool isLocalPlayer(int32_t playerId) const;
 
 	private:
-		void onHandshake(IncomingMessage& msg);
-		void onAcceptPlayer(IncomingMessage& msg);
-		void onSpawnEntity(IncomingMessage& msg);
-		void onAcceptEntity(IncomingMessage& msg);
-		void onDestroyEntity(IncomingMessage& msg);
-		void onGameState(IncomingMessage& msg);
+		void readMessage(IncomingMessage& message);
+		void onHandshake(IncomingMessage& message);
+		void onAcceptPlayer(IncomingMessage& message);
+		void onSpawnEntity(IncomingMessage& message);
+		void onAcceptEntity(IncomingMessage& message);
+		void onDestroyEntity(IncomingMessage& message);
+		void onGameState(IncomingMessage& message);
+		void onReceiveServerTime(IncomingMessage& message);
 
-		void processIncomingMessages(float deltaTime);
-		void processOutgoingMessages(float deltaTime);
-		void processMessage(IncomingMessage& msg);
+		void sendMessage(Message& message);
+		void sendPendingMessages();
 		void sendInput();
 		void setState(State state);
-		void requeueReliableMessages();
-		void sendMessages();
 		void clearSession();
-		int32_t getNextTempNetworkID();
+		int16_t getNextTempNetworkId();
 
-		NetworkInterface m_networkInterface;
-		Game*            m_game;
-		Time&            m_gameTime;
-		uint32_t         m_lastReceivedState;
-		uint32_t         m_lastOrderedMessaged;
-		NetworkSession   m_session;
-		State            m_state;
-		float            m_stateTimer;
-		float            m_messageSentTime;
-		float            m_maxMessageSentTime;
-		uint32_t         m_connectionAttempt;
-		bool             m_isInitialized;
-		int32_t          m_numLocalPlayers;	
+		void receivePackets();
+		void readMessages();
+		void onConnectionCallback(ConnectionCallback type, Connection* connection);
+
+		Socket*     m_socket;
+		Game*       m_game;
+		Connection* m_connection;
+		Time&       m_gameTime;
+		Sequence    m_lastReceivedState;
+		uint32_t    m_lastOrderedMessaged;
+		State       m_state;
+		float       m_stateTimer;
+		float       m_messageSentTime;
+		float       m_maxMessageSentTime;
+		float       m_timeSinceLastClockSync;
+		bool        m_isInitialized;
+		int32_t     m_numLocalPlayers;
+		uint16_t    m_port;
 
 		CircularBuffer<int32_t, s_sequenceMemorySize> 
 			m_recentlyProcessed;

@@ -2,13 +2,13 @@
 #include "game_time.h"
 #include <assert.h>
 
-Time::Time()
-	: m_deltaTimeSeconds(0)
-	, m_deltaTimeMicroSeconds(0)
-	, m_runTimeMicroSeconds(0)
-	, m_tickCount(0)
+Time::Time() :
+	m_deltaTimeSeconds(0), 
+	m_deltaTimeMicroSeconds(0),
+	m_runTimeMicroSeconds(0),
+	m_tickCount(0)
 {
-	m_lastTime = m_clock.now();
+	m_lastTime    = m_clock.now();
 	m_currentTime = m_clock.now();
 }
 

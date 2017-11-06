@@ -34,9 +34,9 @@ GLFWwindow* s_glfwWindow = nullptr;
 Input*      s_instance = nullptr;
 
 // ============================================================================
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow* window, int key, int /*scancode*/, int glfw_action, int /*mods*/)
 {
-
+	assert(window == s_glfwWindow);
 //	LOG_DEBUG("%i", key);
 
 	if (key == -1)
@@ -44,7 +44,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		key = 347; // TODO what is the meaning of this
 	}
 
-	if (action == GLFW_PRESS)
+	if (glfw_action == GLFW_PRESS)
 	{
 		s_keyState[key]     = true;
 		s_keyStateDown[key] = true;
@@ -57,12 +57,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 			s_actionBuffer.insert(action);
 		}
 	}
-	else if (action == GLFW_RELEASE)
+	else if (glfw_action == GLFW_RELEASE)
 	{
 		s_keyState[key]     = false;
 		s_keyStateDown[key] = false;
 	}
-	else if (action == GLFW_REPEAT)
+	else if (glfw_action == GLFW_REPEAT)
 	{
 		s_keyState[key]     = true;
 		s_keyStateDown[key] = false;
@@ -71,15 +71,18 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
 {
+	assert(window == s_glfwWindow);
 	s_mousePosxRel = xpos - s_mousePosx;
 	s_mousePosyRel = ypos - s_mousePosy;
 	s_mousePosx = xpos;
 	s_mousePosy = ypos;
 }
 
-void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+void mouse_button_callback(GLFWwindow* window, int button, int glfw_action, int /*mods*/)
 {
-	if (action == GLFW_PRESS)
+	assert(window == s_glfwWindow);
+
+	if (glfw_action == GLFW_PRESS)
 	{
 		s_mouseState[button]     = true;
 		s_mouseStateDown[button] = true;
@@ -93,7 +96,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 		}
 
 	}
-	else if (action == GLFW_RELEASE)
+	else if (glfw_action == GLFW_RELEASE)
 	{
 		s_mouseState[button]     = false;
 		s_mouseStateDown[button] = false;

@@ -13,7 +13,7 @@ namespace network
 	{
 	public:
 		virtual ~Socket() {}
-		virtual bool initialize(uint32_t port, bool isHost = false) = 0;
+		virtual bool initialize(uint16_t port) = 0;
 		virtual bool isInitialized() const = 0;
 
 		/** Receive
@@ -39,13 +39,7 @@ namespace network
 		virtual uint64_t getPacketsReceived()	const = 0;
 		virtual uint64_t getPacketsSent()		const = 0;
 	
-		enum class NetProtocol
-		{
-			UDP,
-			TCP
-		};
-
-		static Socket* create(NetProtocol type);
+		static Socket* create();
 	};
 
 }; // namespace network

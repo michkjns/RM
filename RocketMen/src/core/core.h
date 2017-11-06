@@ -7,8 +7,9 @@
 
 static const Vector2i g_defaultResolution(640, 480);
 static const Vector2i g_defaultWindowSize = g_defaultResolution;
-static const uint32_t g_defaultPort = 4321;
-static const char*    g_localHost = "127.0.0.1";
+static const uint16_t g_serverPort = 4320;
+static const uint16_t g_clientPort = 4321;
+static const char*    g_localHost  = "127.0.0.1";
 
 class Game;
 class Renderer;

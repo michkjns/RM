@@ -52,7 +52,7 @@ void ActionHistory::replayFrom(uint64_t sequenceNr)
 		}
 		else
 		{
-			ClientFrame& frame = *(replayFrame);
+			//ClientFrame& frame = *(replayFrame);
 			//InputMapper::ApplyInput(frame.actions);
 			//frame.actions->resetReading();
 

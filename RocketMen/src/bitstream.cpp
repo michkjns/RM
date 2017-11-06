@@ -52,9 +52,9 @@ void WriteStream::serializeBits(uint32_t value, uint32_t numBits)
 	
 	flush(m_scratchBits >= 32);
 
-	DEBUG_ONLY(
-		m_bitsWritten += numBits;
-	);
+#ifdef _DEBUG
+	m_bitsWritten += numBits;
+#endif // _DEBUG
 }
 
 /* Write a bool as 0 or 1 bit */
@@ -67,9 +67,10 @@ void WriteStream::serializeBool(bool& value)
 	
 	flush(m_scratchBits >= 32);
 
-	DEBUG_ONLY(
-		m_bitsWritten += 1;
-	);
+#ifdef _DEBUG
+	m_bitsWritten += 1;
+#endif // _DEBUG
+
 }
 
 /* Write and compress a 32-bit integer in in range [min, max] */
@@ -112,9 +113,11 @@ void WriteStream::serializeData(const uint8_t* data, int32_t dataLength)
 		// Copy remaining
 		memcpy(m_buffer + m_wordIndex, data + bytesToWrite, dataLength - bytesToWrite);
 		m_wordIndex += bytesToCopy;
-DEBUG_ONLY(
+
+#ifdef _DEBUG
 		m_bitsWritten += (dataLength-bytesToWrite) * 8;
-);
+#endif // _DEBUG
+
 	}
 	else
 	{
@@ -179,9 +182,10 @@ void ReadStream::serializeBits(uint32_t& value, uint32_t numBits)
 	m_scratch >>= numBits;
 	m_scratchBits-= numBits;
 
-	DEBUG_ONLY(
-		m_bitsRead += numBits;
-	);
+#ifdef _DEBUG
+	m_bitsRead += numBits;
+#endif // _DEBUG
+	
 }
 
 void ReadStream::serializeBool(bool& dest)
@@ -192,9 +196,10 @@ void ReadStream::serializeBool(bool& dest)
 	m_scratch >>= 1;
 	m_scratchBits--;
 
-	DEBUG_ONLY(
-		m_bitsRead += 1;
-	);
+#ifdef _DEBUG
+	m_bitsRead += 1;
+#endif // _DEBUG
+
 }
 
 void ReadStream::serializeInt(int32_t& value, int32_t min, int32_t max)
@@ -303,7 +308,6 @@ BitStream& BitStream::operator=(const BitStream& other)
 	m_writeData       = m_buffer.get();
 
 	return *this;
-
 }
 
 void BitStream::readBytes(char* output, size_t numBytes)

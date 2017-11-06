@@ -56,8 +56,7 @@ Shader& ResourceManager::getShader(std::string name)
 Texture& ResourceManager::createTexture(const void*        imageData, 
 	                                    uint32_t           width,
 	                                    uint32_t           height,
-	                                    const char*        name,
-	                                    Texture::BlendMode blendMode /* = Texture::BlendMode::MODE_OPAQUE */)
+	                                    const char*        name)
 {
 	if(Renderer::get() == nullptr)
 		return dummyTexture;
@@ -70,9 +69,7 @@ Texture& ResourceManager::createTexture(const void*        imageData,
 }
 
 Texture& ResourceManager::loadTexture(const char*        file, 
-									  const char*        name,
-									  Texture::BlendMode blendMode 
-									  /* = Texture::BlendMode::MODE_OPAQUE */)
+									  const char*        name)
 {
 	if (Renderer::get() == nullptr)
 		return dummyTexture;
@@ -128,7 +125,6 @@ TileMap& ResourceManager::loadTilemap(const char* file,
 
 	std::vector<char> mapInput;
 	char inChar;
-	int  count = 0;
 	while (ifs.good())
 	{
 		ifs >> inChar;

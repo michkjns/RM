@@ -40,9 +40,9 @@ private:
 	int32_t   m_bufferLength;
 	bool      m_isFull;
 	
-DEBUG_ONLY(
-	int32_t m_bitsWritten
-);
+#ifdef _DEBUG
+	int32_t m_bitsWritten;
+#endif // ifdef _DEBUG
 
 };
 
@@ -71,9 +71,10 @@ private:
 	int32_t   m_bufferLength;
 	uint32_t* m_buffer;
 	bool      m_corrupted;
-DEBUG_ONLY(
+
+#ifdef _DEBUG
 	int32_t m_bitsRead;
-);
+#endif // _DEBUG
 
 };
 

@@ -40,12 +40,12 @@ void Character::initialize(bool shouldReplicate)
 	Entity::initialize(shouldReplicate);
 }
 
-void Character::update(float deltaTime)
+void Character::update(float /*deltaTime*/)
 {
 
 }
 
-void Character::fixedUpdate(float deltaTime)
+void Character::fixedUpdate(float /*deltaTime*/)
 {
 	if (Input::getKey(Key::SPACE))
 	{
@@ -77,7 +77,7 @@ bool Character::serializeFull(Stream& stream)
 		sprLength = int32_t(m_sprite.length());
 	}
 
-	serializeInt(stream, m_networkID, -s_maxSpawnPredictedEntities - 1, s_maxNetworkedEntities);
+	serializeInt(stream, m_networkId, -s_maxSpawnPredictedEntities - 1, s_maxNetworkedEntities);
 	
 	serializeInt(stream, sprLength, 0, 32);
 	
@@ -154,11 +154,11 @@ void Character::Fire()
 	//LOG_DEBUG("Character::Fire() %f, %f", pos.x, pos.y);
 }
 
-void Character::startContact(Entity* other)
+void Character::startContact(Entity* /*other*/)
 {
 }
 
-void Character::endContact(Entity* other)
+void Character::endContact(Entity* /*other*/)
 {
 }
 

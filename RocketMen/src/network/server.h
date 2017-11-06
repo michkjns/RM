@@ -2,7 +2,7 @@
 #pragma once
 
 #include <game_time.h>
-#include <network/network_interface.h>
+#include <network/connection_callback.h>
 #include <network/remote_client.h>
 
 #include <array>
@@ -13,43 +13,46 @@ class Entity;
 namespace network
 {
 	static const uint32_t s_maxConnectedClients = 32;
-	//==========================================================================
+	//=========================================================================
 
-	class Server
+	struct IncomingMessage;
+	class  Packet;
+	class  Socket;
+
+	class Server 
 	{
 	public:
 		Server(Time& time, Game* game);
 		~Server();
 
-		bool initialize();
-		bool isInitialized() const;
-
 		void update();
 		void fixedUpdate();
 
-		void host(uint32_t port);
+		void host(uint16_t port);
 
-		void setReliableSendRate(float timesPerSecond);
-
-		void generateNetworkID(Entity* entity);
-		void registerLocalClientID(int32_t clientID);
-		void destroyEntity(int32_t networkID);
+		void generateNetworkId(Entity* entity);
+		void registerLocalClientId(int32_t clientId);
+		void destroyEntity(int32_t networkId);
 
 	private:
-		void onClientConnect(IncomingMessage& msg);
-		void onClientDisconnect(const IncomingMessage& msg);
+		RemoteClient* addClient(const Address& address, Connection* connection);
+		void onClientDisconnect(const IncomingMessage& message);
 
-		void onPlayerIntroduction(IncomingMessage& msg);
-		void onEntityRequest(IncomingMessage& msg);
+		void onPlayerIntroduction(IncomingMessage& message);
+		void onEntityRequest(IncomingMessage& message);
+		void onClientPing(IncomingMessage& message);
 
-		void processMessage(IncomingMessage& msg);
-
-		void processIncomingMessages(float deltaTime);
-		void processOutgoingMessages(float deltaTime);
-
-		void writeSnapshot();
+		void readMessage(IncomingMessage& message);
+		void createSnapshots(float deltaTime);
 		void writeSnapshot(RemoteClient& client);
+
+		void updateConnections();
+		void receivePackets();
+		void readMessages();
 		void sendMessages();
+		void onConnectionCallback(ConnectionCallback type, Connection* connection);
+
+		void onConnectionRequest(const Address& address, Packet& packet);
 
 		/** Finds unused remote client slot */
 		RemoteClient* findUnusedClient();
@@ -57,26 +60,18 @@ namespace network
 		/** Gets remote client by address */
 		RemoteClient* getClient(const Address& address);
 
-		NetworkInterface m_networkInterface;
-		Game*      m_game;
-		bool       m_isInitialized;
-		Time&      m_gameTime;
-		int32_t    m_clientIDCounter;
-		int32_t    m_playerIDCounter;
-		int32_t    m_networkIDCounter;
-		uint32_t   m_numConnectedClients;
-		int32_t    m_localClientID;
-		Sequence   m_sequenceCounter;
-		Sequence   m_lastOrderedMessaged;
+		Socket* m_socket;
+		Game*   m_game;
+		bool    m_isInitialized;
+		Time&   m_gameTime;
+		int32_t m_clientIdCounter;
+		int32_t m_playerIdCounter;
+		int32_t m_networkIdCounter;
+		int32_t m_localClientId;
+		int32_t m_numClients;
 
 		/* Time since last snapshot */
 		float m_snapshotTime;
-
-		/** Time since last reliable message release */
-		float m_reliableMessageTime;
-		
-		/** Max reliable message wait time */
-		float m_maxReliableMessageTime;
 
 		/** Remote client buffer */
 		std::array<RemoteClient, s_maxConnectedClients> m_clients;

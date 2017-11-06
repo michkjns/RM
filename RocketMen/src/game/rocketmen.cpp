@@ -19,11 +19,9 @@ bool RocketMenGame::initialize()
 
 	const char* defaultMapName = "testmap";
 
-	ResourceManager::loadTexture("data/textures/square.png", "demoTexture", 
-	                             Texture::BlendMode::MODE_OPAQUE);
+	ResourceManager::loadTexture("data/textures/square.png", "demoTexture");
 
-	ResourceManager::loadTexture("data/textures/tilesheet.png", "tilesheet",
-	                             Texture::BlendMode::MODE_OPAQUE);
+	ResourceManager::loadTexture("data/textures/tilesheet.png", "tilesheet");
 
 	ResourceManager::loadTilemap("data/testmap.16x16.csv", "tilesheet", defaultMapName);
 	Physics::loadCollisionFromTilemap(defaultMapName);
@@ -52,7 +50,7 @@ bool RocketMenGame::initialize()
 	return true;
 }
 
-void RocketMenGame::fixedUpdate(float deltaTime)
+void RocketMenGame::fixedUpdate(float /*deltaTime*/)
 {
 
 }

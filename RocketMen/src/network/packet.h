@@ -11,9 +11,8 @@ namespace network
 	static const int32_t g_maxMessagesPerPacket = 64;
 	struct SentPacketData
 	{
-		bool     acked;
 		uint16_t numMessages;
-		Sequence messageIDs[g_maxMessagesPerPacket];
+		Sequence messageIds[g_maxMessagesPerPacket];
 	};
 
 	struct PacketHeader
@@ -27,7 +26,7 @@ namespace network
 		uint16_t dataLength;
 	};
 
-	static const int32_t g_protocolID = 1000;
+	static const int32_t g_protocolId = 1000;
 	static const int32_t g_maxBlockSize = 2048;
 	static const int32_t g_packetHeaderSize = sizeof(PacketHeader);
 	static const int32_t g_maxPacketSize = (g_maxBlockSize + g_packetHeaderSize);
@@ -36,7 +35,7 @@ namespace network
 	class Packet
 	{
 	public:
-		Packet();
+		Packet(ChannelType channel);
 		~Packet() {}
 		PacketHeader header;
 
@@ -54,7 +53,9 @@ namespace network
 		/** Reads NetworkMessage from the packet 
 		* @return NetworkMessage Message read
 		*/
-		IncomingMessage readNextMessage();
+		IncomingMessage* readNextMessage();
+
+		void resetReading();
 
 		/** Gets the packet data
 		* @return char* Pointer to data buffer 
@@ -62,11 +63,13 @@ namespace network
 		char* getData() const;
 
 		bool isEmpty() const;
+		ChannelType getChannel() const;
 
 	private:
 		unsigned char m_data[g_maxBlockSize];
 		int32_t       m_read;
 		Sequence      m_messageIDs[g_maxMessagesPerPacket];
+		ChannelType   m_channel;
 	};
 
 }; // namespace network

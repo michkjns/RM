@@ -59,7 +59,7 @@ void Rocket::initialize(Entity* owner, Vector2 direction, float power, bool shou
 	Entity::initialize(shouldReplicate);
 }
 
-void Rocket::update(float deltaTime)
+void Rocket::update(float /*deltaTime*/)
 {
 
 }
@@ -97,15 +97,15 @@ Rigidbody* Rocket::getRigidbody() const
 template<typename Stream>
 bool Rocket::serializeFull(Stream& stream)
 {
-	int32_t ownerID = -1;
+	int32_t ownerId = -1;
 	Entity* owner = nullptr;
 	Vector2 vel;
 	Vector2 pos;
 
-	serializeInt(stream, m_networkID, -s_maxSpawnPredictedEntities, s_maxNetworkedEntities);
+	serializeInt(stream, m_networkId, -s_maxSpawnPredictedEntities, s_maxNetworkedEntities);
 	if (Stream::isReading)
 	{
-		if (m_networkID < -s_maxSpawnPredictedEntities || std::abs(m_networkID) > s_maxNetworkedEntities)
+		if (m_networkId < -s_maxSpawnPredictedEntities || std::abs(m_networkId) > s_maxNetworkedEntities)
 		{
 			LOG_WARNING("Rocket: Received invalid networkID");
 			return false;
@@ -113,20 +113,20 @@ bool Rocket::serializeFull(Stream& stream)
 	}
 	if (Stream::isWriting)
 	{
-		ownerID = m_owner->getNetworkID();
+		ownerId = m_owner->getNetworkId();
 		vel     = m_rigidbody->getLinearVelocity();
 		pos     = m_transform.getLocalPosition();
 	}
 
-	serializeInt(stream, ownerID, 0, s_maxNetworkedEntities);
+	serializeInt(stream, ownerId, 0, s_maxNetworkedEntities);
 	if (Stream::isReading)
 	{
-		if (ownerID >= s_maxNetworkedEntities || ownerID < 0)
+		if (ownerId >= s_maxNetworkedEntities || ownerId < 0)
 			return false;
 
 		for (const auto& entity : Entity::getList())
 		{
-			if (entity->getNetworkID() == ownerID)
+			if (entity->getNetworkId() == ownerId)
 			{
 				owner = entity;
 				break;
@@ -191,10 +191,9 @@ bool Rocket::serialize(Stream& stream)
 	return true;
 }
 
-void Rocket::startContact(Entity* other)
+void Rocket::startContact(Entity* /*other*/)
 {
-	return;
-	if (isAlive())
+	/*if (isAlive())
 	{
 		if (other == m_owner) return;
 		LOG_DEBUG("Rocket::startContact");
@@ -204,10 +203,10 @@ void Rocket::startContact(Entity* other)
 			Physics::blastExplosion(explosionEvent.pos, explosionEvent.radius, explosionEvent.power);
 			kill();
 		}
-	}
+	}*/
 }
 
-void Rocket::endContact(Entity* other)
+void Rocket::endContact(Entity* /*other*/)
 {
 }
 

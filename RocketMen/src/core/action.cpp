@@ -30,10 +30,10 @@ void Action::set(const std::string& name, bool state)
 	m_state = state;
 }
 
-void Action::set(const std::string& name, float m_value)
+void Action::set(const std::string& name, float value)
 {
 	m_type  = std::hash<std::string>()(name);
-	m_value = m_value;
+	m_value = value;
 }
 
 size_t Action::getHash() const

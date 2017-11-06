@@ -38,10 +38,10 @@ class PhysicsDraw : public b2Draw
 public:
 	void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
 	void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color);
-	void DrawCircle(const b2Vec2& center, float32 radius, const b2Color& color) {}
-	void DrawSolidCircle(const b2Vec2& center, float32 radius, const b2Vec2& axis, const b2Color& color) {}
+	void DrawCircle(const b2Vec2& /*center*/, float32 /*radius*/, const b2Color& /*color*/) {};
+	void DrawSolidCircle(const b2Vec2& /*center*/, float32 /*radius*/, const b2Vec2& /*axis*/, const b2Color& /*color*/) {};
 	void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color);
-	void DrawTransform(const b2Transform& xf) {}
+	void DrawTransform(const b2Transform& /*xf*/) {};
 };
 
 // ============================================================================
@@ -239,7 +239,7 @@ void Physics::loadCollisionFromTilemap(std::string tilemapName)
 	std::vector<Rect> rects;
 	char* tempMap = new char[tilemap.getMapWidth() * tilemap.getMapHeight()];
 	memcpy(tempMap, tilemap.getMap(), tilemap.getMapWidth() * tilemap.getMapHeight());
-	bool newRect = true;
+
 	Rect currentRect;
 	for (uint32_t x = 0; x < tilemap.getMapWidth(); x++)
 	{

@@ -82,25 +82,19 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	{
 		LOG_INFO("Core: Creating server..");
 		m_server = new Server(m_gameTime, m_game);
-		if (m_server->initialize())
-		{
-			LOG_INFO("Server: Server succesfully initialized");
-			Network::setServer(m_server);
-		}
-
-		m_server->host(g_defaultPort);
+		Network::setServer(m_server);
+		m_server->host(g_serverPort);
 	}
 	else
 	{
 		LOG_INFO("Core: Creating client..");
 		m_client = new Client(m_gameTime, m_game);
-		m_client->initialize();
+		m_client->initialize(g_clientPort);
 		Network::setClient(m_client);
 		
-		LOG_INFO("Core: Initializing input");
+		LOG_INFO("Core: Initializing input..");
 		m_input = Input::create();
 		m_input->initialize(m_window);
-
 	}
 
 	if (!loadResources())
@@ -143,7 +137,6 @@ void Core::drawDebug()
 
 void Core::run()
 {
-	uint64_t simulatedTime = 0;
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
 	ActionBuffer* actions = nullptr;
@@ -151,7 +144,7 @@ void Core::run()
 	if (m_client)
 	{
 		LOG_INFO("Client: Attempting to connect to localhost");
-		m_client->connect(network::Address(g_localHost, g_defaultPort));
+		m_client->connect(network::Address(g_localHost, g_serverPort));
 	}
 
 	float currTime = m_gameTime.getSeconds();

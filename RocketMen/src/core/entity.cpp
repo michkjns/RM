@@ -14,7 +14,7 @@ static std::map<EntityType, IEntityFactory*> s_factoryMap;
 
 static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
-static uint32_t s_entityID;
+static uint32_t s_entityId;
 
 inline bool isReplicated(Entity* entity)
 {
@@ -30,7 +30,7 @@ inline bool isReplicated(Entity* entity)
 Entity::Entity() :
 	m_id(0),
 	m_isInitialized(false),
-	m_networkID(INDEX_NONE)
+	m_networkId(INDEX_NONE)
 {
 }
 
@@ -42,19 +42,19 @@ void Entity::initialize(bool replicate)
 {
  	if (!isReplicated(this))
 	{
-		m_id = ++s_entityID;
+		m_id = ++s_entityId;
 		s_newEntities.push_back(this);
 	}
 
 	m_isInitialized = true;
 	
-	if (replicate && m_networkID == INDEX_NONE)
+	if (replicate && m_networkId == INDEX_NONE)
 	{
-		Network::generateNetworkID(this);
+		Network::generateNetworkId(this);
 	}
 }
 
-Entity* Entity::instantiate(ReadStream& stream, bool replicate)
+Entity* Entity::instantiate(ReadStream& stream)
 {
 	EntityType type = EntityType::Entity;
 	int32_t intType = INDEX_NONE;
@@ -62,7 +62,7 @@ Entity* Entity::instantiate(ReadStream& stream, bool replicate)
 
 	ensure(intType > INDEX_NONE && intType < s_numEntityTypes);
 	type = static_cast<EntityType>(intType);
-	return s_factoryMap.at(type)->instantiate(stream, replicate);
+	return s_factoryMap.at(type)->instantiate(stream);
 }
 
 bool Entity::serializeFull(Entity* entity, ReadStream& stream, bool includeType)
@@ -144,7 +144,11 @@ void Entity::kill()
 	m_id = 0;
 	if (Network::isServer())
 	{
-		Network::destroyEntity(m_networkID);
+		Network::destroyEntity(m_networkId);
+	}
+	else if (m_networkId < 0)
+	{
+
 	}
 }
 
@@ -158,26 +162,33 @@ std::string Entity::getSpriteName() const
 	return m_sprite;
 }
 
-void Entity::setNetworkID(int32_t networkID)
+void Entity::setNetworkId(int32_t networkId)
 {
-	m_networkID = networkID;
+	m_networkId = networkId;
 }
 
-int32_t Entity::getNetworkID() const
+int32_t Entity::getNetworkId() const
 {
-	return m_networkID;
+	return m_networkId;
 }
 
-DEBUG_ONLY(uint32_t Entity::getID() const
+bool Entity::isNetworkPrediction() const
+{
+	return m_networkId < INDEX_NONE;
+}
+
+#ifdef _DEBUG
+uint32_t Entity::getId() const
 {
 	return m_id;
-})
+}
+#endif // _DEBUG
 
-void Entity::startContact(Entity* other)
+void Entity::startContact(Entity* /*other*/)
 {
 }
 
-void Entity::endContact(Entity* other)
+void Entity::endContact(Entity* /*other*/)
 {
 }
 

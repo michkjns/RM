@@ -20,14 +20,10 @@ public:
 	static Texture& createTexture(const void*        imageData,
 	                              uint32_t           width, 
 	                              uint32_t           height,
-	                              const char*        name,
-	                              Texture::BlendMode blendMode
-	                               = Texture::BlendMode::MODE_OPAQUE);
+	                              const char*        name);
 
 	static Texture& loadTexture(const char* file, 
-								const char* name,
-								Texture::BlendMode blendMode
-								 = Texture::BlendMode::MODE_OPAQUE);
+								const char* name);
 
 	static Texture& getTexture(std::string name);
 

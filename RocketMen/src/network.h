@@ -20,14 +20,14 @@ public:
 	static void disconnect();
 
 
-	static void generateNetworkID(class Entity* entity);
+	static void generateNetworkId(class Entity* entity);
 
-	static bool addLocalPlayer(int32_t controllerID);
+	static bool addLocalPlayer(int32_t controllerId);
 	static uint32_t getNumLocalPlayers();
-	static bool isLocalPlayer(int32_t playerID);
+	static bool isLocalPlayer(int32_t playerId);
 
 	static bool requestEntity(class Entity* entity);
-	static void destroyEntity(int32_t networkID);
+	static void destroyEntity(int32_t networkId);
 
 protected:
 	static void setClient(network::Client* client);

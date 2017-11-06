@@ -53,7 +53,7 @@ void Rigidbody::setTransform(const Vector2& position, float angle)
 	m_impl->SetTransform(tob2(position), angle);
 }
 
-void Rigidbody::setLinearVelocity(Vector2& vel)
+void Rigidbody::setLinearVelocity(const Vector2& vel)
 {
 	m_impl->SetLinearVelocity(tob2(vel));
 }

@@ -54,10 +54,10 @@ void Address::set(const char* address, uint16_t port)
 			i++;
 		}
 		free(str);
-		a = std::stoi(parts[0]);
-		b = std::stoi(parts[1]);
-		c = std::stoi(parts[2]);
-		d = std::stoi(parts[3]);
+		a = static_cast<int8_t>(std::stoi(parts[0]));
+		b = static_cast<int8_t>(std::stoi(parts[1]));
+		c = static_cast<int8_t>(std::stoi(parts[2]));
+		d = static_cast<int8_t>(std::stoi(parts[3]));
 	}
 
 	m_address = (a << 24) | (b << 16) | (c << 8) | d;
