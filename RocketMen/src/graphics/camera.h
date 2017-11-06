@@ -8,8 +8,8 @@
 namespace graphics {
 	enum class ProjectionMode
 	{
-		ORTOGRAPHIC_PROJECTION,
-		PERSPECTIVE_PROJECTION
+		Orthographic,
+		Perspective
 	};
 }; //namespace graphics
 

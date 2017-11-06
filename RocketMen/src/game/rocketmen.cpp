@@ -30,7 +30,7 @@ bool RocketMenGame::initialize()
 
 	if (Renderer* renderer = Renderer::get())
 	{
-		Camera::mainCamera = new Camera(graphics::ProjectionMode::ORTOGRAPHIC_PROJECTION,
+		Camera::mainCamera = new Camera(graphics::ProjectionMode::Orthographic,
 			                            static_cast<float>(renderer->getScreenSize().x),
 			                            static_cast<float>(renderer->getScreenSize().y),
 		                                pixelsPerMeter);

@@ -17,7 +17,7 @@ Camera::Camera(ProjectionMode projection, float width, float height, int32_t pix
 {
 	switch (projection)
 	{
-		case ProjectionMode::ORTOGRAPHIC_PROJECTION:
+		case ProjectionMode::Orthographic:
 		{
 			width /= pixelsPerMeter;
 			height /= pixelsPerMeter;
@@ -28,7 +28,7 @@ Camera::Camera(ProjectionMode projection, float width, float height, int32_t pix
 											-1.0f, 1.0f);
 			break;
 		}
-		case ProjectionMode::PERSPECTIVE_PROJECTION:
+		case ProjectionMode::Perspective:
 		{
 			// TODO(Support perspective projection?)
 			assert(false);
