@@ -17,11 +17,11 @@ public:
 	ActionListener();
 	~ActionListener();
 
-	void setPlayerID(int32_t playerID);
-	void setControllerID(int32_t controllerID);
+	void setPlayerId(int32_t playerId);
+	void setControllerId(int32_t controllerId);
 
-	int32_t getPlayerID()     const;
-	int32_t getControllerID() const;
+	int32_t getPlayerId()     const;
+	int32_t getControllerId() const;
 
 	template<typename F, class I>
 	void registerAction(const char* name, void(F::*function)(void), I* object)
@@ -38,7 +38,7 @@ public:
 private:
 	std::map<size_t, std::function<void(void)>> m_actionMap;
 
-	int32_t m_playerID;
-	int32_t m_controllerID;
+	int32_t m_playerId;
+	int32_t m_controllerId;
 
 };

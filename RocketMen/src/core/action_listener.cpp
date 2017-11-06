@@ -9,8 +9,8 @@ std::vector<ActionListener*>& ActionListener::getList()
 }
 
 ActionListener::ActionListener() :
-	m_playerID(-1),
-	m_controllerID(-1)
+	m_playerId(-1),
+	m_controllerId(-1)
 {
 	s_actionListeners.push_back(this);
 }
@@ -40,29 +40,27 @@ void ActionListener::executeAction(size_t action)
 	}
 }
 
-void ActionListener::setPlayerID(int32_t playerID)
+void ActionListener::setPlayerId(int32_t playerId)
 {
-	m_playerID = playerID;
+	m_playerId = playerId;
 }
 
-void ActionListener::setControllerID(int32_t controllerID)
+void ActionListener::setControllerId(int32_t controllerId)
 {
-	m_controllerID = controllerID;
+	m_controllerId = controllerId;
 }
 
 void ActionListener::clear()
 {
 	m_actionMap.clear();
-	//m_actionMapTriggers.clear();
-	//m_actionMapTriggers.clear();
 }
 
-int32_t ActionListener::getPlayerID() const
+int32_t ActionListener::getPlayerId() const
 {
-	return m_playerID;
+	return m_playerId;
 }
 
-int32_t ActionListener::getControllerID() const
+int32_t ActionListener::getControllerId() const
 {
-	return m_controllerID;
+	return m_controllerId;
 }
