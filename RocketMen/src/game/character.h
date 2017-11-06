@@ -40,28 +40,4 @@ namespace rm
 		Rigidbody*      m_rigidbody;
 		ActionListener* m_actionListener;
 	};
-
-	//===========================================================================
-
-	//class CharacterFactory : public EntityFactory
-	//{
-	//public:
-	//	CharacterFactory() : EntityFactory() {};
-	//	static void initialize() {
-	//		EntityFactory::registerFactory(getType(), &s_factory);
-	//	}
-
-	//protected:
-	//	static	EntityType getType() { return EntityType::Character; }
-	//	Entity* instantiateEntity(ReadStream& stream,
-	//							  bool shouldReplicate = false);
-	//	virtual bool serializeFull(Entity* entity, WriteStream& stream) override;
-	//	virtual bool serializeFull(Entity* entity, ReadStream& stream) override;
-	//	virtual bool serialize(Entity* entity, WriteStream& ws) override;
-	//	virtual bool serialize(Entity* entity, ReadStream& rs)  override;
-
-	//	static CharacterFactory s_factory;
-	//};
-
-
 }; // namespace rm
