@@ -3,6 +3,7 @@
 
 #include <core/debug.h>
 #include <core/entity.h>
+#include <core/entity_manager.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
 #include <graphics/camera.h>
@@ -120,7 +121,7 @@ void Renderer_glfw::render()
 
 void Renderer_glfw::renderSprites()
 {
-	for (const auto& it : Entity::getList())
+	for (const auto& it : EntityManager::getEntities())
 	{
 		if (!it->getSpriteName().empty())
 		{

@@ -17,27 +17,25 @@ EntityFactory<Character> EntityFactory<Character>::s_factory;
 Character::Character() :
 	m_rigidbody(nullptr)
 {
-}
-
-Character::~Character()
-{
-	if(m_rigidbody)
-		Physics::destroyRigidbody(m_rigidbody);
-
-	if (m_actionListener)
-		delete m_actionListener;
-}
-
-void Character::initialize(bool shouldReplicate)
-{
 	m_actionListener = new ActionListener();
 	m_actionListener->registerAction("Fire", &Character::Fire, this);
 
 	m_rigidbody = Physics::createCharacterBody(Vector2(1.0f, 1.0f), this);
 	m_rigidbody->setPosition(m_transform.getWorldPosition());
 	m_transform.setRigidbody(m_rigidbody);
+}
 
-	Entity::initialize(shouldReplicate);
+Character::~Character()
+{
+	if (m_rigidbody)
+	{
+		Physics::destroyRigidbody(m_rigidbody);
+	}
+
+	if (m_actionListener)
+	{
+		delete m_actionListener;
+	}
 }
 
 void Character::update(float /*deltaTime*/)
@@ -57,10 +55,13 @@ void Character::fixedUpdate(float /*deltaTime*/)
 
 void Character::debugDraw()
 {
-	Vector2 mp = Camera::mainCamera->screenToWorld(Input::getMousePosition());
-	Vector2 pos = m_transform.getWorldPosition();
+	if (Network::isClient())
+	{
+		Vector2 mp = Camera::mainCamera->screenToWorld(Input::getMousePosition());
+		Vector2 pos = m_transform.getWorldPosition();
 
-	Renderer::get()->drawLineSegment(pos, mp, Color(1.f, 0.f, 0.f, 1.f));
+		Renderer::get()->drawLineSegment(pos, mp, Color(1.f, 0.f, 0.f, 1.f));
+	}
 }
 
 template<typename Stream>
@@ -92,9 +93,6 @@ bool Character::serializeFull(Stream& stream)
 			m_sprite[i] = char(character);
 	}
 	
-	if(!m_isInitialized)
-		initialize(false);
-
 	if (!serializeVector2(stream, pos))
 		return false;
 
@@ -138,19 +136,17 @@ bool Character::serialize(Stream& stream)
 
 void Character::Fire()
 {
-	if (!Camera::mainCamera) 
-		return;
-
-	const Vector2 mp        = Input::getMousePosition();
-	const Vector2 mpWorld   = Camera::mainCamera->screenToWorld(mp);
+	const Vector2 screenMousePosition = Input::getMousePosition();
+	const Vector2 worldMousePosition  = Camera::mainCamera->screenToWorld(screenMousePosition);
 	const Vector2 direction = 
-		glm::normalize(mpWorld - m_transform.getWorldPosition());
+		glm::normalize(worldMousePosition - m_transform.getWorldPosition());
 	const float   power     = 20.f;
 
 	Rocket* rocket = new Rocket();
 	const Vector2 pos = m_transform.getWorldPosition() + direction * 1.0f;
 	rocket->getTransform().setLocalPosition(pos);
-	rocket->initialize(this, direction, power, true);
+	rocket->initialize(this, direction, power);
+	Entity::instantiate(rocket);
 	//LOG_DEBUG("Character::Fire() %f, %f", pos.x, pos.y);
 }
 

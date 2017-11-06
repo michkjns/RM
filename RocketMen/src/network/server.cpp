@@ -2,11 +2,13 @@
 #include "server.h"
 
 #include <core/entity.h>
+#include <core/entity_manager.h>
 #include <core/game.h>
 #include <core/debug.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/remote_client.h>
+#include <network/snapshot.h>
 #include <network/socket.h>
 
 #include <utility.h>
@@ -80,7 +82,7 @@ void Server::generateNetworkId(Entity* entity)
 	message.type    = MessageType::SpawnEntity;
 
 	WriteStream stream(32);
-	Entity::serializeFull(entity, stream);
+	EntityManager::serializeFullEntity(entity, stream);
 	message.data.writeData((char*)stream.getBuffer(), stream.getLength());
 
 	for (auto& client : m_clients)
@@ -186,7 +188,7 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 	ReadStream readStream(bufferLength);
 	inMessage.data.readBytes((char*)readStream.getBuffer(), bufferLength);
 
-	Entity* entity = Entity::instantiate(readStream);
+	Entity* entity = EntityManager::instantiateEntity(readStream);
 
 	if (entity == nullptr)
 	{
@@ -201,7 +203,7 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 	outMessage.data.writeInt32(generatedId); // TODO Compress in range (0, s_maxNetworkedEntities)
 
 	WriteStream ws(128);
-	if (!Entity::serializeFull(entity, ws))
+	if (!EntityManager::serializeFullEntity(entity, ws))
 	{
 		entity->kill();
 		assert(false);
@@ -242,17 +244,6 @@ void Server::onClientPing(IncomingMessage& message)
 
 void Server::readMessage(IncomingMessage& message)
 {
-	//RemoteClient* client = getClient(message.address);
-	//if (client && message.type != MessageType::Ack)
-	//{
-	//	for (auto i : client->m_recentlyProcessed)
-	//	{
-	//		if (i == message.id)
-	//			return; // Disregard duplicate message
-	//		
-	//	}
-	//}
-
 	switch (message.type)
 	{	
 		case MessageType::IntroducePlayer:
@@ -291,11 +282,6 @@ void Server::readMessage(IncomingMessage& message)
 		case MessageType::NUM_MESSAGE_TYPES:
 			break;
 	}
-	//if (client != nullptr)
-	//{
-	//	client->m_recentlyProcessed[client->m_nextProcessed++] = msg.sequenceNr;
-	//	if (client->m_nextProcessed >= 32) client->m_nextProcessed = 0;
-	//}
 }
 
 void Server::createSnapshots(float deltaTime)
@@ -317,25 +303,12 @@ void Server::createSnapshots(float deltaTime)
 
 void Server::writeSnapshot(RemoteClient& client)
 {
-	std::vector<Entity*>& entityList = Entity::getList();
-	WriteStream writeStream(512);  // TODO Make a constant variable for snapshot size, maybe a snapshot class/struct?
-
-	for (int32_t networkId = 0; networkId < s_maxNetworkedEntities; networkId++)
-	{
-		Entity* netEntity = findPtrByPredicate(entityList.begin(), entityList.end(),
-			[networkId](Entity* entity) -> bool { return entity->getNetworkId() == networkId; });
-
-		bool writeEntity = netEntity != nullptr;
-		serializeBit(writeStream, writeEntity);
-		if (writeEntity)
-		{
-			Entity::serialize(netEntity, writeStream);
-		}
-	}
+	std::vector<Entity*>& entityList = EntityManager::getEntities();
+	Snapshot snapshot(entityList);
 
 	Message message = {};
 	message.type    = MessageType::Gamestate;
-	message.data.writeBuffer((char*)writeStream.getBuffer(), writeStream.getLength());
+	message.data.writeBuffer(snapshot.getBuffer(), snapshot.getSize());
 
 	client.getConnection()->sendMessage(message);
 }

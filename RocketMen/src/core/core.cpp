@@ -6,6 +6,7 @@
 #include <core/resource_manager.h>
 #include <core/window.h>
 #include <core/entity.h>
+#include <core/entity_manager.h>
 #include <graphics/check_gl_error.h>
 #include <graphics/renderer.h>
 #include <network.h>
@@ -127,7 +128,7 @@ bool Core::loadResources()
 
 void Core::drawDebug()
 {
-	for (auto& it : Entity::getList())
+	for (auto& it : EntityManager::getEntities())
 	{
 		it->debugDraw();
 	}
@@ -179,7 +180,7 @@ void Core::run()
 		}
 		
 		m_game->update(m_gameTime);
-		for (auto& it : Entity::getList())
+		for (auto& it : EntityManager::getEntities())
 		{
 			it->update(deltaTime);
 		}
@@ -203,7 +204,7 @@ void Core::run()
 			
 			m_game->fixedUpdate(fixedDeltaTime);
 
-			for (auto& it : Entity::getList())
+			for (auto& it : EntityManager::getEntities())
 			{
 				if (it->isAlive())
 				{
@@ -227,7 +228,7 @@ void Core::run()
 		}
 
 		m_input->update();
-		Entity::flushEntities();
+		EntityManager::flushEntities();
 
 		/****************/
 		/** Render */
@@ -250,8 +251,8 @@ void Core::destroy()
 	LOG_INFO("Core: Shutting down..");
 
 	LOG_INFO("Core: Cleaning up entities..");
-	Entity::killEntities();
-	Entity::flushEntities();
+	EntityManager::killEntities();
+	EntityManager::flushEntities();
 
 	LOG_INFO("Core: Terminating physics..");
 	Physics::destroyBodies();

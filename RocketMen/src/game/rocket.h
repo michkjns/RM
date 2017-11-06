@@ -9,7 +9,7 @@ namespace rm
 	struct RocketExplode
 	{
 		Vector2 pos;
-		int32_t networkID;
+		int32_t networkId;
 		float radius;
 		float power;
 	};
@@ -24,8 +24,7 @@ namespace rm
 		Rocket(Vector2 direction, float accelerationPower);
 		virtual ~Rocket();
 
-		void initialize(Entity* owner, Vector2 direction, float power,
-		                bool shouldReplicate = false);
+		void initialize(Entity* owner, Vector2 direction, float power);
 
 		virtual void update(float deltaTime)      override;
 		virtual void fixedUpdate(float deltaTime) override;
@@ -47,6 +46,7 @@ namespace rm
 
 	private:
 		virtual void setupRigidBody();
+		bool       m_isInitialized;
 		Rigidbody* m_rigidbody;
 		Entity*    m_owner;
 		Vector2    m_direction;

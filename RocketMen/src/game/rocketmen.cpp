@@ -2,6 +2,7 @@
 #include <common.h>
 
 #include <core/input.h>
+#include <core/entity_manager.h>
 #include <core/resource_manager.h>
 #include <game/character.h>
 #include <game/rocket.h>
@@ -94,5 +95,5 @@ void RocketMenGame::onPlayerJoin()
 	character->getTransform().setLocalPosition( Vector2(-3.f, 3.f));
 	character->setSprite("demoTexture");
 	
-	character->initialize();
+	EntityManager::instantiateEntity(character);
 }

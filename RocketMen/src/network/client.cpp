@@ -3,6 +3,7 @@
 
 #include <core/action_buffer.h>
 #include <core/entity.h>
+#include <core/entity_manager.h>
 #include <core/game.h>
 #include <core/input.h>
 #include <core/debug.h>
@@ -196,7 +197,7 @@ bool Client::requestEntity(Entity* entity)
 		message.data.writeInt16(tempId);
 
 		WriteStream stream(128);
-		Entity::serializeFull(entity, stream);
+		EntityManager::serializeFullEntity(entity, stream);
 		message.data.writeData((char*)stream.getBuffer(), stream.getLength());
 	
 		m_connection->sendMessage(message);
@@ -342,10 +343,10 @@ void Client::onSpawnEntity(IncomingMessage& msg)
 	msg.data.readBytes((char*)readStream.getBuffer(), msg.data.getLength() - msg.data.getReadTotalBytes());
 
 #ifdef _DEBUG
-	Entity* entity = Entity::instantiate(readStream);
+	Entity* entity = EntityManager::instantiateEntity(readStream);
 	LOG_DEBUG("Client: Spawned entity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
 #else
-	Entity::instantiate(readStream);
+	EntityManager::instantiateEntity(readStream);
 #endif // _DEBUG
 }
 
@@ -359,17 +360,12 @@ void Client::onAcceptEntity(IncomingMessage& msg)
 	{
 		m_recentlyPredictedSpawns[index] = 0;
 	}
-	auto entities = Entity::getList();
+	auto entities = EntityManager::getEntities();
 	if (Entity* entity = findPtrByPredicate(entities.begin(), entities.end(),
 		[localId](Entity* it) { return it->getNetworkId() == localId; } ))
 	{
-		if (m_recentlyDestroyedEntities.contains(remoteId))
-		{
-			entity->kill();
-			return;
-		}
-
 		entity->setNetworkId(remoteId);
+		LOG_DEBUG("Client: Accepted entity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
 	}
 	else
 	{
@@ -387,22 +383,17 @@ void Client::onDestroyEntity(IncomingMessage& msg)
 		return;
 	}
 
-	for (auto& entity : Entity::getList())
+	auto entityList = EntityManager::getEntities();
+	if (Entity* netEntity = findPtrByPredicate(entityList.begin(), entityList.end(),
+		[networkId](Entity* entity) -> bool { return entity->getNetworkId() == networkId; }))
 	{
-		if (entity->getNetworkId() == networkId)
-		{
-			entity->kill();
-			return;
-		}
+		netEntity->kill();
 	}
-
-	// Not found, but remember it in case a spawn message comes in delayed
-	//m_recentlyDestroyedEntities.insert(networkID); // TODO Remove once messages are ordered
 } 
 
 void Client::onGameState(IncomingMessage& msg)
 {
-	std::vector<Entity*>& entityList = Entity::getList();
+	std::vector<Entity*>& entityList = EntityManager::getEntities();
 	ReadStream readStream(512);
 
 	msg.data.readBytes((char*)readStream.getBuffer(),
@@ -414,10 +405,10 @@ void Client::onGameState(IncomingMessage& msg)
 		serializeBit(readStream, readEntityData);
 		if (readEntityData)
 		{
-			if (Entity* netEntity = findPtrByPredicate(entityList.begin(), entityList.end(), 
+			if (Entity* netEntity = findPtrByPredicate(entityList.begin(), entityList.end(),
 				[netId](Entity* entity) -> bool { return entity->getNetworkId() == netId; }))
 			{
-				Entity::serialize(netEntity, readStream);
+				EntityManager::serializeEntity(netEntity, readStream);
 			}
 		}
 	}

@@ -3,8 +3,10 @@
 
 #include <bitstream.h>
 #include <core/debug.h>
+#include <core/entity_manager.h>
 #include <network.h>
 #include <physics.h>
+#include <utility.h>
 
 using namespace rm;
 
@@ -13,6 +15,7 @@ EntityFactory<Rocket> EntityFactory<Rocket>::s_factory;
 static float s_maxRocketLifetime = 5.0f;
 
 Rocket::Rocket() :
+	m_isInitialized(false),
 	m_rigidbody(nullptr),
 	m_owner(nullptr),
 	m_lifetimeSeconds(0.f)
@@ -32,21 +35,17 @@ Rocket::Rocket(Vector2 direction, float accelerationPower) :
 Rocket::~Rocket()
 {
 	if (m_rigidbody)
+	{
 		Physics::destroyRigidbody(m_rigidbody);
+	}
 }
 
-void Rocket::initialize(Entity* owner, Vector2 direction, float power, bool shouldReplicate)
+void Rocket::initialize(Entity* owner, Vector2 direction, float power)
 {
-	if (m_rigidbody == nullptr)
-	{
-		setupRigidBody();
-	}
-
 	m_owner             = owner;
 	m_accelerationPower = power;
 	m_direction         = glm::normalize(direction);
 	m_accelerationPower = power;
-
 
 	if (m_rigidbody == nullptr)
 	{
@@ -55,8 +54,7 @@ void Rocket::initialize(Entity* owner, Vector2 direction, float power, bool shou
 
 	m_transform.setRigidbody(m_rigidbody);
 	m_rigidbody->setLinearVelocity(m_accelerationPower * m_direction);
-
-	Entity::initialize(shouldReplicate);
+	m_isInitialized = true;
 }
 
 void Rocket::update(float /*deltaTime*/)
@@ -124,14 +122,9 @@ bool Rocket::serializeFull(Stream& stream)
 		if (ownerId >= s_maxNetworkedEntities || ownerId < 0)
 			return false;
 
-		for (const auto& entity : Entity::getList())
-		{
-			if (entity->getNetworkId() == ownerId)
-			{
-				owner = entity;
-				break;
-			}
-		}
+		auto entityList = EntityManager::getEntities();
+		owner = findPtrByPredicate(entityList.begin(), entityList.end(),
+			[ownerId](Entity* entity) -> bool { return entity->getNetworkId() == ownerId; });
 	}
 	
 	if (!serializeVector2(stream, vel, -100.0f, 100.0f, 0.01f))
@@ -142,7 +135,7 @@ bool Rocket::serializeFull(Stream& stream)
 
 	if (!m_isInitialized)
 	{
-		initialize(owner, glm::normalize(vel), m_accelerationPower, false);
+		initialize(owner, glm::normalize(vel), m_accelerationPower);
 	}
 
 	if(!serializeVector2(stream, pos, -100.0f, 100.0f, 0.01f))
@@ -191,9 +184,9 @@ bool Rocket::serialize(Stream& stream)
 	return true;
 }
 
-void Rocket::startContact(Entity* /*other*/)
+void Rocket::startContact(Entity* other)
 {
-	/*if (isAlive())
+	if (isAlive())
 	{
 		if (other == m_owner) return;
 		LOG_DEBUG("Rocket::startContact");
@@ -203,7 +196,7 @@ void Rocket::startContact(Entity* /*other*/)
 			Physics::blastExplosion(explosionEvent.pos, explosionEvent.radius, explosionEvent.power);
 			kill();
 		}
-	}*/
+	}
 }
 
 void Rocket::endContact(Entity* /*other*/)

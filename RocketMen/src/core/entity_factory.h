@@ -6,6 +6,8 @@
 
 class Entity;
 
+static const int32_t s_numEntityTypes = static_cast<int32_t>(EntityType::NUM_ENTITY_TYPES);
+
 class IEntityFactory
 {
 public:
@@ -30,7 +32,7 @@ public:
 
 	static void initialize()
 	{
-		Entity::registerFactory(dynamic_cast<IEntityFactory*>(&s_factory));
+		EntityManager::registerFactory(dynamic_cast<IEntityFactory*>(&s_factory));
 	}
 
 	EntityType getType() override 

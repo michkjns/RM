@@ -16,10 +16,9 @@ namespace rm
 		Character();
 		virtual ~Character();
 
-		virtual void initialize(bool isNetworked = true);
-		virtual void update(float deltaTime)            override;
-		virtual void fixedUpdate(float deltaTime)       override;
-		virtual void debugDraw()                        override;
+		virtual void update(float deltaTime)      override;
+		virtual void fixedUpdate(float deltaTime) override;
+		virtual void debugDraw()                  override;
 
 		/** Serialize whole object */
 		template<typename Stream>

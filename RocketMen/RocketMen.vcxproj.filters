@@ -159,6 +159,12 @@
     <ClCompile Include="src\network\unreliable_channel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\entity_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\snapshot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitstream.h">
@@ -318,6 +324,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\message_type.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\entity_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\snapshot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -41,11 +41,6 @@ void Game::processActions(ActionBuffer& actions)
 		for (auto listener : ActionListener::getList())
 		{
 			listener->executeAction(actions[i].getHash());
-			//input::Action& a = actions[i];
-			//if (a == "PrintSomething")
-			//{
-			//	LOG_INFO("Something!");
-			//}
 		}
 	}
 
