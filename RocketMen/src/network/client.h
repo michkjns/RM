@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <buffer.h>
 #include <circular_buffer.h>
 #include <core/entity.h>
 #include <network/common_network.h>
@@ -15,12 +16,14 @@ class Game;
 class Time;
 class ActionBuffer;
 
-//==============================================================================
+//=============================================================================
 
 namespace network 
 {
 	struct LocalPlayer
 	{
+		LocalPlayer() : playerId(INDEX_NONE), controllerId(INDEX_NONE) {}
+
 		int32_t playerId;
 		int32_t controllerId;
 	};
@@ -47,21 +50,23 @@ namespace network
 		bool initialize(uint16_t port);
 		bool isInitialized() const;
 		void update();
-		
+
+		void readInput();
 		void requestServerTime();
-		void fixedUpdate(ActionBuffer& actions);
+		void fixedUpdate();
 		void connect(const Address& address);
 		void disconnect();
+		LocalPlayer& addLocalPlayer(int32_t controllerId);
 		void clearLocalPlayers();
-		bool addLocalPlayer(int32_t controllerId);
 		bool requestEntity(Entity* entity);
 
 		uint32_t getNumLocalPlayers() const;
 		bool isLocalPlayer(int32_t playerId) const;
+		LocalPlayer* getLocalPlayer(int32_t playerId) const;
 
 	private:
 		void readMessage(IncomingMessage& message);
-		void onHandshake(IncomingMessage& message);
+		void onConnectionEstablished(IncomingMessage& message);
 		void onAcceptPlayer(IncomingMessage& message);
 		void onSpawnEntity(IncomingMessage& message);
 		void onAcceptEntity(IncomingMessage& message);
@@ -71,7 +76,6 @@ namespace network
 
 		void sendMessage(Message& message);
 		void sendPendingMessages();
-		void sendInput();
 		void setState(State state);
 		void clearSession();
 		int16_t getNextTempNetworkId();
@@ -92,7 +96,6 @@ namespace network
 		float       m_maxMessageSentTime;
 		float       m_timeSinceLastClockSync;
 		bool        m_isInitialized;
-		int32_t     m_numLocalPlayers;
 		uint16_t    m_port;
 
 		CircularBuffer<int32_t, s_sequenceMemorySize> 
@@ -104,7 +107,6 @@ namespace network
 		CircularBuffer<int32_t, s_maxSpawnPredictedEntities>
 			m_recentlyPredictedSpawns;
 
-		std::array<LocalPlayer, s_maxPlayersPerClient> 
-			m_localPlayers;	
+		Buffer<LocalPlayer>	m_localPlayers;	
 	};
 }; //namespace network

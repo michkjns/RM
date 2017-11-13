@@ -20,8 +20,6 @@ extern "C" void crcInit(void);
 
 using namespace network;
 
-static bool s_enableDebugDraw = true;
-
 Core::Core() :
 	m_game(nullptr),
 	m_renderer(nullptr),
@@ -30,9 +28,9 @@ Core::Core() :
 	m_server(nullptr),
 	m_input(nullptr),
 	m_physics(nullptr),		
-	m_timestep(33333ULL / 2)
+	m_timestep(33333ULL / 2),
+	m_enableDebugDraw(true)
 {
-
 }
 
 Core::~Core()
@@ -46,12 +44,19 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	crcInit();
 
 	bool runDedicated = false;
+	bool runListen = false;
 	for (int i = 0; i < argc; i++)
 	{
 		const char* arg = argv[i];
 		if (strcmp(arg, "-d") == 0 || strcmp(arg, "--dedicated") == 0)
 		{
 			runDedicated = true;
+			runListen = false;
+		}
+		if (strcmp(arg, "-l") == 0 || strcmp(arg, "--listen") == 0)
+		{
+			runDedicated = false;
+			runListen = true;
 		}
 		if (strcmp(arg, "-v") == 0 || strcmp(arg, "--verbosity") == 0)
 		{
@@ -66,7 +71,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 
 	m_game = game;
 
-	if((!runDedicated) || (runDedicated && Debug::getVerbosity() == Debug::Verbosity::Debug))
+	if(!runDedicated || (runDedicated && Debug::getVerbosity() == Debug::Verbosity::Debug))
 	{
 		LOG_INFO("Core: Creating window..");
 		m_window = Window::create();
@@ -79,23 +84,23 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		m_renderer->initialize(m_window);
 	}
 
-	if (runDedicated)
+	if (runDedicated || runListen)
 	{
 		LOG_INFO("Core: Creating server..");
 		m_server = new Server(m_gameTime, m_game);
 		Network::setServer(m_server);
-		m_server->host(g_serverPort);
+		m_server->host(s_defaultServerPort);
 	}
-	else
+
+	if(!runDedicated)
 	{
 		LOG_INFO("Core: Creating client..");
 		m_client = new Client(m_gameTime, m_game);
-		m_client->initialize(g_clientPort);
+		m_client->initialize(s_defaultClientPort);
 		Network::setClient(m_client);
 		
 		LOG_INFO("Core: Initializing input..");
-		m_input = Input::create();
-		m_input->initialize(m_window);
+		Input::initialize(m_window);
 	}
 
 	if (!loadResources())
@@ -140,13 +145,6 @@ void Core::run()
 {
 	LOG_INFO("Core: Initializing game..");
 	m_game->initialize();
-	ActionBuffer* actions = nullptr;
-
-	if (m_client)
-	{
-		LOG_INFO("Client: Attempting to connect to localhost");
-		m_client->connect(network::Address(g_localHost, g_serverPort));
-	}
 
 	float currTime = m_gameTime.getSeconds();
 	float accumulator = 0.0f;
@@ -175,7 +173,6 @@ void Core::run()
 		/** Client Update */
 		if (m_client)
 		{
-			actions = &Input::getActions();
 			m_client->update();
 		}
 		
@@ -185,7 +182,7 @@ void Core::run()
 			it->update(deltaTime);
 		}
 
-		float newTime = m_gameTime.getSeconds();
+		const float newTime = m_gameTime.getSeconds();
 		float frameTime = newTime - currTime;
 		if (frameTime > 0.25f)
 		{
@@ -196,10 +193,9 @@ void Core::run()
 
 		while (accumulator >= fixedDeltaTime)
 		{
-			if (m_client && actions) 
+			if (m_client) 
 			{
-				m_game->processActions(*actions);
-				m_client->fixedUpdate(*actions);
+				m_client->fixedUpdate();
 			}
 			
 			m_game->fixedUpdate(fixedDeltaTime);
@@ -223,8 +219,8 @@ void Core::run()
 
 		if (Input::getKeyDown(input::Key::NUM_1))
 		{
-			s_enableDebugDraw = !s_enableDebugDraw;
-			LOG_INFO(s_enableDebugDraw? "Debug drawing enabled" : " Debug drawing disabled");
+			m_enableDebugDraw = !m_enableDebugDraw;
+			LOG_INFO(m_enableDebugDraw ? "Debug drawing enabled" : "Debug drawing disabled");
 		}
 
 		m_input->update();
@@ -235,7 +231,7 @@ void Core::run()
 		if (m_renderer)
 		{
 			m_renderer->render();
-			if (s_enableDebugDraw)
+			if (m_enableDebugDraw)
 			{
 				drawDebug();
 			}
@@ -261,20 +257,11 @@ void Core::destroy()
 	LOG_INFO("Core: Cleaning up resources..");
 	ResourceManager::clear();
 
-	LOG_INFO("Core: Terminating input system..");
-	m_input->destroy();
-
-	if (m_client != nullptr)
-	{
-		Network::setClient(nullptr);
-		delete m_client;
-	}
-
-	if (m_server != nullptr)
-	{
-		Network::setServer(nullptr);
-		delete m_server;
-	}
+	Network::setClient(nullptr);
+	delete m_client;
+	
+	Network::setServer(nullptr);
+	delete m_server;
 
 	if (m_renderer != nullptr)
 	{

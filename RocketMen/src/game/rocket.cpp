@@ -18,7 +18,8 @@ Rocket::Rocket() :
 	m_isInitialized(false),
 	m_rigidbody(nullptr),
 	m_owner(nullptr),
-	m_lifetimeSeconds(0.f)
+	m_lifetimeSeconds(0.f),
+	m_gracePeriod(true)
 {
 }
 
@@ -69,7 +70,12 @@ void Rocket::fixedUpdate(float deltaTime)
 	m_lifetimeSeconds += deltaTime;
 
 	if (Network::isServer())
-	{		
+	{
+		if (m_gracePeriod && m_lifetimeSeconds >= 1.5f)
+		{
+			m_gracePeriod = false;
+		}
+
 		if (m_lifetimeSeconds >= s_maxRocketLifetime) 
 		{
 			kill();
@@ -128,18 +134,24 @@ bool Rocket::serializeFull(Stream& stream)
 	}
 	
 	if (!serializeVector2(stream, vel, -100.0f, 100.0f, 0.01f))
+	{
 		return false;
+	}
 
 	if (!serializeFloat(stream, m_accelerationPower))
+	{
 		return false;
+	}
 
 	if (!m_isInitialized)
 	{
 		initialize(owner, glm::normalize(vel), m_accelerationPower);
 	}
 
-	if(!serializeVector2(stream, pos, -100.0f, 100.0f, 0.01f))
+	if (!serializeVector2(stream, pos, -100.0f, 100.0f, 0.01f))
+	{
 		return false;
+	}
 
 	if (Stream::isReading)
 	{
@@ -163,11 +175,16 @@ bool Rocket::serialize(Stream& stream)
 		vel = m_rigidbody->getLinearVelocity();
 	}
 
-	if (!serializeFloat(stream, angle, 0.0f, 2.0f, 0.01f))
-		return false;
-	if (Stream::isReading)
+	if (serializeFloat(stream, angle, 0.0f, 2.0f, 0.01f))
 	{
-		m_transform.setLocalRotation(angle);
+		if (Stream::isReading)
+		{
+			m_transform.setLocalRotation(angle);
+		}
+	}
+	else
+	{
+		return false;
 	}
 
 	serializeVector2(stream, pos);
@@ -181,16 +198,18 @@ bool Rocket::serialize(Stream& stream)
 	{
 		m_rigidbody->setLinearVelocity(vel);
 	}
+
 	return true;
 }
 
 void Rocket::startContact(Entity* other)
 {
+	if (m_gracePeriod && other == m_owner)
+		return;
+
 	if (isAlive())
 	{
-		if (other == m_owner) return;
-		LOG_DEBUG("Rocket::startContact");
-		RocketExplode explosionEvent = { m_rigidbody->getPosition(), 0, 3.f, 5.f };
+		RocketExplode explosionEvent = { m_rigidbody->getPosition(), 0, 3.f, 60.f };
 		if (Network::isServer())
 		{
 			Physics::blastExplosion(explosionEvent.pos, explosionEvent.radius, explosionEvent.power);

@@ -5,6 +5,7 @@
 #include <core/entity_manager.h>
 #include <core/game.h>
 #include <core/debug.h>
+#include <core/input_buffer.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/remote_client.h>
@@ -29,7 +30,7 @@ Server::Server(Time& gameTime, Game* game) :
 	m_snapshotTime(0.0f)
 {
 	m_socket = Socket::create();
-	assert(m_socket);
+	assert(m_socket != nullptr);
 }
 
 Server::~Server()
@@ -87,7 +88,7 @@ void Server::generateNetworkId(Entity* entity)
 
 	for (auto& client : m_clients)
 	{
-		if (client.isUsed())
+		if (client.isUsed() && client.getId() != m_localClientId)
 		{
 			client.getConnection()->sendMessage(message);
 #ifdef _DEBUG
@@ -110,7 +111,7 @@ void Server::destroyEntity(int32_t networkId)
 	message.data.writeInt32(networkId);
 	for (auto& client : m_clients)
 	{
-		if (client.isUsed())
+		if (client.isUsed() && client.getId() != m_localClientId)
 		{
 			client.getConnection()->sendMessage(message);
 		}
@@ -148,7 +149,7 @@ void Server::onClientDisconnect(const IncomingMessage& /*inMessage*/)
 void Server::onPlayerIntroduction(IncomingMessage& inMessage)
 {
 	RemoteClient* client = getClient(inMessage.address);
-	assert(client);
+	assert(client != nullptr);
 	if (client->getNumPlayers() > 0)
 		return;
 
@@ -171,36 +172,57 @@ void Server::onPlayerIntroduction(IncomingMessage& inMessage)
 	for (uint32_t i = 0; i < numPlayers; i++)
 	{
 		LOG_INFO("Giving player id %i", m_playerIdCounter);
+		m_game->onPlayerJoin(m_playerIdCounter);
 		outMessage.data.writeInt32(m_playerIdCounter++);
 	}
 
 	client->getConnection()->sendMessage(outMessage);
-	m_game->onPlayerJoin();
+}
+
+void Server::onPlayerInput(IncomingMessage& message)
+{
+	RemoteClient* client = getClient(message.address);
+	if (client == nullptr)
+	{
+		LOG_WARNING("Server: onPlayerInput: Client non-existent (%s)", message.address.toString());
+		return;
+	}
+
+	ActionBuffer inputEvents;
+	const int32_t playerId = inputEvents.readFromMessage(message);
+	if (playerId != INDEX_NONE)
+	{
+		m_game->processInputEvents(inputEvents, playerId);
+	}
 }
 
 void Server::onEntityRequest(IncomingMessage& inMessage)
 {
 	RemoteClient* client = getClient(inMessage.address);
-	int32_t receivedId   = inMessage.data.readInt16();
-	int32_t generatedId  = m_networkIdCounter++;
+	if (client == nullptr)
+	{
+		LOG_WARNING("Server: onEntityRequest: Client non-existent (%s)", inMessage.address.toString());
+		return;
+	}
+	const int32_t tempNetworkId  = inMessage.data.readInt16();
 	
 	const int32_t bufferLength = int32_t(inMessage.data.getLength()) - inMessage.data.getReadTotalBytes();
 	ReadStream readStream(bufferLength);
 	inMessage.data.readBytes((char*)readStream.getBuffer(), bufferLength);
 
 	Entity* entity = EntityManager::instantiateEntity(readStream);
-
 	if (entity == nullptr)
 	{
-		LOG_WARNING("Failed to instantiate entity");
 		return;
 	}
-	entity->setNetworkId(generatedId);
+
+	const int32_t networkId = m_networkIdCounter++;
+	entity->setNetworkId(networkId);
 
 	Message outMessage = {};
 	outMessage.type    = MessageType::AcceptEntity;
-	outMessage.data.writeInt32(receivedId);
-	outMessage.data.writeInt32(generatedId); // TODO Compress in range (0, s_maxNetworkedEntities)
+	outMessage.data.writeInt32(tempNetworkId);
+	outMessage.data.writeInt32(networkId); // TODO Compress in range (0, s_maxNetworkedEntities)
 
 	WriteStream ws(128);
 	if (!EntityManager::serializeFullEntity(entity, ws))
@@ -212,17 +234,16 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 
 	outMessage.data.writeData((char*)ws.getBuffer(), ws.getLength());
 	client->getConnection()->sendMessage(outMessage);
-	LOG_DEBUG("spawnMessage %d", generatedId);
 
 	Message spawnMessage = {};
 	spawnMessage.type    = MessageType::SpawnEntity;
 
-	spawnMessage.data.writeInt32(generatedId);
+	spawnMessage.data.writeInt32(networkId);
 	spawnMessage.data.writeData((char*)ws.getBuffer(), ws.getLength());
 
 	for (auto& otherClient : m_clients)
 	{
-		if (otherClient.isUsed() && otherClient != *client)
+		if (otherClient.isUsed() && otherClient != *client && otherClient.getId() != m_localClientId)
 		{
 			otherClient.getConnection()->sendMessage(spawnMessage);
 		}
@@ -253,6 +274,7 @@ void Server::readMessage(IncomingMessage& message)
 		}
 		case MessageType::PlayerInput:
 		{
+			onPlayerInput(message);
 			break;
 		}
 		case MessageType::RequestEntity:
@@ -447,7 +469,8 @@ void Server::onConnectionRequest(const Address& address, Packet& packet)
 	if (m_numClients < s_maxConnectedClients)
 	{
 		Connection* connection = new Connection(m_socket, address, 
-			std::bind(&Server::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2));
+			std::bind(&Server::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2),
+			false);
 		
 		if (addClient(address, connection))
 		{

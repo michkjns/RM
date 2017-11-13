@@ -69,25 +69,25 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)/dep/glfw-3.1.2-build/$(Configuration);$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D/Box2D</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)/dep/glfw-3.2.1-build/$(Configuration);$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src</IncludePath>
     <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(NETFXKitsDir)Lib\um\x86;$(SolutionDir)/dep/glfw-3.1.2-build/$(Configuration);$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);dep\soil\lib;</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
-    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glfw-3.1.2.bin.WIN64/lib-vc2015;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/Box2D/x64/Debug;$(SolutionDir)/dep/Box2D/x64/Release</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D/Box2D</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/Box2D/x64/Debug;$(SolutionDir)/dep/Box2D/x64/Release;$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/lib-vc2015</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.1.2/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
-    <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/glfw-3.1.2.bin.WIN64/lib-vc2015;$(SolutionDir)/dep/Box2D/Build/vs2015/bin/x64/Release</LibraryPath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
+    <LibraryPath>$(SolutionDir)/dep/glew-1.13.0/lib/Release/$(Platform);$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/Box2D/Build/vs2015/bin/x64/Release;$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/lib-vc2015</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -162,7 +162,7 @@
     <ClCompile Include="src\core\entity_manager.cpp" />
     <ClCompile Include="src\game\character.cpp" />
     <ClCompile Include="src\core\action.cpp" />
-    <ClCompile Include="src\core\action_buffer.cpp" />
+    <ClCompile Include="src\core\input_buffer.cpp" />
     <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\entity.cpp" />
@@ -206,6 +206,7 @@
     <ClCompile Include="src\tests.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\buffer.h" />
     <ClInclude Include="src\circular_buffer.h" />
     <ClInclude Include="src\core\action_listener.h" />
     <ClInclude Include="src\core\entity_factory.h" />
@@ -213,7 +214,7 @@
     <ClInclude Include="src\core\entity_type.h" />
     <ClInclude Include="src\game\character.h" />
     <ClInclude Include="src\core\action.h" />
-    <ClInclude Include="src\core\action_buffer.h" />
+    <ClInclude Include="src\core\input_buffer.h" />
     <ClInclude Include="src\bitstream.h" />
     <ClInclude Include="src\core\entity.h" />
     <ClInclude Include="src\game\rocket.h" />

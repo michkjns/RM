@@ -13,15 +13,15 @@ static const uint32_t s_maxConnectionAttemptDuration = 30;
 static const float    s_maxReliableMessageTime(0.10f);
 static const float    s_timeout = 120.f;
 
-Connection::Connection(Socket* socket, const Address& address, ConnectionCallbackMethod callback) :
+Connection::Connection(Socket* socket, const Address& address, ConnectionCallbackMethod callback, bool keepAlive) :
 	m_address(address),
 	m_connectionAttempt(0),
 	m_timeSinceLastPacketReceived(0.f),
-	m_isTimedOut(false),
+	m_hasTimedOut(false),
 	m_state(State::Disconnected),
 	m_connectionAttemptDuration(0.f),
 	m_unreliableChannel(new UnreliableChannel()),
-	m_reliableOrderedChannel(new ReliableOrderedChannel()),
+	m_reliableOrderedChannel(new ReliableOrderedChannel(keepAlive)),
 	m_connectionCallback(callback)
 {
 	assert(socket != nullptr);
@@ -33,10 +33,7 @@ Connection::~Connection()
 {
 	assert(m_state == State::Closed);
 
-	assert(m_unreliableChannel);
 	delete m_unreliableChannel;
-
-	assert(m_reliableOrderedChannel);
 	delete m_reliableOrderedChannel;
 }
 
@@ -76,7 +73,6 @@ void Connection::sendMessage(Message& message)
 	if (getMessageChannel(message) == ChannelType::ReliableOrdered)
 	{
 		m_reliableOrderedChannel->sendMessage(message);
-		LOG_DEBUG("Sending msg %s", messageTypeAsString(message.type));
 	}
 	else
 	{
@@ -151,7 +147,6 @@ void Connection::tryConnect()
 {
 	assert(m_state == State::Disconnected);
 
-	LOG_DEBUG("Connection: Attempting to connect..");
 	Message message = {};
 	message.type = MessageType::RequestConnection;
 	sendMessage(message);

@@ -27,7 +27,7 @@ namespace network
 
 	public:
 		Connection(Socket* socket, const Address& address,
-			ConnectionCallbackMethod callback);
+			ConnectionCallbackMethod callback, bool keepAlive);
 
 		~Connection();
 
@@ -50,7 +50,7 @@ namespace network
 		Socket*  m_socket;
 		uint32_t m_connectionAttempt;
 		float    m_timeSinceLastPacketReceived;
-		bool     m_isTimedOut;
+		bool     m_hasTimedOut;
 		State    m_state;
 		float    m_connectionAttemptDuration;
 

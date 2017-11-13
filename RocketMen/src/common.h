@@ -41,8 +41,7 @@ using Sequence = uint16_t;
 #endif
 
 #define ensure(X) (LIKELY(!!(X)) || (__debugbreak(), !!(X)))
-
-#define assert(X) (bool)(X ? true : _assert(false), false)
+#define assert(X) ((bool)(X) ? true : (_assert(false), false))
 
 inline bool sequenceGreaterThan(Sequence s1, Sequence s2)
 {

@@ -7,9 +7,6 @@
 
 static const Vector2i g_defaultResolution(640, 480);
 static const Vector2i g_defaultWindowSize = g_defaultResolution;
-static const uint16_t g_serverPort = 4320;
-static const uint16_t g_clientPort = 4321;
-static const char*    g_localHost  = "127.0.0.1";
 
 class Game;
 class Renderer;
@@ -43,4 +40,5 @@ private:
 	Input*           m_input;
 	class Physics*   m_physics;
 	uint64_t         m_timestep;
+	bool             m_enableDebugDraw;
 };

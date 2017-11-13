@@ -40,12 +40,12 @@ int main(int argc, char *argv[])
 	}
 #endif
 
-	Core engine;
+	Core core;
 	Game* game = new rm::RocketMenGame();
 
-	engine.initialize(game, argc, argv);
-	engine.run();
-	engine.destroy();
+	core.initialize(game, argc, argv);
+	core.run();
+	core.destroy();
 
 	delete game;
 

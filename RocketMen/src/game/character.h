@@ -10,7 +10,7 @@ namespace rm
 	class Character : public Entity
 	{
 	public:
-		DEFINE_ENTITY_TYPE(EntityType::Character);
+		DECLARE_ENTITY(EntityType::Character);
 
 	public:
 		Character();
@@ -34,6 +34,7 @@ namespace rm
 		virtual void endContact(Entity* other)   override;
 
 		Rigidbody* getRigidbody() const;
+		void posessbyPlayer(int32_t playerId);
 
 	private:
 		Rigidbody*      m_rigidbody;

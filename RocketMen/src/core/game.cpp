@@ -3,7 +3,7 @@
 
 #include <core/action_listener.h>
 #include <core/debug.h>
-#include <core/action_buffer.h>
+#include <core/input_buffer.h>
 #include <map>
 
 bool Game::initialize()
@@ -34,13 +34,16 @@ void Game::setTimestep(uint64_t timestep)
 	m_timestep = timestep;
 }
 
-void Game::processActions(ActionBuffer& actions)
+void Game::processInputEvents(ActionBuffer& actions, int32_t playerId)
 {
-	for (uint32_t i = 0; i < actions.getNumActions(); i++)
+	for (auto inputEvent : actions)
 	{
 		for (auto listener : ActionListener::getList())
 		{
-			listener->executeAction(actions[i].getHash());
+			if (listener->getPlayerId() == playerId)
+			{
+				listener->executeAction(inputEvent.getHash());
+			}
 		}
 	}
 

@@ -11,7 +11,7 @@ namespace network
 	class ReliableOrderedChannel : public NetworkChannel
 	{
 	public:
-		ReliableOrderedChannel();
+		ReliableOrderedChannel(bool keepAlive);
 		~ReliableOrderedChannel();
 
 		virtual void sendMessage(Message& message)       override;
@@ -36,6 +36,7 @@ namespace network
 		Sequence m_receiveMessageId;
 		Sequence m_lastReceivedSequence;
 		float    m_lastPacketSendTime;
+		bool     m_keepAlive;
 
 		SequenceBuffer<OutgoingMessage> m_messageSendQueue;
 		SequenceBuffer<IncomingMessage> m_messageReceiveQueue;

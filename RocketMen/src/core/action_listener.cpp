@@ -8,12 +8,17 @@ std::vector<ActionListener*>& ActionListener::getList()
 	return s_actionListeners;
 }
 
-ActionListener::ActionListener() :
-	m_playerId(-1),
-	m_controllerId(-1)
+ActionListener::ActionListener(int32_t playerId) :
+	m_playerId(playerId)
 {
 	s_actionListeners.push_back(this);
 }
+
+//ActionListener::ActionListener() :
+//	m_playerId(-1)
+//{
+//	s_actionListeners.push_back(this);
+//}
 
 ActionListener::~ActionListener()
 {
@@ -45,11 +50,6 @@ void ActionListener::setPlayerId(int32_t playerId)
 	m_playerId = playerId;
 }
 
-void ActionListener::setControllerId(int32_t controllerId)
-{
-	m_controllerId = controllerId;
-}
-
 void ActionListener::clear()
 {
 	m_actionMap.clear();
@@ -58,9 +58,4 @@ void ActionListener::clear()
 int32_t ActionListener::getPlayerId() const
 {
 	return m_playerId;
-}
-
-int32_t ActionListener::getControllerId() const
-{
-	return m_controllerId;
 }

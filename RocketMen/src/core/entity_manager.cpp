@@ -17,10 +17,13 @@ static uint32_t s_entityId;
 
 inline bool isReplicated(Entity* entity)
 {
-	for (const auto& ent : s_entities)
+	if (assert(entity != nullptr))
 	{
-		if (ent == entity)
-			return true;
+		for (const auto& ent : s_entities)
+		{
+			if (ent == entity)
+				return true;
+		}
 	}
 
 	return false;
@@ -33,14 +36,14 @@ IEntityFactory* EntityManager::getFactory(EntityType type)
 
 void EntityManager::registerFactory(IEntityFactory* factory)
 {
-	assert(factory);
+	assert(factory != nullptr);
 	s_factoryMap[factory->getType()] = factory;
 }
 
 void EntityManager::instantiateEntity(Entity* entity, bool enableReplication)
 {
 	assert(entity != nullptr);
-	//assert(!isReplicated(entity));
+	assert(!isReplicated(entity));
 
 	if (!isReplicated(entity))
 	{
@@ -64,11 +67,13 @@ Entity* EntityManager::instantiateEntity(ReadStream& stream, bool enableReplicat
 	type = static_cast<EntityType>(intType);
 	Entity* entity = getFactory(type)->instantiate(stream);
 	instantiateEntity(entity, enableReplication);
+
 	return entity;
 }
 
 bool EntityManager::serializeFullEntity(Entity* entity, ReadStream& stream, bool includeType)
 {
+	assert(entity != nullptr);
 	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
@@ -76,27 +81,32 @@ bool EntityManager::serializeFullEntity(Entity* entity, ReadStream& stream, bool
 		stream.serializeInt(readType, 0, s_numEntityTypes);
 		ensure(readType == intType);
 	}
+
 	return getFactory(entity->getType())->serializeFull(entity, stream);
 }
 
 bool EntityManager::serializeFullEntity(Entity* entity, WriteStream& stream, bool includeType)
 {
+	assert(entity != nullptr);
 	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
 		stream.serializeInt(intType, 0, s_numEntityTypes);
 	}
+
 	return getFactory(entity->getType())->serializeFull(entity, stream);
 }
 
 bool EntityManager::serializeEntity(Entity* entity, WriteStream& stream)
 {
+	assert(entity != nullptr);
 	return getFactory(entity->getType())->serialize(entity, stream);
 }
 
 bool EntityManager::serializeEntity(Entity* entity, ReadStream& stream)
 {
-	return getFactory(entity->getType())->serialize(entity, stream);;
+	assert(entity != nullptr);
+	return getFactory(entity->getType())->serialize(entity, stream);
 }
 
 void EntityManager::flushEntities()
@@ -109,7 +119,9 @@ void EntityManager::flushEntities()
 			it = s_entities.erase(it);
 		}
 		else
+		{
 			it++;
+		}
 	}
 
 	for (auto it : s_newEntities)

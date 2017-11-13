@@ -1,14 +1,15 @@
 
 #pragma once
 
-
 namespace input
 {
+	using ControllerButton = uint32_t;
+
 	enum class CursorState
 	{
-		STATE_ENABLED,
-		STATE_HIDDEN,
-		STATE_DISABLED
+		Enabled,
+		Hidden,
+		Disabled
 	};
 
 	enum class MouseButton
@@ -22,9 +23,10 @@ namespace input
 		MOUSE_7 = 6,
 		MOUSE_8 = 7,
 		MOUSE_LAST = MOUSE_8,
-		MOUSE_LEFT = MOUSE_1,
-		MOUSE_RIGHT = MOUSE_2,
-		MOUSE_MIDDLE = MOUSE_3
+
+		Left = MOUSE_1,
+		Right = MOUSE_2,
+		Middle = MOUSE_3
 	};
 
 	enum class Key

@@ -98,7 +98,7 @@ void Window_glfw::terminate()
 
 void Window_glfw::swapBuffers()
 {
-	assert(m_glfwWindow);
+	assert(m_glfwWindow != nullptr);
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR)
 	{

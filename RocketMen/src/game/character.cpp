@@ -15,11 +15,9 @@ using namespace input;
 EntityFactory<Character> EntityFactory<Character>::s_factory;
 
 Character::Character() :
-	m_rigidbody(nullptr)
+	m_rigidbody(nullptr),
+	m_actionListener(nullptr)
 {
-	m_actionListener = new ActionListener();
-	m_actionListener->registerAction("Fire", &Character::Fire, this);
-
 	m_rigidbody = Physics::createCharacterBody(Vector2(1.0f, 1.0f), this);
 	m_rigidbody->setPosition(m_transform.getWorldPosition());
 	m_transform.setRigidbody(m_rigidbody);
@@ -27,15 +25,8 @@ Character::Character() :
 
 Character::~Character()
 {
-	if (m_rigidbody)
-	{
-		Physics::destroyRigidbody(m_rigidbody);
-	}
-
-	if (m_actionListener)
-	{
-		delete m_actionListener;
-	}
+	Physics::destroyRigidbody(m_rigidbody);
+	delete m_actionListener;
 }
 
 void Character::update(float /*deltaTime*/)
@@ -105,6 +96,20 @@ bool Character::serializeFull(Stream& stream)
 	if (Stream::isReading)
 		m_rigidbody->setLinearVelocity(vel);
 
+	int32_t playerId = INDEX_NONE;
+	if (Stream::isWriting)
+	{
+		playerId = m_actionListener ? m_actionListener->getPlayerId() : INDEX_NONE;
+	}
+	serializeInt(stream, playerId);
+	if(Stream::isReading)
+	{
+		if (m_actionListener == nullptr && playerId != INDEX_NONE)
+		{
+			posessbyPlayer(playerId);
+		}
+	}
+
 	return true;
 }
 
@@ -136,18 +141,19 @@ bool Character::serialize(Stream& stream)
 
 void Character::Fire()
 {
-	const Vector2 screenMousePosition = Input::getMousePosition();
-	const Vector2 worldMousePosition  = Camera::mainCamera->screenToWorld(screenMousePosition);
-	const Vector2 direction = 
-		glm::normalize(worldMousePosition - m_transform.getWorldPosition());
-	const float   power     = 20.f;
+	if (Network::isServer())
+	{
+		const Vector2 screenMousePosition = Input::getMousePosition();
+		const Vector2 worldMousePosition = Camera::mainCamera->screenToWorld(screenMousePosition);
+		const Vector2 direction = glm::normalize(worldMousePosition - m_transform.getWorldPosition());
+		const float power = 20.f;
 
-	Rocket* rocket = new Rocket();
-	const Vector2 pos = m_transform.getWorldPosition() + direction * 1.0f;
-	rocket->getTransform().setLocalPosition(pos);
-	rocket->initialize(this, direction, power);
-	Entity::instantiate(rocket);
-	//LOG_DEBUG("Character::Fire() %f, %f", pos.x, pos.y);
+		Rocket* rocket = new Rocket();
+		const Vector2 pos = m_transform.getWorldPosition() + direction * 1.0f;
+		rocket->getTransform().setLocalPosition(pos);
+		rocket->initialize(this, direction, power);
+		Entity::instantiate(rocket);
+	}
 }
 
 void Character::startContact(Entity* /*other*/)
@@ -161,4 +167,13 @@ void Character::endContact(Entity* /*other*/)
 Rigidbody* Character::getRigidbody() const
 {
 	return m_rigidbody;
+}
+
+void Character::posessbyPlayer(int32_t playerId)
+{
+	assert(m_actionListener == nullptr);
+	assert(playerId != INDEX_NONE);
+
+	m_actionListener = new ActionListener(playerId);
+	m_actionListener->registerAction("Fire", &Character::Fire, this);
 }

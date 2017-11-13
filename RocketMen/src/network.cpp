@@ -23,7 +23,7 @@ bool Network::isServer()
 void Network::connect(const network::Address& address)
 {
 	assert(s_client != nullptr);
-	LOG_INFO("Client: Attempting to connect to %s", address.toString().c_str());
+	LOG_INFO("Network: connecting to %s...", address.toString().c_str());
 	s_client->connect(address);
 }
 
@@ -52,16 +52,12 @@ void Network::generateNetworkId(Entity* entity)
 	}
 }
 
-bool Network::addLocalPlayer(int32_t controllerId) // TODO Create enum for controller IDs / input devices
+void Network::addLocalPlayer(int32_t controllerId)
 {
-	assert(s_client);
+	assert(s_client != nullptr);
 	assert(s_client->isInitialized());
-	if (ensure(controllerId >= 0))
-	{
-		return s_client->addLocalPlayer(controllerId);
-	}
-
-	return false;
+	assert(controllerId >= 0);
+	s_client->addLocalPlayer(controllerId);
 }
 
 uint32_t Network::getNumLocalPlayers()
@@ -76,7 +72,7 @@ uint32_t Network::getNumLocalPlayers()
 
 bool Network::isLocalPlayer(int32_t playerId)
 {
-	assert(s_client);
+	assert(s_client != nullptr);
 	assert(s_client->isInitialized());
 
 	return s_client->isLocalPlayer(playerId);
@@ -84,7 +80,7 @@ bool Network::isLocalPlayer(int32_t playerId)
 
 bool Network::requestEntity(Entity* entity)
 {
-	assert(s_client);
+	assert(s_client != nullptr);
 	assert(s_client->isInitialized());
 
 	return s_client->requestEntity(entity);

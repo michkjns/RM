@@ -5,6 +5,9 @@
 
 #include <cstdint>
 
+static const uint16_t s_defaultServerPort = 4320;
+static const uint16_t s_defaultClientPort = 4321;
+
 namespace network {
 	class Client;
 	class Server;
@@ -22,7 +25,7 @@ public:
 
 	static void generateNetworkId(class Entity* entity);
 
-	static bool addLocalPlayer(int32_t controllerId);
+	static void addLocalPlayer(int32_t controllerId);
 	static uint32_t getNumLocalPlayers();
 	static bool isLocalPlayer(int32_t playerId);
 

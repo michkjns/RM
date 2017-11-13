@@ -39,6 +39,7 @@ namespace network
 		void onClientDisconnect(const IncomingMessage& message);
 
 		void onPlayerIntroduction(IncomingMessage& message);
+		void onPlayerInput(IncomingMessage& message);
 		void onEntityRequest(IncomingMessage& message);
 		void onClientPing(IncomingMessage& message);
 
@@ -50,7 +51,8 @@ namespace network
 		void receivePackets();
 		void readMessages();
 		void sendMessages();
-		void onConnectionCallback(ConnectionCallback type, Connection* connection);
+		void onConnectionCallback(ConnectionCallback type, 
+			Connection* connection);
 
 		void onConnectionRequest(const Address& address, Packet& packet);
 

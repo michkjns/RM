@@ -15,11 +15,12 @@ static const uint32_t s_sendQueueSize     = 256;
 static const float    s_messageResendTime = 0.1f;
 static const float    s_keepAliveTime     = 1.f;
 
-ReliableOrderedChannel::ReliableOrderedChannel() :
+ReliableOrderedChannel::ReliableOrderedChannel(bool keepAlive) :
 	m_sendMessageId(0),
 	m_receiveMessageId(0),
 	m_lastReceivedSequence(0),
 	m_lastPacketSendTime(.0f),
+	m_keepAlive(keepAlive),
 	m_messageSendQueue(s_sendQueueSize),
 	m_messageReceiveQueue(s_receiveQueueSize),
 	m_sentPackets(s_packetWindowSize),
@@ -55,17 +56,15 @@ void ReliableOrderedChannel::sendPendingMessages(Socket* socket, const Address& 
 	if (hasMessagesToSend(time))
 	{
 		Packet* packet = createPacket(time);
+		assert(!packet->isEmpty());
 
-		if (!packet->isEmpty())
-		{
-			writeAcks(packet);
-			sendPacket(socket, address, packet);
-			m_lastPacketSendTime = time.getSeconds();
-		}
+		writeAcks(packet);
+		sendPacket(socket, address, packet);
+		m_lastPacketSendTime = time.getSeconds();
 
 		delete packet;
 	}
-	else if (time.getSeconds() - m_lastPacketSendTime > s_keepAliveTime)
+	else if (m_keepAlive && time.getSeconds() - m_lastPacketSendTime > s_keepAliveTime)
 	{
 		Message pingMessage = {};
 		pingMessage.type = MessageType::KeepAlive;

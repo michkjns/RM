@@ -46,7 +46,7 @@ void ActionHistory::replayFrom(uint64_t sequenceNr)
 	while (replayFrame != m_newestFrame)
 	{
 		/** Skip deprecated input */
-		if (replayFrame->sequenceNr < sequenceNr)
+		if (replayFrame->sequence < sequenceNr)
 		{
 			replayFrame = next(replayFrame);
 		}

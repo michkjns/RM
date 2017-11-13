@@ -61,7 +61,7 @@ int32_t Entity::getNetworkId() const
 	return m_networkId;
 }
 
-bool Entity::isNetworkPrediction() const
+bool Entity::isSpawnPrediction() const
 {
 	return m_networkId < INDEX_NONE;
 }

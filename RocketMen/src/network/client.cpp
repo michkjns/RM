@@ -1,7 +1,7 @@
 
 #include <network/client.h>
 
-#include <core/action_buffer.h>
+#include <core/input_buffer.h>
 #include <core/entity.h>
 #include <core/entity_manager.h>
 #include <core/game.h>
@@ -33,11 +33,12 @@ Client::Client(Time& time, Game* game) :
 	m_maxMessageSentTime(0.05f),
 	m_timeSinceLastClockSync(0.f),
 	m_isInitialized(false),
-	m_numLocalPlayers(0)
+	m_localPlayers(s_maxPlayersPerClient)
+
 {
 	clearSession();
 	m_socket = Socket::create();
-	assert(m_socket);
+	assert(m_socket != nullptr);
 }
 
 Client::~Client()
@@ -71,6 +72,10 @@ void Client::update()
 		m_connection->update(m_gameTime);
 		receivePackets();
 		readMessages();
+
+		readInput();
+
+
 		
 		m_messageSentTime += deltaTime;
 
@@ -89,6 +94,29 @@ void Client::update()
 	m_stateTimer += deltaTime;
 }
 
+void Client::readInput()
+{
+	for (LocalPlayer player : m_localPlayers)
+	{
+		if (player.controllerId != INDEX_NONE && player.playerId != INDEX_NONE)
+		{
+			ActionBuffer inputEvents;
+			Input::getActions(player.controllerId, inputEvents);
+			if (!inputEvents.isEmpty())
+			{
+				Message message = {};
+				message.type = MessageType::PlayerInput;
+				message.data.writeInt32(player.playerId);
+				message.data.writeInt32(inputEvents.getCount());
+				message.data.writeData(reinterpret_cast<const char*>(inputEvents.begin()),
+					inputEvents.getCount() * sizeof(input::Action));
+
+				sendMessage(message);
+			}
+		}
+	}
+}
+
 void Client::requestServerTime()
 {
 	OutgoingMessage pingMessage = {};
@@ -97,38 +125,15 @@ void Client::requestServerTime()
 	sendMessage(pingMessage);
 }
 
-void Client::fixedUpdate(ActionBuffer& actions)
+void Client::fixedUpdate()
 {
-	if (actions.getNumActions() == 0)
-		return;
-
-	for (uint32_t i = 0; i < actions.getNumActions(); i++)
-	{
-		input::Action action = actions[i];
-		action.getHash();
-	}
-
-	//NetworkMessage msg = {};
-	//msg.type = MessageType::PLAYER_INPUT;
-	//msg.isOrdered  = true;
-	//msg.isReliable = true;
-	//msg.data = BitStream::create();
-	//msg.data->writeInt32(actions.getNumActions());
-
-	//for (uint32_t i = 0; i < actions.getNumActions(); i++)
-	//{
-	//	input::Action action = actions[i];
-	//	msg.data->writeInt64(action.getHash());
-	//}
-
-	//queueMessage(msg);
 }
 
 void Client::connect(const Address& address)
 {
 	if (!ensure(m_state == Client::State::Disconnected))
 	{
-		LOG_ERROR("You must disconnect first before connecting!");
+		LOG_ERROR("Client::connect: Already connected");
 		return;
 	}
 
@@ -138,7 +143,8 @@ void Client::connect(const Address& address)
 	if (m_socket->initialize(m_port))
 	{
 		m_connection = new Connection(m_socket, address, 
-			std::bind(&Client::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2));
+			std::bind(&Client::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2),
+			true);
 
 		m_connection->tryConnect();
 		m_state = Client::State::Connecting;
@@ -161,30 +167,27 @@ void Client::disconnect()
 	setState(State::Disconnecting);
 }
 
-void Client::clearLocalPlayers()
+LocalPlayer& Client::addLocalPlayer(int32_t controllerId)
 {
-	for (LocalPlayer& localPlayer : m_localPlayers)
-	{
-		localPlayer.controllerId = INDEX_NONE;
-		localPlayer.playerId     = INDEX_NONE;
-	}
+	assert(m_localPlayers.getCount() < s_maxPlayersPerClient);
 
-	m_numLocalPlayers = 0;
+	LocalPlayer& player = m_localPlayers.insert();
+	player.controllerId = controllerId;
+	return player;
 }
 
-bool Client::addLocalPlayer(int32_t controllerId)
+void Client::clearLocalPlayers()
 {
-	if (m_numLocalPlayers < s_maxPlayersPerClient)
-	{
-		m_localPlayers[m_numLocalPlayers++].controllerId = controllerId;
-		return true;
-	}
-
-	return false;
+	m_localPlayers.clear();
 }
 
 bool Client::requestEntity(Entity* entity)
 {
+	if (!assert(entity != nullptr))
+	{
+		return false;
+	}
+
 	const int16_t tempId = getNextTempNetworkId();
 	entity->setNetworkId(static_cast<int32_t>(tempId));
 
@@ -209,38 +212,35 @@ bool Client::requestEntity(Entity* entity)
 
 uint32_t Client::getNumLocalPlayers() const
 {
-	return m_numLocalPlayers;
+	return m_localPlayers.getCount();
 }
 
 bool Client::isLocalPlayer(int32_t playerId) const
 {
-	for (auto player : m_localPlayers)
+	return getLocalPlayer(playerId) != nullptr;
+}
+
+LocalPlayer* Client::getLocalPlayer(int32_t playerId) const
+{
+	for (auto& localPlayer : m_localPlayers)
 	{
-		if (player.playerId == playerId)
+		if (localPlayer.playerId == playerId)
 		{
-			return true;
+			return &localPlayer;
 		}
 	}
 
-	return false;
+	return nullptr;
 }
 
 void Client::readMessage(IncomingMessage& message)
 {
-	//// Disregard duplicate messages
-	//if (m_recentlyProcessed.contains(message.id))
-	//{
-	//	return;
-	//}
-	//
-	//m_recentlyProcessed.insert(message.id);
-
 	switch (message.type)
 	{
 		case MessageType::Gamestate:
 		{
 			if (sequenceLessThan(message.sequence, m_lastReceivedState))
-			{ // discard packet
+			{ // old, discard
 				break;
 			}
 			
@@ -266,7 +266,7 @@ void Client::readMessage(IncomingMessage& message)
 
 		case MessageType::AcceptClient:
 		{
-			onHandshake(message);
+			onConnectionEstablished(message);
 			break;
 		}
 		case MessageType::AcceptPlayer:
@@ -295,13 +295,13 @@ void Client::readMessage(IncomingMessage& message)
 	}
 }
 
-void Client::onHandshake(IncomingMessage& msg)
+void Client::onConnectionEstablished(IncomingMessage& msg)
 {
 	if (!ensure(m_state == State::Connecting))
 		return;
 
 	int32_t id = msg.data.readInt32();
-	LOG_INFO("Client: Received handshake from the server! I have received ID  %d\n", id);
+	LOG_INFO("Client: Connection established with the server, Client ID: %d", id);
 	setState(State::Connected);
 
 	if (Network::isServer())
@@ -310,30 +310,25 @@ void Client::onHandshake(IncomingMessage& msg)
 	}
 
 	// Introduce Players
-	Message outMessage   = {};
-	outMessage.type      = MessageType::IntroducePlayer;
+	Message outMessage = {};
+	outMessage.type = MessageType::IntroducePlayer;
 	outMessage.data.writeInt32(getNumLocalPlayers());
-	
-	//for (auto player : m_localPlayers)
-	//{
-	//	// Write player names etc
-	//}
 
 	sendMessage(outMessage);
 }
 
 void Client::onAcceptPlayer(IncomingMessage& msg)
 {
-	if (m_localPlayers[0].playerId < 0 == false)
+	if (m_localPlayers[0].playerId != INDEX_NONE)
 	{
-		ensure(false);
+		assert(false);
 		return;
 	}
 	
-	for (uint32_t i = 0; i < getNumLocalPlayers(); i++)
+	for (auto& player : m_localPlayers)
 	{
-		m_localPlayers[i].playerId = msg.data.readInt32();
-		LOG_INFO("Received player id %i", m_localPlayers[i].playerId);
+		player.playerId = msg.data.readInt32();
+		LOG_INFO("Received player id %i", player.playerId);
 	}
 }
 
@@ -365,7 +360,9 @@ void Client::onAcceptEntity(IncomingMessage& msg)
 		[localId](Entity* it) { return it->getNetworkId() == localId; } ))
 	{
 		entity->setNetworkId(remoteId);
+#ifdef _DEBUG
 		LOG_DEBUG("Client: Accepted entity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
+#endif
 	}
 	else
 	{
@@ -434,11 +431,8 @@ void Client::sendMessage(Message& message)
 void Client::sendPendingMessages()
 {
 	assert(m_connection != nullptr);
-	m_connection->sendPendingMessages(m_gameTime);
-}
 
-void Client::sendInput()
-{
+	m_connection->sendPendingMessages(m_gameTime);
 }
 
 void Client::setState(State state)

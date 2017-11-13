@@ -176,7 +176,7 @@ void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, co
 void Renderer_glfw::drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color, 
 	                                bool screenSpace)
 {
-	assert(Camera::mainCamera);
+	assert(Camera::mainCamera != nullptr);
 
 	Shader& lineShader = ResourceManager::getShader("line_shader");
 	lineShader.use();

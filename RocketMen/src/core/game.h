@@ -31,7 +31,7 @@ public:
 
 	virtual void terminate() = 0;
 
-	virtual void onPlayerJoin() = 0;
+	virtual void onPlayerJoin(int32_t playerId) = 0;
 
 public:
 	virtual const char* const getName()    const;
@@ -40,8 +40,7 @@ public:
 	uint64_t getTimestep();
 	void     setTimestep(uint64_t timestep);
 
-	/** Processes the actionbuffer and performs action callbacks */
-	void     processActions(class ActionBuffer& actions);
+	void processInputEvents(class ActionBuffer& inputEvents, int32_t playerId);
 	
 private:
 	uint64_t m_timestep;

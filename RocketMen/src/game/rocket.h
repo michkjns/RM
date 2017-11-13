@@ -17,7 +17,7 @@ namespace rm
 	class Rocket : public Entity
 	{
 	public:
-		DEFINE_ENTITY_TYPE(EntityType::Rocket);
+		DECLARE_ENTITY(EntityType::Rocket);
 
 	public:
 		Rocket();
@@ -52,6 +52,7 @@ namespace rm
 		Vector2    m_direction;
 		float      m_accelerationPower;
 		float      m_lifetimeSeconds;
+		bool       m_gracePeriod;
 	};
 
 };

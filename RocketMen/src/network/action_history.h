@@ -2,7 +2,7 @@
 #pragma once
 
 #include <bitstream.h>
-#include <core/action_buffer.h>
+#include <core/input_buffer.h>
 
 #include <cstdint>
 #include <list>
@@ -11,8 +11,8 @@ namespace network
 {
 	struct ClientFrame
 	{
-		uint64_t	 sequenceNr;
-		ActionBuffer actions;
+		uint64_t	sequence;
+		ActionBuffer inputEvents;
 	};
 
 	class ActionHistory

@@ -8,17 +8,27 @@
 static const uint32_t s_maxActions = 16;
 //==============================================================================
 
+namespace network
+{
+	struct IncomingMessage;
+};
+
 class ActionBuffer
 {
 public:
+	ActionBuffer();
+
 	void insert(const input::Action& action);
-	void erase(const input::Action& action);
+	void insert(const ActionBuffer& other);
 	void clear();
 
-	uint32_t getNumActions() const;
+	uint32_t getCount() const;
+	bool     isEmpty()  const;
 
-	input::Action* begin();
-	input::Action* end();
+	const input::Action* begin() const;
+	const input::Action* end()   const;
+
+	int32_t readFromMessage(network::IncomingMessage& message);
 
 private:
 	input::Action m_actions[s_maxActions];

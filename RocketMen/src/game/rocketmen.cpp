@@ -1,12 +1,13 @@
 
+#include <game/rocketmen.h>
 #include <common.h>
 
-#include <core/input.h>
+#include <core/debug.h>
 #include <core/entity_manager.h>
+#include <core/input.h>
 #include <core/resource_manager.h>
 #include <game/character.h>
 #include <game/rocket.h>
-#include <game/rocketmen.h>
 #include <graphics/camera.h>
 #include <network.h>
 #include <physics.h>
@@ -41,8 +42,12 @@ bool RocketMenGame::initialize()
 
 	if (Network::isClient())
 	{
-		Input::mapAction("Fire", MouseButton::MOUSE_LEFT);
-		assert(Network::addLocalPlayer(0));
+		Network::addLocalPlayer(0);
+		Input::mapAction("Fire", MouseButton::Left, ButtonState::Press);
+		Input::mapAction("Fire", ControllerButton(1), ButtonState::Press, 0);
+
+		const char* localHostAddress = "127.0.0.1";
+		Network::connect(network::Address(localHostAddress, s_defaultServerPort));
 	}
 
 	EntityFactory<Character>::initialize();
@@ -61,6 +66,9 @@ void RocketMenGame::update(const Time& time)
 	const float deltaTime = time.getDeltaSeconds();
 
 	const float cameraSpeed = 0.20f;
+
+	const float axis = Input::getAxis(0, 0);
+	Camera::mainCamera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
 
 	if (Input::getKey(Key::LEFT))
 	{
@@ -88,12 +96,13 @@ void RocketMenGame::terminate()
 	if(Camera::mainCamera) delete Camera::mainCamera;
 }
 
-void RocketMenGame::onPlayerJoin()
+void RocketMenGame::onPlayerJoin(int32_t playerId)
 {
 	Character* character = new Character();
 
 	character->getTransform().setLocalPosition( Vector2(-3.f, 3.f));
 	character->setSprite("demoTexture");
+	character->posessbyPlayer(playerId);
 	
 	EntityManager::instantiateEntity(character);
 }

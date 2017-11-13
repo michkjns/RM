@@ -14,14 +14,11 @@ public:
 	static std::vector<ActionListener*>& getList();
 
 public:
-	ActionListener();
+	ActionListener(int32_t playerId);
 	~ActionListener();
 
 	void setPlayerId(int32_t playerId);
-	void setControllerId(int32_t controllerId);
-
-	int32_t getPlayerId()     const;
-	int32_t getControllerId() const;
+	int32_t getPlayerId() const;
 
 	template<typename F, class I>
 	void registerAction(const char* name, void(F::*function)(void), I* object)
@@ -39,6 +36,4 @@ private:
 	std::map<size_t, std::function<void(void)>> m_actionMap;
 
 	int32_t m_playerId;
-	int32_t m_controllerId;
-
 };

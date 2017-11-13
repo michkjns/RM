@@ -3,7 +3,7 @@
 
 #include <common.h>
 
-#include <core/action_buffer.h>
+#include <core/input_buffer.h>
 #include <core/keys.h>
 
 class Window;
@@ -11,8 +11,8 @@ class Window;
 class Input
 {
 public:
-	bool initialize(Window* window);
-	void update();
+	static bool initialize(Window* window);
+	static void update();
 
 	/** @return true when the key is pressed down */
 	static bool getKey(input::Key key);
@@ -35,18 +35,23 @@ public:
 	/** @return true if button is pressed this frame */
 	static bool getMouseDown(input::MouseButton button);
 
+	static float getAxis(int32_t controllerId, int32_t axis);
+
+	static void getActions(int32_t controllerId, ActionBuffer& inputBuffer);
+
 	/** Binds a key to an action */
-	static void mapAction(std::string name, input::Key key);
-	static void mapAction(std::string name, input::MouseButton mouseButton);
+	static void mapAction(std::string name, input::Key key, 
+		input::ButtonState eventType);
+
+	static void mapAction(std::string name, input::MouseButton mouseButton, 
+		input::ButtonState eventType);
+
+	static void mapAction(std::string name, input::ControllerButton controllerButton,
+		input::ButtonState eventType, int32_t controllerId);
 
 	/** Enables or disables the cursor */
 	static void setCursorEnabled(input::CursorState newState);
 
 	/** @return true if the cursor is enabled */
 	static input::CursorState getCursorEnabled();
-
-	static ActionBuffer& getActions();
-
-	static Input* create();
-	static void destroy();
 };

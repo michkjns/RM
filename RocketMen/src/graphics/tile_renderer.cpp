@@ -49,8 +49,8 @@ bool TileRenderer::initialize()
 
 void TileRenderer::render(TileMap* tileMap, const glm::mat4& projectionViewMatrix)
 {
-	assert(m_tileShader);
-	assert(tileMap);
+	assert(m_tileShader != nullptr);
+	assert(tileMap != nullptr);
 	if (!tileMap->isInitalized())
 		return;
 
