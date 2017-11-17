@@ -1,5 +1,5 @@
 
-#include <core/input_buffer.h>
+#include <core/action_buffer.h>
 
 #include <common.h>
 #include <network/network_message.h>

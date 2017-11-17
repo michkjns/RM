@@ -1,7 +1,7 @@
 
 #include <network/client.h>
 
-#include <core/input_buffer.h>
+#include <core/action_buffer.h>
 #include <core/entity.h>
 #include <core/entity_manager.h>
 #include <core/game.h>

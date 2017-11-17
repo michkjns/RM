@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <core/input_buffer.h>
+#include <core/action_buffer.h>
 #include <network/common_network.h>
 #include <network/sequence_buffer.h>
 

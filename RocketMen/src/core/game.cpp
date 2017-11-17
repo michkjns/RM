@@ -3,7 +3,7 @@
 
 #include <core/action_listener.h>
 #include <core/debug.h>
-#include <core/input_buffer.h>
+#include <core/action_buffer.h>
 #include <map>
 
 bool Game::initialize()

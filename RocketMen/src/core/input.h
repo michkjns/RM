@@ -3,7 +3,7 @@
 
 #include <common.h>
 
-#include <core/input_buffer.h>
+#include <core/action_buffer.h>
 #include <core/keys.h>
 
 class Window;

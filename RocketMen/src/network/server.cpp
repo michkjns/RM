@@ -5,7 +5,7 @@
 #include <core/entity_manager.h>
 #include <core/game.h>
 #include <core/debug.h>
-#include <core/input_buffer.h>
+#include <core/action_buffer.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/remote_client.h>
