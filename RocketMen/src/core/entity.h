@@ -50,6 +50,11 @@ public:
 	void setNetworkId(int32_t networkId);
 	int32_t getNetworkId() const;
 
+	int16_t getOwnerPlayerId() const;
+
+	/* @return true if entity is replicated between server and client*/
+	bool isReplicated() const;
+
 	/* @return true if entity is spawned locally and not yet acknowledged by the server*/
 	bool isSpawnPrediction() const;
 
@@ -65,6 +70,7 @@ protected:
 	std::string m_sprite;
 	uint32_t    m_id;
 	int32_t     m_networkId;
+	int16_t     m_ownerPlayerId;
 
 public:
 	friend class EntityManager;

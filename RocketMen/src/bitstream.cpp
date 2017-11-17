@@ -86,12 +86,12 @@ void WriteStream::serializeInt(int32_t& value, int32_t min, int32_t max)
 }
 
 /* Write a full byte */
-void WriteStream::serializeByte(const uint8_t byte)
+void WriteStream::serializeByte(const char byte)
 {
 	serializeBits(uint32_t(byte), 8);
 }
 
-void WriteStream::serializeData(const uint8_t* data, int32_t dataLength)
+void WriteStream::serializeData(const char* data, int32_t dataLength)
 {
 	assert(data != nullptr);
 	assert(dataLength > 0);
@@ -130,7 +130,7 @@ void WriteStream::serializeData(const uint8_t* data, int32_t dataLength)
 
 size_t WriteStream::getLength() const
 {
-	return (m_wordIndex + 1) * (sizeof(uint32_t) / sizeof(uint8_t));
+	return (m_wordIndex + 1) * (sizeof(uint32_t) / sizeof(char));
 }
 
 uint32_t* WriteStream::getBuffer() const
@@ -214,7 +214,7 @@ void ReadStream::serializeInt(int32_t& value, int32_t min, int32_t max)
 	value = value32 + min;
 }
 
-void ReadStream::serializeByte(uint8_t& dest)
+void ReadStream::serializeByte(char& dest)
 {
 	flush();
 
@@ -223,7 +223,7 @@ void ReadStream::serializeByte(uint8_t& dest)
 	dest = static_cast<uint8_t>(value32);
 }
 
-void ReadStream::serializeData(uint8_t* dest, int32_t length)
+void ReadStream::serializeData(char* dest, int32_t length)
 {
 	flush();
 	if ((m_scratchBits & 7) == 0) // Byte aligned
@@ -249,12 +249,7 @@ uint32_t* ReadStream::getBuffer() const
 
 
 
-
-
-
-
-
-
+//=============================================================================
 
 
 BitStream::BitStream() :
@@ -274,20 +269,19 @@ BitStream::BitStream(const BitStream& bs)
 	m_buffer = std::unique_ptr<char[]>(new char[s_bufferSize]);
 	memcpy(m_buffer.get(), bs.m_buffer.get(), s_bufferSize);
 
-	m_readData        = m_buffer.get();
 	m_readTotalBytes  = bs.m_readTotalBytes;
 	m_readBit         = bs.m_readBit;
+	m_readData        = m_buffer.get() + m_readTotalBytes;
 
 	m_writeTotalBytes = bs.m_writeTotalBytes;
 	m_writeLength     = bs.m_writeLength;
 	m_writeByte       = bs.m_writeByte;
 	m_writeBit        = bs.m_writeBit;
-	m_writeData       = m_buffer.get();
+	m_writeData       = m_buffer.get() + m_writeTotalBytes;
 }
 
 BitStream::~BitStream()
 {
-	//delete[] m_buffer;
 }
 
 BitStream& BitStream::operator=(const BitStream& other)
@@ -297,15 +291,15 @@ BitStream& BitStream::operator=(const BitStream& other)
 
 	memcpy(m_buffer.get(), other.m_buffer.get(), s_bufferSize);
 
-	m_readData        = m_buffer.get();
 	m_readTotalBytes  = other.m_readTotalBytes;
 	m_readBit         = other.m_readBit;
+	m_readData        = m_buffer.get() + m_readTotalBytes;
 
 	m_writeTotalBytes = other.m_writeTotalBytes;
 	m_writeLength     = other.m_writeLength;
 	m_writeByte       = other.m_writeByte;
 	m_writeBit        = other.m_writeBit;
-	m_writeData       = m_buffer.get();
+	m_writeData       = m_buffer.get() + m_writeTotalBytes;
 
 	return *this;
 }
@@ -395,6 +389,11 @@ bool BitStream::readBool()
 	bool out;
 	readBit(&out);
 	return out;
+}
+
+void BitStream::readToStream(ReadStream& stream)
+{
+	readBytes((char*)stream.getBuffer(), getLength() - getReadTotalBytes());
 }
 
 void BitStream::writeBuffer(const char* data, size_t length)
@@ -544,6 +543,11 @@ void BitStream::writeInt64(int64_t value)
 void BitStream::writeBool(bool value)
 {
 	writeBit(value, 1);
+}
+
+void BitStream::writeFromStream(WriteStream& stream)
+{
+	writeData(reinterpret_cast<char*>(stream.getBuffer()), stream.getLength());
 }
 
 void BitStream::resetReading()

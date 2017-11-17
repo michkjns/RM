@@ -28,7 +28,7 @@ namespace input
 		float  getValue() const;
 
 	protected:
-		size_t     m_hashedName;
+		size_t m_hashedName;
 
 		union
 		{

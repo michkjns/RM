@@ -37,7 +37,6 @@ private:
 	network::Client* m_client;
 	network::Server* m_server;
 	Time             m_gameTime;
-	Input*           m_input;
 	class Physics*   m_physics;
 	uint64_t         m_timestep;
 	bool             m_enableDebugDraw;

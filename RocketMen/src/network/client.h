@@ -4,10 +4,12 @@
 #include <buffer.h>
 #include <circular_buffer.h>
 #include <core/entity.h>
+#include <core/keys.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/connection_callback.h>
 #include <network/network_message.h>
+#include <network/client_history.h>
 
 #include <array>
 #include <cstdint>
@@ -22,10 +24,14 @@ namespace network
 {
 	struct LocalPlayer
 	{
-		LocalPlayer() : playerId(INDEX_NONE), controllerId(INDEX_NONE) {}
+		LocalPlayer() : 
+			playerId(INDEX_NONE),
+			controllerId(INDEX_NONE),
+			listenMouseKB(false) {}
 
-		int32_t playerId;
-		int32_t controllerId;
+		int16_t playerId;
+		input::ControllerId controllerId;
+		bool listenMouseKB;
 	};
 
 	class Client
@@ -47,24 +53,26 @@ namespace network
 		};
 
 	public:
-		bool initialize(uint16_t port);
+		void initialize(uint16_t port);
 		bool isInitialized() const;
 		void update();
 
-		void readInput();
 		void requestServerTime();
-		void fixedUpdate();
+		void readInput();
+		void simulate(Sequence frameId);
 		void connect(const Address& address);
 		void disconnect();
-		LocalPlayer& addLocalPlayer(int32_t controllerId);
-		void clearLocalPlayers();
+		LocalPlayer& addLocalPlayer(int32_t controllerId, bool listenMouseKB = false);
 		bool requestEntity(Entity* entity);
+		void requestEntity(int32_t netId);
 
 		uint32_t getNumLocalPlayers() const;
-		bool isLocalPlayer(int32_t playerId) const;
-		LocalPlayer* getLocalPlayer(int32_t playerId) const;
+		bool isLocalPlayer(int16_t playerId) const;
+		LocalPlayer* getLocalPlayer(int16_t playerId) const;
 
 	private:
+		void sendPlayerActions();
+		void syncOwnedEntities(int16_t playerId);
 		void readMessage(IncomingMessage& message);
 		void onConnectionEstablished(IncomingMessage& message);
 		void onAcceptPlayer(IncomingMessage& message);
@@ -78,7 +86,7 @@ namespace network
 		void sendPendingMessages();
 		void setState(State state);
 		void clearSession();
-		int16_t getNextTempNetworkId();
+		int32_t getNextTempNetworkId();
 
 		void receivePackets();
 		void readMessages();
@@ -89,12 +97,15 @@ namespace network
 		Connection* m_connection;
 		Time&       m_gameTime;
 		Sequence    m_lastReceivedState;
+		Sequence    m_lastFrameSent;
+		Sequence    m_lastFrameSimulated;
 		uint32_t    m_lastOrderedMessaged;
 		State       m_state;
 		float       m_stateTimer;
-		float       m_messageSentTime;
-		float       m_maxMessageSentTime;
+		float       m_timeSinceLastInputMessage;
+		float       m_maxInputMessageSentTime;
 		float       m_timeSinceLastClockSync;
+		float       m_clockResyncTime;
 		bool        m_isInitialized;
 		uint16_t    m_port;
 
@@ -105,8 +116,10 @@ namespace network
 			m_recentlyDestroyedEntities;
 
 		CircularBuffer<int32_t, s_maxSpawnPredictedEntities>
-			m_recentlyPredictedSpawns;
+			m_requestedEntities;
 
 		Buffer<LocalPlayer>	m_localPlayers;	
+
+		ClientHistory m_clientHistory;
 	};
 }; //namespace network

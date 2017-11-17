@@ -15,7 +15,7 @@ namespace rm
 		void fixedUpdate(float deltaTime)    override;
 		void update(const Time& time)        override;
 		void terminate()                     override;
-		void onPlayerJoin(int32_t playerId) override;
+		void onPlayerJoin(int16_t playerId)  override;
 	};
 
 }; // namespace rm

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <common.h>
 #include <core/action.h>
 
 #include <string>
@@ -11,6 +12,7 @@ static const uint32_t s_maxActions = 16;
 namespace network
 {
 	struct IncomingMessage;
+	struct Message;
 };
 
 class ActionBuffer
@@ -28,7 +30,8 @@ public:
 	const input::Action* begin() const;
 	const input::Action* end()   const;
 
-	int32_t readFromMessage(network::IncomingMessage& message);
+	void readFromMessage(network::IncomingMessage& message);
+	void writeToMessage(network::Message& message);
 
 private:
 	input::Action m_actions[s_maxActions];
@@ -37,11 +40,13 @@ private:
 public:
 	inline input::Action operator[] (uint32_t i) const
 	{
+		assert(i < m_numActions && i >= 0);
 		return (m_actions[i]);
 	}
 
 	inline input::Action& operator[] (uint32_t i)
 	{
+		assert(i < m_numActions && i >= 0);
 		return (m_actions[i]);
 	}
 };

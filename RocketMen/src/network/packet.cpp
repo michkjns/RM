@@ -10,50 +10,46 @@ using std::memcpy;
 
 Packet::Packet(ChannelType channel) :
 	m_read(0),
-	m_channel(channel)
+	m_channel(channel),
+	m_error(false)
 {
 	header = {};
 }
 
 void Packet::writeMessage(const OutgoingMessage& message)
 {
-	assert(header.dataLength + sizeof(MessageType) + sizeof(int32_t) +
-			   message.data.getLength() < g_maxPacketSize);
+	assert(header.dataLength + g_messageOverhead +
+		message.data.getLength() < g_maxBlockSize);
 
 	assert(getMessageChannel(message) == m_channel);
 
+	assert(message.type > MessageType::None 
+		&& message.type < MessageType::NUM_MESSAGE_TYPES);
+	
 	writeData(&message.type, sizeof(MessageType));
-
 	writeData(&message.sequence, sizeof(Sequence));
-	m_messageIDs[header.messageCount] = message.sequence;
+	m_messageIDs[header.numMessages] = message.sequence;
 
-	if(message.data.getLength() > 0)
+	const int32_t messageDataSize = static_cast<int32_t>(message.data.getLength());
+	writeData(&messageDataSize, sizeof(messageDataSize));
+	
+	if(messageDataSize > 0)
 	{
-		const int32_t size = static_cast<int32_t>(message.data.getLength());
-		assert(size < g_maxPacketSize);
-		writeData(&size, sizeof(size));
-		writeData(message.data.getBuffer(), size);
-
-#ifdef _DEBUG
-	//	LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
-#endif
-	}
-	else
-	{
-		int32_t size = 0;
-		writeData(&size, sizeof(size));
+		writeData(message.data.getBuffer(), messageDataSize);
 #ifdef _DEBUG
 	//	LOG_DEBUG("WriteMessage: ID: %d, size: %d, %s", message.sequence, size, messageTypeAsString(message.type));
 #endif
 	}
 
-	header.messageCount++;
+	assert(header.dataLength < g_maxPacketSize);
+	header.numMessages++;
 }
 
 void Packet::writeData(const void* data, const size_t length)
 {
 	assert(data != nullptr);
-	assert(length > 0 && length < 1500);
+	assert(length > 0 && 
+		header.dataLength + length < g_maxBlockSize);
 
 	memcpy(m_data + header.dataLength, data, length);
 	header.dataLength += static_cast<uint16_t>(length);
@@ -62,27 +58,35 @@ void Packet::writeData(const void* data, const size_t length)
 IncomingMessage* Packet::readNextMessage()
 {
 	IncomingMessage* message = new IncomingMessage();
-
 	memcpy(&message->type, m_data + m_read, sizeof(MessageType));
 	m_read += sizeof(MessageType);
-	
+
 	if (!ensure(message->type > MessageType::None && message->type < MessageType::NUM_MESSAGE_TYPES))
 	{
 		LOG_WARNING("Packet: Invalid message type found");
+		m_error = true;
+		delete message;
 		return nullptr;
 	}
 
 	memcpy(&message->sequence, m_data + m_read, sizeof(Sequence));
 	m_read += sizeof(Sequence);
 
-	int32_t dataSize;
-	memcpy(&dataSize, m_data + m_read, sizeof(dataSize));
-	assert(dataSize < g_maxPacketSize);
-	m_read += sizeof(dataSize);
-	if (dataSize > 0)
+	int32_t messageDataSize;
+	memcpy(&messageDataSize, m_data + m_read, sizeof(messageDataSize));
+	m_read += sizeof(messageDataSize);
+
+	if (messageDataSize > g_maxPacketSize)
 	{
-		message->data.writeData(reinterpret_cast<char*>(m_data + m_read), dataSize);
-		m_read += dataSize;
+		m_error = true;
+		delete message;
+		return nullptr;
+	}
+
+	if (messageDataSize > 0)
+	{
+		message->data.writeData(reinterpret_cast<char*>(m_data + m_read), messageDataSize);
+		m_read += messageDataSize;
 	}
 
 	return message;
@@ -100,10 +104,15 @@ char* Packet::getData() const
 
 bool network::Packet::isEmpty() const
 {
-	return header.messageCount == 0;
+	return header.numMessages == 0;
 }
 
 ChannelType Packet::getChannel() const
 {
 	return m_channel;
+}
+
+bool Packet::getError() const
+{
+	return m_error;
 }

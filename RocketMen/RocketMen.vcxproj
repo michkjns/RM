@@ -80,7 +80,7 @@
     <OutDir>$(SolutionDir)/bin/</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D/Box2D</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/include;$(SolutionDir)/dep/glm-0.9.5.1;$(SolutionDir)/dep/glew-1.13.0/include/;$(SolutionDir)/dep/soil/src;$(SolutionDir)/src;$(SolutionDir)/dep/Box2D</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;dep/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/glew-1.13.0/bin/Release;$(SolutionDir)/glm-0.9.5.1/bin/Release/$(Platform);$(SolutionDir)/glew-1.13.0/lib/Release/$(Platform);$(SolutionDir)/dep/soil/lib/x64;$(SolutionDir)/dep/Box2D/x64/Debug;$(SolutionDir)/dep/Box2D/x64/Release;$(SolutionDir)/dep/glfw-3.2.1.bin.WIN64/lib-vc2015</LibraryPath>
     <OutDir>$(SolutionDir)/bin/</OutDir>
     <TargetName>$(ProjectName)_d</TargetName>
@@ -162,7 +162,7 @@
     <ClCompile Include="src\core\entity_manager.cpp" />
     <ClCompile Include="src\game\character.cpp" />
     <ClCompile Include="src\core\action.cpp" />
-    <ClCompile Include="src\core\input_buffer.cpp" />
+    <ClCompile Include="src\core\action_buffer.cpp" />
     <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\entity.cpp" />
@@ -175,7 +175,6 @@
     <ClCompile Include="src\graphics\camera.cpp" />
     <ClCompile Include="src\graphics\check_gl_error.cpp" />
     <ClCompile Include="src\network\client.cpp" />
-    <ClCompile Include="src\network\action_history.cpp" />
     <ClCompile Include="src\core\core.cpp" />
     <ClCompile Include="src\core\debug.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -191,6 +190,7 @@
     <ClCompile Include="src\game\rocketmen.cpp" />
     <ClCompile Include="src\network\sequence_buffer.cpp" />
     <ClCompile Include="src\network\snapshot.cpp" />
+    <ClCompile Include="src\network\client_history.cpp" />
     <ClCompile Include="src\network\unreliable_channel.cpp" />
     <ClCompile Include="src\physics.cpp" />
     <ClCompile Include="src\physics\rigidbody.cpp" />
@@ -214,7 +214,7 @@
     <ClInclude Include="src\core\entity_type.h" />
     <ClInclude Include="src\game\character.h" />
     <ClInclude Include="src\core\action.h" />
-    <ClInclude Include="src\core\input_buffer.h" />
+    <ClInclude Include="src\core\action_buffer.h" />
     <ClInclude Include="src\bitstream.h" />
     <ClInclude Include="src\core\entity.h" />
     <ClInclude Include="src\game\rocket.h" />
@@ -226,13 +226,13 @@
     <ClInclude Include="src\graphics\tile_map.h" />
     <ClInclude Include="src\graphics\tile_renderer.h" />
     <ClInclude Include="src\network.h" />
-    <ClInclude Include="src\network\action_history.h" />
     <ClInclude Include="src\core\core.h" />
     <ClInclude Include="src\core\debug.h" />
     <ClInclude Include="src\core\game.h" />
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\network\address.h" />
     <ClInclude Include="src\crc\crc.h" />
+    <ClInclude Include="src\network\client_history.h" />
     <ClInclude Include="src\network\common_network.h" />
     <ClInclude Include="src\network\connection.h" />
     <ClInclude Include="src\network\connection_callback.h" />

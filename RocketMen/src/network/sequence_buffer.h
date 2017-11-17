@@ -16,6 +16,7 @@ public:
 	bool     exists(Sequence sequence) const;
 	bool     isAvailable(Sequence sequence) const;
 	void     remove(Sequence sequence);
+	void     removeOldEntries();
 	bool     isEmpty() const;
 	int32_t  getSize() const;
 	T*       getEntry(Sequence sequence) const;
@@ -87,7 +88,6 @@ inline bool SequenceBuffer<T>::isAvailable(Sequence sequence) const
 	return !exists(sequence);
 }
 
-
 template<typename T>
 bool SequenceBuffer<T>::isEmpty() const
 {
@@ -106,6 +106,19 @@ template<typename T>
 void SequenceBuffer<T>::remove(Sequence sequence)
 {
 	m_exist[getIndex(sequence)] = false;
+}
+
+template<typename T>
+inline void SequenceBuffer<T>::removeOldEntries()
+{
+	const Sequence oldestSequence = m_currentSequence - static_cast<Sequence>(m_size);
+	for (int32_t i = 0; i < m_size; i++)
+	{
+		if (m_exist[i] && sequenceLessThan(m_sequences[i], oldestSequence))
+		{
+			m_exist[i] = false;
+		}
+	}
 }
 
 template<typename T>

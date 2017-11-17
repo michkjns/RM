@@ -79,23 +79,7 @@ void Server::generateNetworkId(Entity* entity)
 	int32_t networkId = m_networkIdCounter++;
 	entity->setNetworkId(networkId);
 
-	Message message = {};
-	message.type    = MessageType::SpawnEntity;
-
-	WriteStream stream(32);
-	EntityManager::serializeFullEntity(entity, stream);
-	message.data.writeData((char*)stream.getBuffer(), stream.getLength());
-
-	for (auto& client : m_clients)
-	{
-		if (client.isUsed() && client.getId() != m_localClientId)
-		{
-			client.getConnection()->sendMessage(message);
-#ifdef _DEBUG
-				LOG_DEBUG("Server: spawning Entity id: %d netId: %d", entity->getId(), networkId);
-#endif // _DEBUG
-		}
-	}
+	sendEntitySpawn(entity);
 }
 
 void Server::registerLocalClientId(int32_t clientId)
@@ -162,8 +146,6 @@ void Server::onPlayerIntroduction(IncomingMessage& inMessage)
 		LOG_WARNING("Illegal number of players received from client %i", client->getNumPlayers())
 		return;
 	}
-
-	client->setNumPlayers(numPlayers);
 	
 	// Introduce Players
 	Message outMessage = {};
@@ -172,8 +154,9 @@ void Server::onPlayerIntroduction(IncomingMessage& inMessage)
 	for (uint32_t i = 0; i < numPlayers; i++)
 	{
 		LOG_INFO("Giving player id %i", m_playerIdCounter);
+		client->addPlayer(m_playerIdCounter);
 		m_game->onPlayerJoin(m_playerIdCounter);
-		outMessage.data.writeInt32(m_playerIdCounter++);
+		outMessage.data.writeInt16(m_playerIdCounter++);
 	}
 
 	client->getConnection()->sendMessage(outMessage);
@@ -188,12 +171,16 @@ void Server::onPlayerInput(IncomingMessage& message)
 		return;
 	}
 
-	ActionBuffer inputEvents;
-	const int32_t playerId = inputEvents.readFromMessage(message);
-	if (playerId != INDEX_NONE)
+	ActionBuffer playerActions;
+	const int16_t playerId = message.data.readInt16();
+	if (playerId <= INDEX_NONE)
 	{
-		m_game->processInputEvents(inputEvents, playerId);
+		return;
 	}
+	const Sequence frameId = message.data.readInt16();
+	playerActions.readFromMessage(message);
+
+	m_game->processPlayerActions(playerActions, playerId);
 }
 
 void Server::onEntityRequest(IncomingMessage& inMessage)
@@ -204,9 +191,122 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 		LOG_WARNING("Server: onEntityRequest: Client non-existent (%s)", inMessage.address.toString());
 		return;
 	}
-	const int32_t tempNetworkId  = inMessage.data.readInt16();
-	
+
+	const int32_t requestId = inMessage.data.readInt32();
+	if (requestId > INDEX_NONE)
+	{
+		Entity* entity = findPtrByPredicate(EntityManager::getEntities().begin(), EntityManager::getEntities().end(),
+			[requestId](Entity* entity) -> bool { return entity->getNetworkId() == requestId; });
+		if (entity != nullptr)
+		{
+			sendEntitySpawn(entity, client);
+		}
+	}
+	else if(requestId < INDEX_NONE)
+	{
+		acknowledgeEntitySpawn(inMessage, requestId, client);
+	}
+}
+
+void Server::onClientGameState(IncomingMessage& inMessage)
+{
+	RemoteClient* client = getClient(inMessage.address);
+	if (client == nullptr)
+	{
+		LOG_WARNING("Server: onClientGameState: unknown client (%s)", inMessage.address.toString());
+		return;
+	}
+
+	int32_t numReceivedEntities = 0;
+	ReadStream stream(32);
+	inMessage.data.readToStream(stream);
+
+	serializeInt(stream, numReceivedEntities);
+	std::vector<Entity*> entities = EntityManager::getEntities();
+	for (int32_t i = 0; i < numReceivedEntities; i++)
+	{
+		int32_t networkId = INDEX_NONE;
+		serializeInt(stream, networkId);
+		assert(networkId != INDEX_NONE);
+		Entity* entity = findPtrByPredicate(entities.begin(), entities.end(), [networkId](Entity* entity)
+		{
+			return  entity->getNetworkId() == networkId;
+		});
+		if (entity != nullptr)
+		{
+			assert(client->ownsPlayer(entity->getOwnerPlayerId()));
+			EntityManager::serializeClientVars(entity, stream);
+		}
+	}
+
+}
+
+void Server::onKeepAliveMessage(IncomingMessage& inMessage)
+{
+	if (RemoteClient* client = getClient(inMessage.address))
+	{
+		Message message = {};
+		message.type = MessageType::KeepAlive;
+		client->getConnection()->sendMessage(message);
+	}
+}
+
+void Server::sendEntitySpawn(Entity* entity, RemoteClient* client)
+{
+	assert(entity != nullptr);
+	assert(entity->getNetworkId() > INDEX_NONE);
+
+	Message spawnMessage = {};
+	spawnMessage.type = MessageType::SpawnEntity;
+
+	WriteStream stream(32);
+	int32_t networkId = entity->getNetworkId();
+	serializeInt(stream, networkId);
+	if (!EntityManager::serializeFullEntity(entity, stream))
+	{
+		assert(false);
+		return;
+	}
+	spawnMessage.data.writeFromStream(stream);
+	client->getConnection()->sendMessage(spawnMessage);
+}
+
+void Server::sendEntitySpawn(Entity* entity)
+{
+	assert(entity != nullptr);
+	assert(entity->getNetworkId() > INDEX_NONE);
+
+	Message message = {};
+	message.type = MessageType::SpawnEntity;
+
+	WriteStream stream(32);
+	int32_t networkId = entity->getNetworkId();
+	serializeInt(stream, networkId);
+	if(!EntityManager::serializeFullEntity(entity, stream))
+	{
+		assert(false);
+		return;
+	}
+	message.data.writeFromStream(stream);
+
+	for (auto& client : m_clients)
+	{
+		if (client.isUsed() && client.getId() != m_localClientId)
+		{
+			client.getConnection()->sendMessage(message);
+#ifdef _DEBUG
+			LOG_DEBUG("Server: spawning Entity id: %d netId: %d", entity->getId(), entity->getNetworkId());
+#endif // _DEBUG
+		}
+	}
+}
+
+void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client)
+{
 	const int32_t bufferLength = int32_t(inMessage.data.getLength()) - inMessage.data.getReadTotalBytes();
+
+	LOG_DEBUG("Server::acknowledgeEntitySpawn tempId_%d", tempId);
+
 	ReadStream readStream(bufferLength);
 	inMessage.data.readBytes((char*)readStream.getBuffer(), bufferLength);
 
@@ -220,26 +320,26 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 	entity->setNetworkId(networkId);
 
 	Message outMessage = {};
-	outMessage.type    = MessageType::AcceptEntity;
-	outMessage.data.writeInt32(tempNetworkId);
+	outMessage.type = MessageType::AcceptEntity;
+	outMessage.data.writeInt32(tempId);
 	outMessage.data.writeInt32(networkId); // TODO Compress in range (0, s_maxNetworkedEntities)
 
-	WriteStream ws(128);
-	if (!EntityManager::serializeFullEntity(entity, ws))
+	WriteStream writeStream(128);
+	if (!EntityManager::serializeFullEntity(entity, writeStream))
 	{
 		entity->kill();
 		assert(false);
 		return;
 	}
 
-	outMessage.data.writeData((char*)ws.getBuffer(), ws.getLength());
+	outMessage.data.writeFromStream(writeStream);
 	client->getConnection()->sendMessage(outMessage);
 
 	Message spawnMessage = {};
-	spawnMessage.type    = MessageType::SpawnEntity;
+	spawnMessage.type = MessageType::SpawnEntity;
 
 	spawnMessage.data.writeInt32(networkId);
-	spawnMessage.data.writeData((char*)ws.getBuffer(), ws.getLength());
+	spawnMessage.data.writeFromStream(writeStream);
 
 	for (auto& otherClient : m_clients)
 	{
@@ -291,15 +391,23 @@ void Server::readMessage(IncomingMessage& message)
 			onClientPing(message);
 			break;
 		}
+		case MessageType::Gamestate:
+		{
+			onClientGameState(message);
+			break;
+		}
+		case MessageType::KeepAlive:
+		{
+			onKeepAliveMessage(message);			
+			break;
+		}
 		case MessageType::RequestConnection:
 		case MessageType::None:
 		case MessageType::AcceptClient:
 		case MessageType::AcceptPlayer:
-		case MessageType::Gamestate:
 		case MessageType::SpawnEntity:
 		case MessageType::AcceptEntity:
 		case MessageType::DestroyEntity:
-		case MessageType::KeepAlive:
 		case MessageType::GameEvent:
 		case MessageType::NUM_MESSAGE_TYPES:
 			break;
@@ -367,48 +475,51 @@ void Server::receivePackets()
 		PacketHeader packetHeader;
 		stream.readBytes((char*)&packetHeader, sizeof(PacketHeader));
 
-		ChannelType channel = (packetHeader.sequence == -1 &&
-			packetHeader.ackBits == -1 &&
-			packetHeader.ackSequence == -1) ?
-			ChannelType::Unreliable :
-			ChannelType::ReliableOrdered;
-
-		Packet packet(channel);
-		packet.header = packetHeader;
-		stream.readBytes(packet.getData(), packet.header.dataLength);
-
-		// Write protocol ID after packet to include in the checksum
-		memcpy(packet.getData() + packet.header.dataLength, &g_protocolId, sizeof(g_protocolId));
-
-		if (checksum == crcFast((const unsigned char*)packet.getData(),
-			packet.header.dataLength + sizeof(uint32_t)))
+		if (packetHeader.dataLength < g_maxBlockSize)
 		{
-			bool newConnection = true;
-			for (auto& client : m_clients)
+			ChannelType channel = (packetHeader.sequence == (Sequence)-1
+				&& packetHeader.ackBits == (uint32_t)-1
+				&& packetHeader.ackSequence == (Sequence)-1) ?
+				ChannelType::Unreliable :
+				ChannelType::ReliableOrdered;
+
+			Packet packet(channel);
+			packet.header = packetHeader;
+			stream.readBytes(packet.getData(), packet.header.dataLength);
+
+			// Write protocol ID after packet to include in the checksum
+			memcpy(packet.getData() + packet.header.dataLength, &g_protocolId, sizeof(g_protocolId));
+
+			if (checksum == crcFast((const unsigned char*)packet.getData(),
+				packet.header.dataLength + sizeof(uint32_t)))
 			{
-				if (client.isUsed())
+				bool newConnection = true;
+				for (auto& client : m_clients)
 				{
-					if (client.getConnection()->getAddress() == address)
+					if (client.isUsed())
 					{
-						newConnection = false;
-						client.getConnection()->receivePacket(packet);
-						break;
+						if (client.getConnection()->getAddress() == address)
+						{
+							newConnection = false;
+							client.getConnection()->receivePacket(packet);
+							break;
+						}
 					}
 				}
-			}
-			if (newConnection && m_numClients < s_maxConnectedClients)
-			{
-				IncomingMessage* message = packet.readNextMessage();
-				if (message->type == MessageType::RequestConnection)
+				if (newConnection && m_numClients < s_maxConnectedClients)
 				{
-					onConnectionRequest(address, packet);
+					IncomingMessage* message = packet.readNextMessage();
+					if (message->type == MessageType::RequestConnection)
+					{
+						onConnectionRequest(address, packet);
+					}
+					delete message;
 				}
-				delete message;
 			}
-		}
-		else
-		{
-			LOG_DEBUG("PacketReceiver::receivePackets: Checksum mismatched, packet discarded.");
+			else
+			{
+				LOG_DEBUG("PacketReceiver::receivePackets: Checksum mismatched, packet discarded.");
+			}
 		}
 	}
 }
@@ -469,8 +580,7 @@ void Server::onConnectionRequest(const Address& address, Packet& packet)
 	if (m_numClients < s_maxConnectedClients)
 	{
 		Connection* connection = new Connection(m_socket, address, 
-			std::bind(&Server::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2),
-			false);
+			std::bind(&Server::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2));
 		
 		if (addClient(address, connection))
 		{
@@ -505,12 +615,9 @@ RemoteClient* Server::getClient(const Address& address)
 {
 	for (RemoteClient& client : m_clients)
 	{
-		if (client.isUsed())
+		if (client.isUsed()	&& client.getConnection()->getAddress() == address)
 		{
-			if (client.getConnection()->getAddress() == address)
-			{
-				return &client;
-			}
+			return &client;
 		}
 	}
 	return nullptr;

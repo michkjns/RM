@@ -4,10 +4,10 @@
 #include "entity_manager.h"
 
 #include <bitstream.h>
+#include <buffer.h>
 #include <core/entity.h>
 #include <core/entity_factory.h>
 #include <network.h>
-
 #include <map>
 
 static std::map<EntityType, IEntityFactory*> s_factoryMap;
@@ -45,11 +45,8 @@ void EntityManager::instantiateEntity(Entity* entity, bool enableReplication)
 	assert(entity != nullptr);
 	assert(!isReplicated(entity));
 
-	if (!isReplicated(entity))
-	{
-		entity->m_id = ++s_entityId;
-		s_newEntities.push_back(entity);
-	}
+	entity->m_id = ++s_entityId;
+	s_newEntities.push_back(entity);
 
 	if (enableReplication && entity->getNetworkId() == INDEX_NONE)
 	{
@@ -107,6 +104,18 @@ bool EntityManager::serializeEntity(Entity* entity, ReadStream& stream)
 {
 	assert(entity != nullptr);
 	return getFactory(entity->getType())->serialize(entity, stream);
+}
+
+bool EntityManager::serializeClientVars(Entity* entity, WriteStream& stream)
+{
+	assert(entity != nullptr);
+	return getFactory(entity->getType())->reverseSerialize(entity, stream);
+}
+
+bool EntityManager::serializeClientVars(Entity* entity, ReadStream& stream)
+{
+	assert(entity != nullptr);
+	return getFactory(entity->getType())->reverseSerialize(entity, stream);
 }
 
 void EntityManager::flushEntities()

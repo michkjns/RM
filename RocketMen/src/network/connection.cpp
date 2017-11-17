@@ -13,15 +13,14 @@ static const uint32_t s_maxConnectionAttemptDuration = 30;
 static const float    s_maxReliableMessageTime(0.10f);
 static const float    s_timeout = 120.f;
 
-Connection::Connection(Socket* socket, const Address& address, ConnectionCallbackMethod callback, bool keepAlive) :
+Connection::Connection(Socket* socket, const Address& address, ConnectionCallbackMethod callback) :
 	m_address(address),
 	m_connectionAttempt(0),
 	m_timeSinceLastPacketReceived(0.f),
-	m_hasTimedOut(false),
 	m_state(State::Disconnected),
 	m_connectionAttemptDuration(0.f),
 	m_unreliableChannel(new UnreliableChannel()),
-	m_reliableOrderedChannel(new ReliableOrderedChannel(keepAlive)),
+	m_reliableOrderedChannel(new ReliableOrderedChannel()),
 	m_connectionCallback(callback)
 {
 	assert(socket != nullptr);

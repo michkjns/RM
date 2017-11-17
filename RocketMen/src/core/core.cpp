@@ -26,7 +26,6 @@ Core::Core() :
 	m_window(nullptr),
 	m_client(nullptr),
 	m_server(nullptr),
-	m_input(nullptr),
 	m_physics(nullptr),		
 	m_timestep(33333ULL / 2),
 	m_enableDebugDraw(true)
@@ -100,7 +99,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		Network::setClient(m_client);
 		
 		LOG_INFO("Core: Initializing input..");
-		Input::initialize(m_window);
+		input::initialize(m_window);
 	}
 
 	if (!loadResources())
@@ -150,6 +149,7 @@ void Core::run()
 	float accumulator = 0.0f;
 	const float fixedDeltaTime = m_timestep / 1000000.0f;
 	float t = 0.0f;
+	Sequence frameId = 0;
 
 	LOG_DEBUG("Core: Entering main loop..");
 	bool exit = false;
@@ -191,11 +191,13 @@ void Core::run()
 		currTime = newTime;
 		accumulator += frameTime;
 
+		/****************/
+		/** Simulation Loop */
 		while (accumulator >= fixedDeltaTime)
 		{
 			if (m_client) 
 			{
-				m_client->fixedUpdate();
+				m_client->simulate(frameId);
 			}
 			
 			m_game->fixedUpdate(fixedDeltaTime);
@@ -215,15 +217,16 @@ void Core::run()
 
 			t += fixedDeltaTime;
 			accumulator -= fixedDeltaTime;
+			frameId++;
 		}
 
-		if (Input::getKeyDown(input::Key::NUM_1))
+		if (input::getKeyDown(input::Key::NUM_1))
 		{
 			m_enableDebugDraw = !m_enableDebugDraw;
 			LOG_INFO(m_enableDebugDraw ? "Debug drawing enabled" : "Debug drawing disabled");
 		}
 
-		m_input->update();
+		input::update();
 		EntityManager::flushEntities();
 
 		/****************/

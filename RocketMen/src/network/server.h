@@ -36,11 +36,18 @@ namespace network
 
 	private:
 		RemoteClient* addClient(const Address& address, Connection* connection);
-		void onClientDisconnect(const IncomingMessage& message);
+		void onClientDisconnect(const IncomingMessage& inMessage);
 
-		void onPlayerIntroduction(IncomingMessage& message);
-		void onPlayerInput(IncomingMessage& message);
-		void onEntityRequest(IncomingMessage& message);
+		void onPlayerIntroduction(IncomingMessage& inMessage);
+		void onPlayerInput(IncomingMessage& inMessage);
+		void onEntityRequest(IncomingMessage& inMessage);
+		void onClientGameState(IncomingMessage& inMessage);
+		void onKeepAliveMessage(IncomingMessage& inMessage);
+
+		void sendEntitySpawn(Entity* entity, RemoteClient* client);
+		void sendEntitySpawn(Entity* entity);
+		void acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client);
+
 		void onClientPing(IncomingMessage& message);
 
 		void readMessage(IncomingMessage& message);
@@ -67,7 +74,7 @@ namespace network
 		bool    m_isInitialized;
 		Time&   m_gameTime;
 		int32_t m_clientIdCounter;
-		int32_t m_playerIdCounter;
+		int16_t m_playerIdCounter;
 		int32_t m_networkIdCounter;
 		int32_t m_localClientId;
 		int32_t m_numClients;

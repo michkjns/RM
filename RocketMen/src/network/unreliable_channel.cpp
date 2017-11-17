@@ -6,11 +6,14 @@
 
 using namespace network;
 
+static const uint32_t s_messageSendQueueSize = 64;
+
 UnreliableChannel::UnreliableChannel() : 
 	m_nextMessageId(0),
 	m_queuedSendMessages(0)
 {
 	Message emptyMessage = {};
+
 	m_sendQueue.fill(emptyMessage);
 }
 
@@ -31,21 +34,23 @@ void UnreliableChannel::sendPendingMessages(Socket* socket, const Address& addre
 	{
 		Packet* packet = createPacket(time);
 		sendPacket(socket, address, packet);
+		delete packet;
 	}
 }
 
 void UnreliableChannel::receivePacket(Packet& packet)
 {
-	for (int32_t i = 0; i < packet.header.messageCount; i++)
+	for (int32_t i = 0; i < packet.header.numMessages; i++)
 	{
 		IncomingMessage* message = packet.readNextMessage();
 		m_receiveQueue.insert(*message);
+		delete message;
 	}
 }
 
 IncomingMessage* UnreliableChannel::getNextMessage()
 {
-	for (auto& message : m_receiveQueue)
+	for (IncomingMessage& message : m_receiveQueue)
 	{
 		if (message.type != MessageType::None)
 		{
@@ -68,25 +73,25 @@ Packet* UnreliableChannel::createPacket(const Time& /*time*/)
 	packet->header.sequence    = (Sequence)-1;
 	packet->header.ackSequence = (Sequence)-1;
 
-	for (uint32_t i = 0; i < s_messageQueueSize; i++)
+	for (uint32_t i = 0; i < s_messageSendQueueSize; i++)
 	{
 		Message& message = m_sendQueue[i];
 		if (message.type != MessageType::None)
 		{
 			assert(getMessageChannel(message) == ChannelType::Unreliable);
 			OutgoingMessage outMessage;
-			outMessage.type         = message.type;
-			outMessage.data         = message.data;
-			outMessage.sequence     = m_nextMessageId++;
+			outMessage.type     = message.type;
+			outMessage.data     = message.data;
+			outMessage.sequence = m_nextMessageId++;
 
 			packet->writeMessage(outMessage);
-			packet->writeData(&m_nextMessageId, sizeof(m_nextMessageId));
 
+			message.type = MessageType::None;
 			m_queuedSendMessages--;
-			m_sendQueue[i].type = MessageType::None;
 		}
 
-		if (packet->header.messageCount == g_maxMessagesPerPacket)
+		if (m_queuedSendMessages == 0 
+			|| packet->header.numMessages == g_maxMessagesPerPacket)
 		{
 			break;
 		}

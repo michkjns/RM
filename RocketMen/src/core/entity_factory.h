@@ -16,12 +16,13 @@ public:
 	virtual Entity* instantiate(ReadStream& rs) = 0;
 
 	virtual bool serializeFull(Entity* entity, WriteStream& stream) = 0;
-
 	virtual bool serializeFull(Entity* entity, ReadStream& stream) = 0;
 
 	virtual bool serialize(Entity* entity, WriteStream& stream) = 0;
-
 	virtual bool serialize(Entity* entity, ReadStream& stream) = 0;
+
+	virtual bool reverseSerialize(Entity* entity, WriteStream& stream) = 0;
+	virtual bool reverseSerialize(Entity* entity, ReadStream& stream) = 0;
 };
 
 template<typename T>
@@ -70,6 +71,16 @@ public:
 	bool serialize(Entity* entity, ReadStream& stream) override
 	{
 		return dynamic_cast<T*>(entity)->serialize(stream);
+	}
+
+	bool reverseSerialize(Entity* entity, WriteStream& stream) override
+	{
+		return dynamic_cast<T*>(entity)->reverseSerialize(stream);
+	}
+
+	bool reverseSerialize(Entity* entity, ReadStream& stream) override
+	{
+		return dynamic_cast<T*>(entity)->reverseSerialize(stream);
 	}
 
 	static EntityFactory<T> s_factory;

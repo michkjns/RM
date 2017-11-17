@@ -25,8 +25,8 @@ public:
 	void serializeBits(uint32_t value, uint32_t numBits);
 	void serializeBool(bool& value);
 	void serializeInt(int32_t& value, int32_t min, int32_t max);
-	void serializeByte(const uint8_t byte);
-	void serializeData(const uint8_t* data, int32_t dataLength);
+	void serializeByte(const char byte);
+	void serializeData(const char* data, int32_t dataLength);
 	uint32_t* getBuffer() const;
 
 	/** @return length in bytes */
@@ -59,8 +59,8 @@ public:
 	void serializeBits(uint32_t& value, uint32_t numBits);
 	void serializeBool(bool& dest);
 	void serializeInt(int32_t& dest, int32_t min, int32_t max);
-	void serializeByte(uint8_t& dest);
-	void serializeData(uint8_t* dest, int32_t length);
+	void serializeByte(char& dest);
+	void serializeData(char* dest, int32_t length);
 	uint32_t* getBuffer() const;
 
 private:
@@ -313,6 +313,7 @@ public:
 	void writeInt32(int32_t value);
 	void writeInt64(int64_t value);
 	void writeBool(bool value);
+	void writeFromStream(WriteStream& stream);
 
 	void    readBytes(char* output, size_t numBytes = 1);
 	void    readBit(bool* output);
@@ -322,6 +323,7 @@ public:
 	int32_t	readInt32();
 	int64_t	readInt64();
 	bool	readBool();
+	void    readToStream(ReadStream& stream);
 
 	const size_t getLength() const;
 	const char*	 getBuffer() const;

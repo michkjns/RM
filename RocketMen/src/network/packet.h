@@ -18,7 +18,7 @@ namespace network
 	struct PacketHeader
 	{
 		/** Number of messages in packet */
-		int32_t  messageCount;
+		int32_t  numMessages;
 		uint32_t ackBits;
 		uint32_t hash;
 		Sequence sequence;
@@ -28,8 +28,10 @@ namespace network
 
 	static const int32_t g_protocolId = 1000;
 	static const int32_t g_maxBlockSize = 2048;
+	static const int32_t g_packetBufferSize = g_maxBlockSize + sizeof(g_protocolId);
 	static const int32_t g_packetHeaderSize = sizeof(PacketHeader);
 	static const int32_t g_maxPacketSize = (g_maxBlockSize + g_packetHeaderSize);
+	static const int32_t g_messageOverhead = sizeof(MessageType) + sizeof(Sequence) + sizeof(int32_t);
 // ============================================================================
 
 	class Packet
@@ -65,11 +67,14 @@ namespace network
 		bool isEmpty() const;
 		ChannelType getChannel() const;
 
+		bool getError() const;
+
 	private:
-		unsigned char m_data[g_maxBlockSize];
+		unsigned char m_data[g_packetBufferSize];
 		int32_t       m_read;
 		Sequence      m_messageIDs[g_maxMessagesPerPacket];
 		ChannelType   m_channel;
+		bool          m_error;
 	};
 
 }; // namespace network

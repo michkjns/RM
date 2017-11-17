@@ -1,5 +1,6 @@
 
 #include <core/action_listener.h>
+#include <network.h>
 
 static std::vector<ActionListener*> s_actionListeners;
 
@@ -8,17 +9,11 @@ std::vector<ActionListener*>& ActionListener::getList()
 	return s_actionListeners;
 }
 
-ActionListener::ActionListener(int32_t playerId) :
+ActionListener::ActionListener(int16_t playerId) :
 	m_playerId(playerId)
 {
 	s_actionListeners.push_back(this);
 }
-
-//ActionListener::ActionListener() :
-//	m_playerId(-1)
-//{
-//	s_actionListeners.push_back(this);
-//}
 
 ActionListener::~ActionListener()
 {
@@ -45,9 +40,11 @@ void ActionListener::executeAction(size_t action)
 	}
 }
 
-void ActionListener::setPlayerId(int32_t playerId)
+bool ActionListener::canRegisterAction(ActionType type) const
 {
-	m_playerId = playerId;
+	return (type == ActionType::ClientPredicted)
+		|| (Network::isServer() && type == ActionType::Default)
+		|| (Network::isClient() && type == ActionType::ClientOnly);
 }
 
 void ActionListener::clear()
@@ -55,7 +52,7 @@ void ActionListener::clear()
 	m_actionMap.clear();
 }
 
-int32_t ActionListener::getPlayerId() const
+int16_t ActionListener::getPlayerId() const
 {
 	return m_playerId;
 }

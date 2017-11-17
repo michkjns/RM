@@ -10,8 +10,8 @@ using namespace network;
 RemoteClient::RemoteClient() :
 	m_connection(nullptr),
 	m_id(INDEX_NONE),
-	m_numPlayers(0),
-	m_nextNetworkId(0)
+	m_nextNetworkId(0),
+	m_playerIds(s_maxPlayersPerClient)
 {
 	std::fill(m_recentNetworkIds,  m_recentNetworkIds  + s_networkIdBufferSize, INDEX_NONE);
 }
@@ -27,22 +27,23 @@ void RemoteClient::initialize(int32_t id, Connection* connection)
 
 	m_connection = connection;
 	m_id         = id;
-	m_numPlayers = 0;
 }
 
 void RemoteClient::clear()
 {
 	m_id = INDEX_NONE;
+	m_playerIds.clear();
 
 	assert(m_connection != nullptr);
 	delete m_connection;
 	m_connection = nullptr;
 }
 
-void RemoteClient::setNumPlayers(uint32_t numPlayers)
+void RemoteClient::addPlayer(int16_t playerId)
 {
-	assert(numPlayers < s_maxPlayersPerClient);
-	m_numPlayers = numPlayers;
+	assert(playerId >= 0);
+	int16_t& playerIdEntry = m_playerIds.insert();
+	playerIdEntry = playerId;
 }
 
 bool RemoteClient::isUsed() const
@@ -55,6 +56,18 @@ bool RemoteClient::isAvailable() const
 	return m_id == INDEX_NONE;
 }
 
+bool RemoteClient::ownsPlayer(int16_t playerId) const
+{
+	for (int16_t id : m_playerIds)
+	{
+		if (id == playerId)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 int32_t RemoteClient::getId() const
 {
 	return m_id;
@@ -62,12 +75,17 @@ int32_t RemoteClient::getId() const
 
 uint32_t RemoteClient::getNumPlayers() const
 {
-	return m_numPlayers;
+	return m_playerIds.getCount();
 }
 
 Connection* RemoteClient::getConnection() const 
 {
 	return m_connection;
+}
+
+Buffer<int16_t>& RemoteClient::getPlayerIds()
+{
+	return m_playerIds;
 }
 
 bool network::operator==(const RemoteClient& a, const RemoteClient& b)

@@ -4,6 +4,16 @@
 namespace input
 {
 	using ControllerButton = uint32_t;
+	using ControllerId = int32_t;
+
+	enum Controller : ControllerId
+	{
+		Controller_0 = 0,
+		Controller_1,
+		Controller_2,
+		Controller_3,
+		MouseAndKeyboard = 4
+	};
 
 	enum class CursorState
 	{

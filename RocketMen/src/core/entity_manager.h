@@ -25,7 +25,11 @@ public:
 	static bool serializeEntity(Entity* entity, class WriteStream& stream);
 	static bool serializeEntity(Entity* entity, class ReadStream& stream);
 
+	static bool serializeClientVars(Entity* entity, class WriteStream& stream);
+	static bool serializeClientVars(Entity* entity, class ReadStream& stream);
+
 	static void flushEntities();
 	static void killEntities();
+
 	static std::vector<Entity*>& getEntities();
 };

@@ -70,7 +70,7 @@ uint32_t Network::getNumLocalPlayers()
 	return 0;
 }
 
-bool Network::isLocalPlayer(int32_t playerId)
+bool Network::isLocalPlayer(int16_t playerId)
 {
 	assert(s_client != nullptr);
 	assert(s_client->isInitialized());

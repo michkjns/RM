@@ -6,14 +6,6 @@
 
 namespace rm
 {
-	struct RocketExplode
-	{
-		Vector2 pos;
-		int32_t networkId;
-		float radius;
-		float power;
-	};
-
 	class Rocket : public Entity
 	{
 	public:
@@ -40,6 +32,10 @@ namespace rm
 		/** Serialize commonly updated properties */
 		template<typename Stream>
 		bool serialize(Stream& stream);
+
+		/** Serialize client-owned variables */
+		template<typename Stream>
+		bool reverseSerialize(Stream& stream);
 
 		virtual void startContact(Entity* other) override;
 		virtual void endContact(Entity* other)   override;

@@ -34,18 +34,16 @@ void Game::setTimestep(uint64_t timestep)
 	m_timestep = timestep;
 }
 
-void Game::processInputEvents(ActionBuffer& actions, int32_t playerId)
+void Game::processPlayerActions(ActionBuffer& actions, int16_t playerId)
 {
-	for (auto inputEvent : actions)
+	for (auto action : actions)
 	{
 		for (auto listener : ActionListener::getList())
 		{
 			if (listener->getPlayerId() == playerId)
 			{
-				listener->executeAction(inputEvent.getHash());
+				listener->executeAction(action.getHash());
 			}
 		}
 	}
-
-	actions.clear();
 }

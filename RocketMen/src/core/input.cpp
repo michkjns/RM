@@ -44,7 +44,7 @@ struct ControllerState
 static ControllerState s_controllerState[s_numMaxControllers];
 static std::unordered_map<Key, ActionEvent> s_keyMap;
 static std::unordered_map<MouseButton, ActionEvent> s_mouseMap;
-static ActionBuffer s_actions;
+static ActionBuffer s_mouseAndKeyboardActions;
 
 static GLFWwindow* s_glfwWindow = nullptr;
 
@@ -68,7 +68,7 @@ static void keyCallback(GLFWwindow* window, int key, int /*scancode*/, int glfw_
 	{
 		Action action;
 		action.set(it->second.hashedActionName, it->second.inputEvent);
-		s_actions.insert(action);
+		s_mouseAndKeyboardActions.insert(action);
 	}
 }
 
@@ -95,7 +95,7 @@ static void mouseButtonCallback(GLFWwindow* window, int button, int glfw_action,
 	{
 		Action action;
 		action.set(it->second.hashedActionName, it->second.inputEvent);
-		s_actions.insert(action);
+		s_mouseAndKeyboardActions.insert(action);
 	}
 }
 
@@ -106,7 +106,7 @@ static void controllerCallback(int joy, int /*event*/)
 
 static void refreshControllerStates()
 {
-	for (int32_t controllerId = GLFW_JOYSTICK_1; controllerId < s_numMaxControllers; controllerId++)
+	for (ControllerId controllerId = GLFW_JOYSTICK_1; controllerId < s_numMaxControllers; controllerId++)
 	{
 		if(!glfwJoystickPresent(controllerId))
 			continue;
@@ -137,7 +137,7 @@ static void refreshControllerStates()
 	}
 }
 
-bool Input::initialize(Window* window)
+bool input::initialize(Window* window)
 {
 	if (assert(window != nullptr))
 	{
@@ -154,19 +154,19 @@ bool Input::initialize(Window* window)
 	return false;
 }
 
-void Input::update()
+void input::update()
 {
 	s_mousePosxRel = s_mousePosyRel = 0;
-	s_actions.clear();
+	s_mouseAndKeyboardActions.clear();
 	refreshControllerStates();
 }
 
-bool Input::getKey(Key key)
+bool input::getKey(Key key)
 {
 	return s_keyState[static_cast<int32_t>(key)] == ButtonState::Press;
 }
 
-bool Input::getKeys(std::initializer_list<input::Key> keys)
+bool input::getKeys(std::initializer_list<input::Key> keys)
 {
 	for (auto key : keys)
 	{
@@ -179,32 +179,32 @@ bool Input::getKeys(std::initializer_list<input::Key> keys)
 	return true;
 }
 
-bool Input::getKeyDown(Key key)
+bool input::getKeyDown(Key key)
 {
 	return s_keyState[(int)key] == ButtonState::Repeat;
 }
 
-Vector2 Input::getMousePosition()
+Vector2 input::getMousePosition()
 {
 	return Vector2(s_mousePosx, s_mousePosy);
 }
 
-Vector2 Input::getMouseMovement()
+Vector2 input::getMouseMovement()
 {
 	return Vector2(s_mousePosxRel, s_mousePosyRel);
 }
 
-bool Input::getMouse(MouseButton button)
+bool input::getMouse(MouseButton button)
 {
 	return s_mouseState[static_cast<int32_t>(button)] == ButtonState::Press;
 }
 
-bool Input::getMouseDown(MouseButton button)
+bool input::getMouseDown(MouseButton button)
 {
 	return s_mouseState[static_cast<int32_t>(button)] == ButtonState::Release;
 }
 
-float Input::getAxis(int32_t controllerId, int32_t axis)
+float input::getAxis(ControllerId controllerId, int32_t axis)
 {
 	assert(controllerId >= 0);
 	assert(controllerId < s_numMaxControllers);
@@ -218,50 +218,55 @@ float Input::getAxis(int32_t controllerId, int32_t axis)
 	return s_controllerState[controllerId].axisStates[axis];
 }
 
-void Input::getActions(int32_t controllerId, ActionBuffer& inputBuffer)
+void input::getActions(ControllerId controllerId, ActionBuffer& inputBuffer, bool includeMouseAndKeyboard)
 {
 	assert(controllerId >= 0);
-	ControllerState& controller = s_controllerState[controllerId];
-
-	inputBuffer.insert(s_actions);
-
-	for (auto mapping : controller.buttonMap)
+	if (controllerId != Controller::MouseAndKeyboard)
 	{
-		if(controller.currentButtonStates[mapping.first] == mapping.second.inputEvent)
+		ControllerState& controller = s_controllerState[controllerId];
+		for (auto mapping : controller.buttonMap)
 		{
-			Action action;
-			action.set(mapping.second.hashedActionName, mapping.second.inputEvent);
-			inputBuffer.insert(action);
+			if (controller.currentButtonStates[mapping.first] == mapping.second.inputEvent)
+			{
+				Action action;
+				action.set(mapping.second.hashedActionName, mapping.second.inputEvent);
+				inputBuffer.insert(action);
+			}
 		}
-	}	
+	}
+	if (includeMouseAndKeyboard || controllerId == Controller::MouseAndKeyboard)
+	{
+		inputBuffer.insert(s_mouseAndKeyboardActions);
+	}
 }
 
-void Input::mapAction(std::string name, Key key, ButtonState inputEvent)
+void input::mapAction(std::string name, Key key, ButtonState inputEvent)
 {
 	std::hash<std::string> strHash;
 	s_keyMap[key] = { inputEvent, strHash(toLower(name)) };
 }
 
-void Input::mapAction(std::string name, MouseButton mouseButton, ButtonState inputEvent)
+void input::mapAction(std::string name, MouseButton mouseButton, ButtonState inputEvent)
 {
 	std::hash<std::string> strHash;
 	s_mouseMap[mouseButton] = { inputEvent, strHash(toLower(name)) };
 }
 
-void Input::mapAction(std::string name, ControllerButton controllerButton, ButtonState inputEvent, int32_t controllerId)
+void input::mapAction(std::string name, ControllerButton controllerButton, ButtonState inputEvent, const ControllerId controllerId)
 {
+	assert(controllerId != Controller::MouseAndKeyboard);
 	assert(controllerId >= 0 && controllerId < s_numMaxControllers);
 
 	std::hash<std::string> strHash;
 	s_controllerState[controllerId].buttonMap[controllerButton] = { inputEvent, strHash(toLower(name)) };
 }
 
-void Input::setCursorEnabled(CursorState setEnabled)
+void input::setCursorEnabled(CursorState setEnabled)
 {
 	glfwSetInputMode(s_glfwWindow, GLFW_CURSOR, static_cast<int32_t>(setEnabled) + GLFW_CURSOR_NORMAL);
 }
 
-CursorState Input::getCursorEnabled()
+CursorState input::getCursorEnabled()
 {
 	return static_cast<CursorState>(glfwGetInputMode(s_glfwWindow, GLFW_CURSOR) - GLFW_CURSOR_NORMAL);
 }

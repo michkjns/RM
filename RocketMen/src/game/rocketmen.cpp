@@ -42,9 +42,9 @@ bool RocketMenGame::initialize()
 
 	if (Network::isClient())
 	{
-		Network::addLocalPlayer(0);
-		Input::mapAction("Fire", MouseButton::Left, ButtonState::Press);
-		Input::mapAction("Fire", ControllerButton(1), ButtonState::Press, 0);
+		Network::addLocalPlayer(Controller::MouseAndKeyboard);
+		input::mapAction("Fire", MouseButton::Left, ButtonState::Press);
+		input::mapAction("Fire", ControllerButton(0), ButtonState::Press, Controller::Controller_0);
 
 		const char* localHostAddress = "127.0.0.1";
 		Network::connect(network::Address(localHostAddress, s_defaultServerPort));
@@ -65,27 +65,27 @@ void RocketMenGame::update(const Time& time)
 {
 	const float deltaTime = time.getDeltaSeconds();
 
-	const float cameraSpeed = 0.20f;
+	const float cameraSpeed = 0.20f * deltaTime;
 
-	const float axis = Input::getAxis(0, 0);
+	const float axis = input::getAxis(ControllerId(0), 0);
 	Camera::mainCamera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
 
-	if (Input::getKey(Key::LEFT))
+	if (input::getKey(Key::LEFT))
 	{
 		Camera::mainCamera->translate(Vector3(-1.0f, 0.0f, 0.0f) * cameraSpeed);
 	}
 
-	if (Input::getKey(Key::RIGHT))
+	if (input::getKey(Key::RIGHT))
 	{
 		Camera::mainCamera->translate(Vector3(1.0f, 0.0f, 0.0f) * cameraSpeed);
 	}
 
-	if (Input::getKey(Key::UP))
+	if (input::getKey(Key::UP))
 	{
 		Camera::mainCamera->translate(Vector3(0.0f, 1.0f, 0.0f) * cameraSpeed);
 	}
 
-	if (Input::getKey(Key::DOWN))
+	if (input::getKey(Key::DOWN))
 	{
 		Camera::mainCamera->translate(Vector3(0.0f, -1.0f, 0.0f) * cameraSpeed);
 	}
@@ -96,7 +96,7 @@ void RocketMenGame::terminate()
 	if(Camera::mainCamera) delete Camera::mainCamera;
 }
 
-void RocketMenGame::onPlayerJoin(int32_t playerId)
+void RocketMenGame::onPlayerJoin(int16_t playerId)
 {
 	Character* character = new Character();
 

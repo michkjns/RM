@@ -9,22 +9,23 @@
 
 using namespace network;
 
-static const uint32_t s_packetWindowSize  = 1024;
-static const uint32_t s_receiveQueueSize  = 1024;
-static const uint32_t s_sendQueueSize     = 256;
-static const float    s_messageResendTime = 0.1f;
-static const float    s_keepAliveTime     = 1.f;
+static const uint32_t s_packetWindowSize        = 1024;
+static const uint32_t s_packetReceiveQueueSize  = 1024;
+static const uint32_t s_packetSendQueueSize     = 256;
+static const uint32_t s_messageSendQueueSize    = 1024;
+static const uint32_t s_messageReceiveQueueSize = 256;
+static const float    s_messageResendTime       = 0.1f;
+static const float    s_keepAliveTime           = 1.f;
 
-ReliableOrderedChannel::ReliableOrderedChannel(bool keepAlive) :
+ReliableOrderedChannel::ReliableOrderedChannel() :
 	m_sendMessageId(0),
 	m_receiveMessageId(0),
 	m_lastReceivedSequence(0),
 	m_lastPacketSendTime(.0f),
-	m_keepAlive(keepAlive),
-	m_messageSendQueue(s_sendQueueSize),
-	m_messageReceiveQueue(s_receiveQueueSize),
+	m_messageSendQueue(s_messageSendQueueSize),
+	m_messageReceiveQueue(s_messageReceiveQueueSize),
 	m_sentPackets(s_packetWindowSize),
-	m_receivedPackets(s_receiveQueueSize)
+	m_receivedPackets(s_packetReceiveQueueSize)
 {
 }
 
@@ -41,7 +42,6 @@ void ReliableOrderedChannel::sendMessage(Message& message)
 		messageEntry->data         = message.data;
 		messageEntry->sequence     = m_sendMessageId;
 		messageEntry->timeLastSent = -1.f;
-
 		m_sendMessageId++;
 	}
 	else
@@ -58,33 +58,40 @@ void ReliableOrderedChannel::sendPendingMessages(Socket* socket, const Address& 
 		Packet* packet = createPacket(time);
 		assert(!packet->isEmpty());
 
-		writeAcks(packet);
+		writeAcksToPacket(packet);
 		sendPacket(socket, address, packet);
 		m_lastPacketSendTime = time.getSeconds();
 
 		delete packet;
 	}
-	else if (m_keepAlive && time.getSeconds() - m_lastPacketSendTime > s_keepAliveTime)
+	else if (time.getSeconds() - m_lastPacketSendTime > s_keepAliveTime)
 	{
-		Message pingMessage = {};
-		pingMessage.type = MessageType::KeepAlive;
-		sendMessage(pingMessage);
+		Message aliveMessage = {};
+		aliveMessage.type = MessageType::KeepAlive;
+		sendMessage(aliveMessage);
 	}
+
+	m_receivedPackets.removeOldEntries();
 }
 
 void ReliableOrderedChannel::receivePacket(Packet& packet)
 {
-	readAcks(packet.header);
-
-	for (int32_t i = 0; i < packet.header.messageCount; i++)
+	readAcksFromPacket(packet.header);
+	for (int32_t i = 0; i < packet.header.numMessages; i++)
 	{
 		IncomingMessage* message = packet.readNextMessage();
+		assert(!packet.getError());
+		assert(message != nullptr);
 
-		IncomingMessage* messageEntry = m_messageReceiveQueue.insert(message->sequence);
-		*messageEntry = *message;
+		if (IncomingMessage* messageEntry = m_messageReceiveQueue.insert(message->sequence))
+		{
+			*messageEntry = *message;
+		}
 
 		delete message;
 	}
+
+	m_receivedPackets.insert(packet.header.sequence);
 }
 
 IncomingMessage* ReliableOrderedChannel::getNextMessage()
@@ -92,6 +99,7 @@ IncomingMessage* ReliableOrderedChannel::getNextMessage()
 	if (IncomingMessage* message = m_messageReceiveQueue.getEntry(m_receiveMessageId))
 	{
 		assert(message->sequence == m_receiveMessageId);
+		assert(getMessageChannel(message->type) == ChannelType::ReliableOrdered);
 		m_messageReceiveQueue.remove(m_receiveMessageId);
 		m_receiveMessageId++;
 		return message;
@@ -105,13 +113,14 @@ float ReliableOrderedChannel::getLastPacketSendTime() const
 	return m_lastPacketSendTime;
 }
 
-void ReliableOrderedChannel::writeAcks(Packet* packet)
+void ReliableOrderedChannel::writeAcksToPacket(Packet* packet)
 {
 	packet->header.ackSequence = m_lastReceivedSequence;
 
 	for (Sequence i = 0; i < 32; i++)
 	{
-		Sequence sequence = m_lastReceivedSequence - i - 1;
+		Sequence sequence = m_lastReceivedSequence - 1 - i ;
+
 		if (m_receivedPackets.exists(sequence))
 		{
 			packet->header.ackBits |= (1 << i);
@@ -119,17 +128,14 @@ void ReliableOrderedChannel::writeAcks(Packet* packet)
 	}
 }
 
-void ReliableOrderedChannel::readAcks(const PacketHeader& packetHeader)
+void ReliableOrderedChannel::readAcksFromPacket(const PacketHeader& packetHeader)
 {
-	m_receivedPackets.insert(packetHeader.sequence);
-
 	if (sequenceGreaterThan(packetHeader.sequence, m_lastReceivedSequence))
 	{
 		m_lastReceivedSequence = packetHeader.sequence;
 	}
 
-	if (!m_sentPackets.exists(packetHeader.ackSequence) || 
-		!sequenceLessThan(packetHeader.ackSequence, m_sentPackets.getCurrentSequence() + 1))
+	if (!sequenceLessThan(packetHeader.ackSequence, m_sentPackets.getCurrentSequence() + 1))
 	{
 		return;
 	}
@@ -153,7 +159,7 @@ void ReliableOrderedChannel::readAcks(const PacketHeader& packetHeader)
 
 bool ReliableOrderedChannel::hasMessagesToSend(const Time& time) const
 {
-	for (Sequence i = 0; i < s_messageQueueSize; i++)
+	for (Sequence i = 0; i < s_messageSendQueueSize; i++)
 	{
 		if (m_messageSendQueue.exists(i))
 		{
@@ -183,7 +189,7 @@ Packet* ReliableOrderedChannel::createPacket(const Time& time)
 	packet->header = {};
 	packet->header.sequence = packetSequence;
 
-	for (uint32_t i = 0; i < s_messageQueueSize; i++)
+	for (uint32_t i = 0; i < s_messageSendQueueSize; i++)
 	{
 		OutgoingMessage* message = m_messageSendQueue.getAtIndex(i);
 		if (message != nullptr)
@@ -193,6 +199,7 @@ Packet* ReliableOrderedChannel::createPacket(const Time& time)
 			{
 				packet->writeMessage(*message);
 				packetEntry->messageIds[packetEntry->numMessages++] = message->sequence;
+				
 				if (getMessageChannel(message->type) == ChannelType::ReliableOrdered)
 				{
 					message->timeLastSent = time.getSeconds();
@@ -205,7 +212,7 @@ Packet* ReliableOrderedChannel::createPacket(const Time& time)
 			}
 		}
 
-		if (packet->header.messageCount == g_maxMessagesPerPacket)
+		if (packet->header.numMessages == g_maxMessagesPerPacket)
 		{
 			break;
 		}

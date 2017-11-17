@@ -7,51 +7,51 @@
 #include <core/keys.h>
 
 class Window;
+namespace input {
 
-class Input
-{
-public:
-	static bool initialize(Window* window);
-	static void update();
+	bool initialize(Window* window);
+	void update();
 
 	/** @return true when the key is pressed down */
-	static bool getKey(input::Key key);
+	bool getKey(Key key);
 
 	/** @return true when the keys are pressed down */
-	static bool getKeys(std::initializer_list<input::Key> keys);
+	bool getKeys(std::initializer_list<Key> keys);
 
 	/** @return true when the key pushed the current frame */
-	static bool getKeyDown(input::Key key);
+	bool getKeyDown(Key key);
 
 	/** @return float2 position of the mouse cursor */
-	static Vector2 getMousePosition();
+	Vector2 getMousePosition();
 	
 	/** @return float2 relative position of the mouse cursor */
-	static Vector2 getMouseMovement();
+	Vector2 getMouseMovement();
 
 	/** @return true if button is held down */
-	static bool getMouse(input::MouseButton button);
+	bool getMouse(MouseButton button);
 
 	/** @return true if button is pressed this frame */
-	static bool getMouseDown(input::MouseButton button);
+	bool getMouseDown(MouseButton button);
 
-	static float getAxis(int32_t controllerId, int32_t axis);
+	float getAxis(ControllerId controllerId, int32_t axis);
 
-	static void getActions(int32_t controllerId, ActionBuffer& inputBuffer);
+	void getActions(ControllerId controllerId, ActionBuffer& inputBuffer,
+		bool includeMouseAndKeyboard);
 
 	/** Binds a key to an action */
-	static void mapAction(std::string name, input::Key key, 
-		input::ButtonState eventType);
+	void mapAction(std::string name, Key key, 
+		ButtonState eventType);
 
-	static void mapAction(std::string name, input::MouseButton mouseButton, 
-		input::ButtonState eventType);
+	void mapAction(std::string name, MouseButton mouseButton, 
+		ButtonState eventType);
 
-	static void mapAction(std::string name, input::ControllerButton controllerButton,
-		input::ButtonState eventType, int32_t controllerId);
+	void mapAction(std::string name, ControllerButton controllerButton,
+		ButtonState eventType, const ControllerId controllerId);
 
 	/** Enables or disables the cursor */
-	static void setCursorEnabled(input::CursorState newState);
+	void setCursorEnabled(CursorState newState);
 
 	/** @return true if the cursor is enabled */
-	static input::CursorState getCursorEnabled();
-};
+	CursorState getCursorEnabled();
+
+};// namespace input

@@ -2,7 +2,11 @@
   "DataCollection": [
     {
       "Id": "2447c0b8-22d4-42ea-bee6-31707d9a5b20",
-      "Command": "--listen"
+      "Command": "-d -o rm_d.log"
+    },
+    {
+      "Id": "8792d0ac-bf0c-47d5-ac95-0f39e320bd9a",
+      "Command": "-l -o rm_l.log"
     }
   ]
 }

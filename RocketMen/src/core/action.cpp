@@ -17,7 +17,7 @@ void Action::set(size_t hash, ButtonState inputEvent)
 	m_inputEvent = inputEvent;
 }
 
-void input::Action::set(size_t hash, float value)
+void Action::set(size_t hash, float value)
 {
 	m_hashedName  = hash;
 	m_value = value;

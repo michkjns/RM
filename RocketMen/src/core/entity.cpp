@@ -15,6 +15,7 @@ void Entity::instantiate(Entity* entity)
 	EntityManager::instantiateEntity(entity);
 }
 
+//=============================================================================
 
 Entity::Entity() :
 	m_id(0),
@@ -26,18 +27,12 @@ Entity::~Entity()
 {
 }
 
-//==============================================================================
-
 void Entity::kill()
 {
 	m_id = 0;
 	if (Network::isServer())
 	{
 		Network::destroyEntity(m_networkId);
-	}
-	else if (m_networkId < 0)
-	{
-
 	}
 }
 
@@ -53,12 +48,23 @@ std::string Entity::getSpriteName() const
 
 void Entity::setNetworkId(int32_t networkId)
 {
+	assert(m_networkId < 0);
 	m_networkId = networkId;
 }
 
 int32_t Entity::getNetworkId() const
 {
 	return m_networkId;
+}
+
+int16_t Entity::getOwnerPlayerId() const
+{
+	return m_ownerPlayerId;
+}
+
+bool Entity::isReplicated() const
+{
+	return m_networkId > INDEX_NONE;
 }
 
 bool Entity::isSpawnPrediction() const

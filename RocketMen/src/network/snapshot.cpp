@@ -3,18 +3,28 @@
 
 #include <core/entity.h>
 #include <core/entity_manager.h>
+#include <network/common_network.h>
 #include <utility.h>
 
 using namespace network;
 
-static const uint32_t s_maxSnapshotSize = 512;
-
 Snapshot::Snapshot(std::vector<Entity*>& entities) :
 	m_writeStream(s_maxSnapshotSize)
 {
+	std::vector<Entity*> replicatedEntities;
+	for (Entity* entity : entities)
+	{
+		if (entity->isReplicated())
+		{
+			replicatedEntities.push_back(entity);
+		}
+	}
+
+	int32_t numReplicatedEntities = static_cast<int32_t>(replicatedEntities.size());
+	serializeInt(m_writeStream, numReplicatedEntities);
 	for (int32_t networkId = 0; networkId < s_maxNetworkedEntities; networkId++)
 	{
-		Entity* netEntity = findPtrByPredicate(entities.begin(), entities.end(),
+		Entity* netEntity = findPtrByPredicate(replicatedEntities.begin(), replicatedEntities.end(),
 			[networkId](Entity* entity) -> bool { return entity->getNetworkId() == networkId; });
 
 		bool writeEntity = netEntity != nullptr;

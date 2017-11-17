@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <common.h>
+
 #include <array>
 
 /* CircularBuffer
@@ -35,8 +37,8 @@ public:
 		m_buffer.fill(value);
 	}
 
-	/* Finds the location of given value 
-	* @return  int32_t index of value if found, otherwise -1
+	/* Finds the index of given value 
+	* @return  int32_t index of value if found, otherwise INDEX_NONE
 	*/
 	int32_t find(const T& value)
 	{
@@ -45,7 +47,7 @@ public:
 			if (m_buffer[i] == value)
 				return i;
 		}
-		return -1;
+		return INDEX_NONE;
 	}
 
 	inline T& operator[](size_t i) { return m_buffer[i]; }

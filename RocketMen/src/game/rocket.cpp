@@ -46,7 +46,6 @@ void Rocket::initialize(Entity* owner, Vector2 direction, float power)
 	m_owner             = owner;
 	m_accelerationPower = power;
 	m_direction         = glm::normalize(direction);
-	m_accelerationPower = power;
 
 	if (m_rigidbody == nullptr)
 	{
@@ -202,6 +201,12 @@ bool Rocket::serialize(Stream& stream)
 	return true;
 }
 
+template<typename Stream>
+bool Rocket::reverseSerialize(Stream& /*stream*/)
+{
+	return true;
+}
+
 void Rocket::startContact(Entity* other)
 {
 	if (m_gracePeriod && other == m_owner)
@@ -209,10 +214,9 @@ void Rocket::startContact(Entity* other)
 
 	if (isAlive())
 	{
-		RocketExplode explosionEvent = { m_rigidbody->getPosition(), 0, 3.f, 60.f };
 		if (Network::isServer())
 		{
-			Physics::blastExplosion(explosionEvent.pos, explosionEvent.radius, explosionEvent.power);
+			Physics::blastExplosion(m_rigidbody->getPosition(), 3.f, 200.f);
 			kill();
 		}
 	}
