@@ -3,7 +3,7 @@
 
 #include <common.h>
 #include <core/debug.h>
-#include <game/game_time.h>
+#include <core/game_time.h>
 #include <network/network_message.h>
 #include <network/sequence_buffer.h>
 

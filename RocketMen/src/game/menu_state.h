@@ -1,16 +1,20 @@
 
 #pragma once
 
-#include <game/game_state.h>
+#include <core/game_state.h>
 
-class MenuState : public GameState
+namespace rm
 {
-public:
-	MenuState();
-	virtual ~MenuState() override;
+	class MenuState : public GameState
+	{
+	public:
+		MenuState();
+		virtual ~MenuState() override;
 
-	virtual void initialize(Game* game) override;
-	virtual void destroy(Game* game) override;
-	virtual void tick(Game* game) override;
-	virtual void render(Game* game) override;
-};
+		virtual void initialize(Game* game) override;
+		virtual void destroy(Game* game) override;
+		virtual void update(Game* game, const Time& time) override;
+		virtual void tick(Game* game, float fixedDeltaTime) override;
+		virtual void render(Game* game) override;
+	};
+}; //namespace rm

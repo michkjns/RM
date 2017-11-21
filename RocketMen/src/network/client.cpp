@@ -7,7 +7,7 @@
 #include <core/game.h>
 #include <core/input.h>
 #include <core/debug.h>
-#include <game/game_time.h>
+#include <core/game_time.h>
 #include <network/network.h>
 #include <network/address.h>
 #include <network/packet_receiver.h>
@@ -162,7 +162,7 @@ void Client::readInput()
 	}
 }
 
-void Client::simulate(Sequence frameId)
+void Client::tick(Sequence frameId)
 {
 	Frame* currentFrame = m_clientHistory.insertFrame(frameId);
 

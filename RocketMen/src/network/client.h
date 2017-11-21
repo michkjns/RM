@@ -58,7 +58,7 @@ namespace network
 
 		void requestServerTime();
 		void readInput();
-		void simulate(Sequence frameId);
+		void tick(Sequence frameId);
 		void connect(const Address& address);
 		void disconnect();
 

@@ -3,30 +3,20 @@
 #include <common.h>
 
 #include <core/debug.h>
-#include <core/entity_manager.h>
 #include <core/input.h>
-#include <core/resource_manager.h>
-#include <game/character.h>
-#include <game/rocket.h>
+#include <game/game_state_ids.h>
+#include <game/rocketmen_state_factory.h>
 #include <graphics/camera.h>
-#include <network/network.h>
-#include <physics/physics.h>
+#include <core/entity_manager.h>
+#include <game/character.h>
 
 using namespace input;
 using namespace rm;
 
-bool RocketMenGame::initialize()
+void RocketMenGame::initialize()
 {
-	Game::initialize();
-
-	const char* defaultMapName = "testmap";
-
-	ResourceManager::loadTexture("data/textures/square.png", "demoTexture");
-
-	ResourceManager::loadTexture("data/textures/tilesheet.png", "tilesheet");
-
-	ResourceManager::loadTilemap("data/testmap.16x16.csv", "tilesheet", defaultMapName);
-	Physics::loadCollisionFromTilemap(defaultMapName);
+	Game::initialize(new RocketMenStateFactory());
+	pushState(uint32_t(GameStateID::Gameplay));
 
 	const int32_t pixelsPerMeter = 16;
 
@@ -39,66 +29,12 @@ bool RocketMenGame::initialize()
 
 		Camera::mainCamera->setScale(Vector3(2.f));
 	}
-
-	if (Network::isClient())
-	{
-		Network::addLocalPlayer(Controller::MouseAndKeyboard);
-		input::mapAction("Fire", MouseButton::Left, ButtonState::Press);
-		input::mapAction("Fire", ControllerButton(0), ButtonState::Press, Controller::Controller_0);
-
-		const char* localHostAddress = "127.0.0.1";
-		Network::connect(network::Address(localHostAddress, s_defaultServerPort));
-	}
-
-	EntityFactory<Character>::initialize();
-	EntityFactory<Rocket>::initialize();
-
-	return true;
-}
-
-void RocketMenGame::fixedUpdate(float /*deltaTime*/)
-{
-
-}
-
-void RocketMenGame::update(const Time& time)
-{
-	const float deltaTime = time.getDeltaSeconds();
-
-	const float cameraSpeed = 0.20f * deltaTime;
-
-	const float axis = input::getAxis(ControllerId(0), 0);
-	Camera::mainCamera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
-
-	if (input::getKey(Key::LEFT))
-	{
-		Camera::mainCamera->translate(Vector3(-1.0f, 0.0f, 0.0f) * cameraSpeed);
-	}
-
-	if (input::getKey(Key::RIGHT))
-	{
-		Camera::mainCamera->translate(Vector3(1.0f, 0.0f, 0.0f) * cameraSpeed);
-	}
-
-	if (input::getKey(Key::UP))
-	{
-		Camera::mainCamera->translate(Vector3(0.0f, 1.0f, 0.0f) * cameraSpeed);
-	}
-
-	if (input::getKey(Key::DOWN))
-	{
-		Camera::mainCamera->translate(Vector3(0.0f, -1.0f, 0.0f) * cameraSpeed);
-	}
-
-	if (input::getKey(Key::ESCAPE))
-	{
-		Network::disconnect();
-	}
 }
 
 void RocketMenGame::terminate()
 {
 	delete Camera::mainCamera;
+	Game::terminate();
 }
 
 void RocketMenGame::onPlayerJoin(int16_t playerId)

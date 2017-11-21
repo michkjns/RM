@@ -1,8 +1,7 @@
 
 #pragma once
 
-#include <game/game_time.h>
-
+#include <core/state_machine.h>
 #include <cstdint>
 
 #define DECLARE_GAME_INFO(GAME_NAME, GAME_VERSION) \
@@ -12,24 +11,19 @@ virtual const char* const getVersion() const override { return GAME_VERSION; }
 class Game
 {
 public:
+	Game();
+	virtual ~Game();
+
 	/** Initialize 
 	*	Use to initialize the game class
 	*/
-	virtual bool initialize();
-	
-	/** Fixed timestep update
-	*	Use for game logic affecting physics
-	* @param	float dt	the delta time in microseconds
-	*/
-	virtual void fixedUpdate(float dt) = 0;
+	void initialize(GameStateFactory* stateFactory);
+	virtual void initialize() = 0;
 
-	/** Normal update
-	*	Use for everything that does not affect physics
-	* @param	const Time& time	the game time
-	*/
-	virtual void update(const Time& time) = 0;
+	virtual void update(const class Time& time);
+	virtual void tick(float fixedDeltaTime);
 
-	virtual void terminate() = 0;
+	virtual void terminate();
 
 	virtual void onPlayerJoin(int16_t playerId) = 0;
 	virtual void onPlayerLeave(int16_t playerId) = 0;
@@ -42,7 +36,10 @@ public:
 	void     setTimestep(uint64_t timestep);
 
 	void processPlayerActions(class ActionBuffer& inputActions, int16_t playerId);
-	
-private:
+	GameState* pushState(uint32_t stateId);
+
+protected:
 	uint64_t m_timestep;
+	StateMachine m_stateMachine;
+	GameStateFactory* m_stateFactory;
 };

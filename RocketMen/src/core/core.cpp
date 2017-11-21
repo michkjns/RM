@@ -197,10 +197,10 @@ void Core::run()
 		{
 			if (m_client) 
 			{
-				m_client->simulate(frameId);
+				m_client->tick(frameId);
 			}
 			
-			m_game->fixedUpdate(fixedDeltaTime);
+			m_game->tick(fixedDeltaTime);
 
 			for (auto& it : EntityManager::getEntities())
 			{
