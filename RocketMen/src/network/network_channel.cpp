@@ -13,7 +13,7 @@ void NetworkChannel::sendPacket(Socket* socket, const Address& address, Packet* 
 	assert(socket->isInitialized());
 	assert(!packet->isEmpty());
 
-	assert(g_maxBlockSize - packet->header.dataLength > sizeof(uint32_t));
+	assert(g_maxBlockSize - packet->header.dataLength >= sizeof(uint32_t));
 
 	// Write protocol ID after packet to include in the checksum
 	memcpy(packet->getData() + packet->header.dataLength, &g_protocolId, sizeof(g_protocolId));

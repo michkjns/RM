@@ -89,6 +89,11 @@ void RocketMenGame::update(const Time& time)
 	{
 		Camera::mainCamera->translate(Vector3(0.0f, -1.0f, 0.0f) * cameraSpeed);
 	}
+
+	if (input::getKey(Key::ESCAPE))
+	{
+		Network::disconnect();
+	}
 }
 
 void RocketMenGame::terminate()
@@ -105,4 +110,17 @@ void RocketMenGame::onPlayerJoin(int16_t playerId)
 	character->posessbyPlayer(playerId);
 	
 	EntityManager::instantiateEntity(character);
+}
+
+void RocketMenGame::onPlayerLeave(int16_t playerId)
+{
+	auto& entities = EntityManager::getEntities();
+	for (auto entity : entities)
+	{
+		if (entity->getOwnerPlayerId() == playerId)
+		{
+			entity->kill();
+		}
+	}
+	LOG_INFO("RM: Player %d has left", playerId);
 }

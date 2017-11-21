@@ -25,6 +25,7 @@ namespace network
 	public:
 		Server(Time& time, Game* game);
 		~Server();
+		void reset();
 
 		void update();
 		void fixedUpdate();
@@ -37,11 +38,11 @@ namespace network
 
 	private:
 		RemoteClient* addClient(const Address& address, Connection* connection);
-		void onClientDisconnect(const IncomingMessage& inMessage);
-
+		
 		void onPlayerIntroduction(IncomingMessage& inMessage);
 		void onPlayerInput(IncomingMessage& inMessage);
 		void onEntityRequest(IncomingMessage& inMessage);
+		void onClientDisconnect(IncomingMessage& inMessage);
 		void onClientGameState(IncomingMessage& inMessage);
 		void onKeepAliveMessage(IncomingMessage& inMessage);
 
@@ -69,6 +70,9 @@ namespace network
 
 		/** Gets remote client by address */
 		RemoteClient* getClient(const Address& address);
+
+		/** Gets remote client by connection*/
+		RemoteClient* getClient(const Connection* connection);
 
 		Socket* m_socket;
 		Game*   m_game;

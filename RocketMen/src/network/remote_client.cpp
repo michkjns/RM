@@ -34,7 +34,6 @@ void RemoteClient::clear()
 	m_id = INDEX_NONE;
 	m_playerIds.clear();
 
-	assert(m_connection != nullptr);
 	delete m_connection;
 	m_connection = nullptr;
 }

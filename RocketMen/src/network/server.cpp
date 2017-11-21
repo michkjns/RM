@@ -20,25 +20,44 @@ extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 using namespace network;
 
 Server::Server(Time& gameTime, Game* game) :
-	m_isInitialized(false),
 	m_gameTime(gameTime),
 	m_game(game),
-	m_clientIdCounter(0),
-	m_playerIdCounter(0),
-	m_networkIdCounter(0),
-	m_localClientId(INDEX_NONE),
-	m_numClients(0),
-	m_snapshotTime(0.0f),
 	m_packetReceiver(new PacketReceiver(128))
 {
-	m_socket = Socket::create();
-	assert(m_socket != nullptr);
+	m_socket = nullptr;
+	reset();
 }
 
 Server::~Server()
 {
 	delete m_socket;
 	delete m_packetReceiver;
+}
+
+void Server::reset()
+{
+	m_isInitialized    = false;
+	m_clientIdCounter  = 0;
+	m_playerIdCounter  = 0;
+	m_networkIdCounter = 0;
+	m_localClientId    = INDEX_NONE;
+	m_numClients       = 0;
+	m_snapshotTime     = 0.0f;
+
+	EntityManager::killEntities();
+
+	for (auto& client : m_clients)
+	{
+		if (client.isUsed())
+		{
+			client.getConnection()->close();
+			client.clear();
+		}
+	}
+
+	delete m_socket;
+	m_socket = Socket::create();
+	assert(m_socket != nullptr);
 }
 
 void Server::update()
@@ -129,8 +148,23 @@ RemoteClient* Server::addClient(const Address& address, Connection* connection)
 	return client;
 }
 
-void Server::onClientDisconnect(const IncomingMessage& /*inMessage*/)
+void Server::onClientDisconnect(IncomingMessage& inMessage)
 {
+	RemoteClient* client = getClient(inMessage.address);
+	if (client == nullptr)
+	{
+		return;
+	}
+
+	for (auto playerId : client->getPlayerIds())
+	{
+		m_game->onPlayerLeave(playerId);
+	}
+
+	Message replyMessage = {};
+	replyMessage.type = MessageType::Disconnect;
+	client->getConnection()->sendMessage(replyMessage);
+	client->getConnection()->close();
 }
 
 void Server::onPlayerIntroduction(IncomingMessage& inMessage)
@@ -395,6 +429,7 @@ void Server::readMessage(IncomingMessage& message)
 		}
 		case MessageType::Disconnect:
 		{
+			onClientDisconnect(message);
 			break;
 		}
 		case MessageType::ClockSync:
@@ -540,9 +575,19 @@ void Server::onConnectionCallback(ConnectionCallback type, Connection* connectio
 	{
 		case ConnectionCallback::ConnectionLost:
 		{
-			if (RemoteClient* client = getClient(connection->getAddress()))
+			if (RemoteClient* client = getClient(connection))
 			{
-				LOG_INFO("Server: Client %i has timed out", client->getId());
+				if (!connection->isClosed())
+				{
+					LOG_INFO("Server: Client %i has timed out", client->getId());
+					connection->close();
+				}
+
+				for (auto playerId : client->getPlayerIds())
+				{
+					m_game->onPlayerLeave(playerId);
+				}
+
 				client->clear();
 			}
 			break;
@@ -597,6 +642,18 @@ RemoteClient* Server::getClient(const Address& address)
 	for (RemoteClient& client : m_clients)
 	{
 		if (client.isUsed()	&& client.getConnection()->getAddress() == address)
+		{
+			return &client;
+		}
+	}
+	return nullptr;
+}
+
+RemoteClient* Server::getClient(const Connection* connection)
+{
+	for (RemoteClient& client : m_clients)
+	{
+		if (client.isUsed() && client.getConnection() == connection)
 		{
 			return &client;
 		}

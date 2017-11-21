@@ -16,6 +16,7 @@ namespace rm
 		void update(const Time& time)        override;
 		void terminate()                     override;
 		void onPlayerJoin(int16_t playerId)  override;
+		void onPlayerLeave(int16_t playerId)  override;
 	};
 
 }; // namespace rm

@@ -53,8 +53,7 @@ namespace network
 		};
 
 	public:
-		void initialize(uint16_t port);
-		bool isInitialized() const;
+		void setPort(uint16_t port);
 		void update();
 
 		void requestServerTime();
@@ -62,6 +61,7 @@ namespace network
 		void simulate(Sequence frameId);
 		void connect(const Address& address);
 		void disconnect();
+
 		LocalPlayer& addLocalPlayer(int32_t controllerId, bool listenMouseKB = false);
 		bool requestEntity(Entity* entity);
 		void requestEntity(int32_t netId);
@@ -69,6 +69,7 @@ namespace network
 		uint32_t getNumLocalPlayers() const;
 		bool isLocalPlayer(int16_t playerId) const;
 		LocalPlayer* getLocalPlayer(int16_t playerId) const;
+		State getState() const;
 
 	private:
 		void sendPlayerActions();
@@ -81,6 +82,7 @@ namespace network
 		void onDestroyEntity(IncomingMessage& message);
 		void onGameState(IncomingMessage& message);
 		void onReceiveServerTime(IncomingMessage& message);
+		void onDisconnected();
 
 		void sendMessage(Message& message);
 		void sendPendingMessages();
@@ -101,12 +103,10 @@ namespace network
 		Sequence        m_lastFrameSimulated;
 		uint32_t        m_lastOrderedMessaged;
 		State           m_state;
-		float           m_stateTimer;
 		float           m_timeSinceLastInputMessage;
 		float           m_maxInputMessageSentTime;
 		float           m_timeSinceLastClockSync;
 		float           m_clockResyncTime;
-		bool            m_isInitialized;
 		uint16_t        m_port;
 		PacketReceiver* m_packetReceiver;
 

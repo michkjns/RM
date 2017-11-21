@@ -33,12 +33,10 @@ Client::Client(Time& time, Game* game) :
 	m_lastFrameSimulated(0),
 	m_lastOrderedMessaged(0),
 	m_state(State::Disconnected),
-	m_stateTimer(0.0f),
 	m_timeSinceLastInputMessage(0.0f),
 	m_maxInputMessageSentTime(0.05f),
 	m_timeSinceLastClockSync(0.f),
 	m_clockResyncTime(5.f),
-	m_isInitialized(false),
 	m_packetReceiver(new PacketReceiver(64)),
 	m_localPlayers(s_maxPlayersPerClient)
 
@@ -54,34 +52,32 @@ Client::~Client()
 	delete m_packetReceiver;
 }
 
-void Client::initialize(uint16_t port)
+void Client::setPort(uint16_t port)
 {
-	clearSession();
-
 	m_port = port;
-	m_isInitialized = true;
-}
-
-bool Client::isInitialized() const
-{
-	return m_isInitialized;
 }
 
 void Client::update()
 {
 	const float deltaTime = m_gameTime.getDeltaSeconds();
 
+	const State state = m_state;
 	if (m_state != State::Disconnected)
 	{
 		assert(m_connection != nullptr);
 		m_timeSinceLastInputMessage += deltaTime;
 
 		receivePackets();
+		if (m_state != state)
+		{
+			return;
+		}
+
 		readMessages();
-		readInput();
 
 		if (m_state == State::Connected)
 		{
+			readInput();
 			if (m_timeSinceLastInputMessage >= m_maxInputMessageSentTime)
 			{
 				m_timeSinceLastInputMessage = 0.f;
@@ -99,14 +95,16 @@ void Client::update()
 		}
 
 		sendPendingMessages();
-		
 		if (!Network::isServer())
 		{
 			m_connection->update(m_gameTime);
 		}
-	}
 
-	m_stateTimer += deltaTime;
+		if (m_state == State::Disconnected)
+		{
+			clearSession();
+		}
+	}
 }
 
 void Client::sendPlayerActions()
@@ -211,11 +209,14 @@ void Client::connect(const Address& address)
 
 void Client::disconnect()
 {
-	if (m_state != State::Connected || m_state != State::Connecting)
+	if (m_state != State::Connected && m_state != State::Connecting)
 	{
-		ensure(false);
 		return;
 	}
+
+	Message message = {};
+	message.type = MessageType::Disconnect;
+	m_connection->sendMessage(message);
 
 	setState(State::Disconnecting);
 	m_connection->close();
@@ -287,6 +288,11 @@ LocalPlayer* Client::getLocalPlayer(int16_t playerId) const
 	}
 
 	return nullptr;
+}
+
+Client::State Client::getState() const
+{
+	return m_state;
 }
 
 void Client::syncOwnedEntities(int16_t playerId)
@@ -363,13 +369,17 @@ void Client::readMessage(IncomingMessage& message)
 			onReceiveServerTime(message);
 			break;
 		}
+		case MessageType::Disconnect:
+		{
+			onDisconnected();
+			break;
+		}
 		case MessageType::KeepAlive:
 		case MessageType::RequestEntity:
 		case MessageType::IntroducePlayer:
 		case MessageType::PlayerInput:
 		case MessageType::None:
 		case MessageType::RequestConnection:
-		case MessageType::Disconnect:
 		case MessageType::GameEvent:
 		case MessageType::NUM_MESSAGE_TYPES:
 		{
@@ -542,6 +552,12 @@ void Client::onReceiveServerTime(IncomingMessage& message)
 	// http://www.mine-control.com/zack/timesync/timesync.html
 }
 
+void Client::onDisconnected()
+{
+	assert(m_connection != nullptr);
+	setState(Client::State::Disconnected);
+}
+
 void Client::sendMessage(Message& message)
 {
 	assert(m_connection != nullptr);
@@ -557,8 +573,7 @@ void Client::sendPendingMessages()
 
 void Client::setState(State state)
 {
-	m_state      = state;
-	m_stateTimer = 0.0f;
+	m_state = state;
 }
 
 void Client::clearSession()
@@ -568,10 +583,10 @@ void Client::clearSession()
 	m_recentlyDestroyedEntities.fill(INDEX_NONE);
 	m_requestedEntities.fill(INDEX_NONE);
 	
-	if (m_connection)
-	{
-		delete m_connection;
-	}
+	delete m_connection;
+	m_connection = nullptr;
+
+	EntityManager::killEntities();
 }
 
 int32_t Client::getNextTempNetworkId()
@@ -629,11 +644,16 @@ void Client::onConnectionCallback(ConnectionCallback type, Connection* connectio
 			break;
 		}
 		case ConnectionCallback::ConnectionFailed:
+		{
+			LOG_INFO("Client: Failed to connect to the server");
+			setState(State::Disconnected);
+			connection->close();
+			clearSession();
+			break;
+		}
 		case ConnectionCallback::ConnectionLost:
 		{
-			LOG_INFO(type == ConnectionCallback::ConnectionLost ? 
-				"Client: Lost connection to the server" : "Client: Failed to connect to the server");
-			disconnect();
+			setState(State::Connecting);
 			break;
 		}
 		case ConnectionCallback::ConnectionReceived:

@@ -9,9 +9,8 @@
 
 using namespace network;
 
-static const uint32_t s_maxConnectionAttemptDuration = 30;
-static const float    s_maxReliableMessageTime(0.10f);
-static const float    s_timeout = 120.f;
+static const uint32_t s_maxConnectionAttemptDuration = 10;
+static const float    s_timeout = 20.f;
 
 Connection::Connection(Socket* socket, const Address& address, ConnectionCallbackMethod callback) :
 	m_address(address),
@@ -43,8 +42,10 @@ void Connection::update(const Time& time)
 		case State::Connected:
 		{
 			m_timeSinceLastPacketReceived += time.getDeltaSeconds();
-			if (m_timeSinceLastPacketReceived > s_timeout)
+			if (m_timeSinceLastPacketReceived > 2.f)
 			{
+				LOG_INFO("Connection: Connection lost, reconnecting..");
+				setState(State::Connecting);
 				m_connectionCallback(ConnectionCallback::ConnectionLost, this);
 			}
 			break;
@@ -59,10 +60,10 @@ void Connection::update(const Time& time)
 			}
 			break;
 		}
-		case State::Disconnected:
 		case State::Closed:
+		case State::Disconnected:
 		{
-			break; 
+			break;
 		}
 	}
 }
@@ -135,6 +136,10 @@ const Address& Connection::getAddress() const
 void Connection::setState(State state)
 {
 	m_state = state;
+	if (state == Connection::State::Connecting)
+	{
+		m_connectionAttemptDuration = 0.f;
+	}
 }
 
 Connection::State Connection::getState() const
@@ -149,5 +154,10 @@ void Connection::tryConnect()
 	Message message = {};
 	message.type = MessageType::RequestConnection;
 	sendMessage(message);
-	setState(State::Connecting);	
+	setState(State::Connecting);
+}
+
+bool Connection::isClosed() const
+{
+	return m_state == State::Closed;
 }

@@ -95,7 +95,7 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	{
 		LOG_INFO("Core: Creating client..");
 		m_client = new Client(m_gameTime, m_game);
-		m_client->initialize(s_defaultClientPort);
+		m_client->setPort(s_defaultClientPort);
 		Network::setClient(m_client);
 		
 		LOG_INFO("Core: Initializing input..");

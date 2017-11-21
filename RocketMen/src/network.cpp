@@ -12,7 +12,7 @@ static Server* s_server;
 
 bool Network::isClient()
 {
-	return (s_client && s_client->isInitialized());
+	return s_client != nullptr;
 }
 
 bool Network::isServer()
@@ -32,6 +32,10 @@ void Network::disconnect()
 	if (isClient())
 	{
 		s_client->disconnect();
+	}
+	if (isServer())
+	{
+		s_server->reset();
 	}
 }
 
@@ -55,7 +59,6 @@ void Network::generateNetworkId(Entity* entity)
 void Network::addLocalPlayer(int32_t controllerId)
 {
 	assert(s_client != nullptr);
-	assert(s_client->isInitialized());
 	assert(controllerId >= 0);
 	s_client->addLocalPlayer(controllerId);
 }
@@ -72,7 +75,7 @@ uint32_t Network::getNumLocalPlayers()
 
 bool Network::isLocalPlayer(int16_t playerId)
 {
-	if (s_client != nullptr && s_client->isInitialized())
+	if (s_client != nullptr)
 	{
 		return s_client->isLocalPlayer(playerId);
 	}
@@ -83,8 +86,6 @@ bool Network::isLocalPlayer(int16_t playerId)
 bool Network::requestEntity(Entity* entity)
 {
 	assert(s_client != nullptr);
-	assert(s_client->isInitialized());
-
 	return s_client->requestEntity(entity);
 }
 

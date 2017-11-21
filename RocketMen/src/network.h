@@ -22,7 +22,6 @@ public:
 	static void connect(const network::Address& address);
 	static void disconnect();
 
-
 	static void generateNetworkId(class Entity* entity);
 
 	static void addLocalPlayer(int32_t controllerId);

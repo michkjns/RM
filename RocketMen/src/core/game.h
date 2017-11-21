@@ -32,6 +32,7 @@ public:
 	virtual void terminate() = 0;
 
 	virtual void onPlayerJoin(int16_t playerId) = 0;
+	virtual void onPlayerLeave(int16_t playerId) = 0;
 
 public:
 	virtual const char* const getName()    const;

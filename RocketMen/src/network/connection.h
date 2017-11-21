@@ -45,6 +45,8 @@ namespace network
 		void setState(State state);
 		void tryConnect();
 
+		bool isClosed() const;
+
 	private:
 		Address  m_address;
 		Socket*  m_socket;
