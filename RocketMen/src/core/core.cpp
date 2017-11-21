@@ -242,7 +242,7 @@ void Core::run()
 		}
 	}
 
-	LOG_DEBUG("Core: main loop canceled..");
+	LOG_DEBUG("Core: main loop ended..");
 }
 
 void Core::destroy()

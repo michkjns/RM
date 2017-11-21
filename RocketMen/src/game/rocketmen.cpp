@@ -93,7 +93,7 @@ void RocketMenGame::update(const Time& time)
 
 void RocketMenGame::terminate()
 {
-	if(Camera::mainCamera) delete Camera::mainCamera;
+	delete Camera::mainCamera;
 }
 
 void RocketMenGame::onPlayerJoin(int16_t playerId)

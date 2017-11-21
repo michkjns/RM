@@ -72,10 +72,12 @@ uint32_t Network::getNumLocalPlayers()
 
 bool Network::isLocalPlayer(int16_t playerId)
 {
-	assert(s_client != nullptr);
-	assert(s_client->isInitialized());
+	if (s_client != nullptr && s_client->isInitialized())
+	{
+		return s_client->isLocalPlayer(playerId);
+	}
 
-	return s_client->isLocalPlayer(playerId);
+	return false;
 }
 
 bool Network::requestEntity(Entity* entity)

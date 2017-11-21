@@ -7,18 +7,15 @@
 using namespace input;
 
 ActionBuffer::ActionBuffer() :
-	m_numActions(0)
+	m_actions(s_maxActions)
 {
 }
 
 void ActionBuffer::insert(const Action& action)
 {
-	assert(m_numActions < s_maxActions);
-	if (m_numActions != s_maxActions)
-	{
-		m_actions[m_numActions++] = action;
-
-	}
+	assert(m_actions.getCount() < s_maxActions);
+	Action& entry = m_actions.insert();
+	entry = action;
 }
 
 void ActionBuffer::insert(const ActionBuffer& otherBuffer)
@@ -29,29 +26,34 @@ void ActionBuffer::insert(const ActionBuffer& otherBuffer)
 	}
 }
 
+void ActionBuffer::remove(Action& action)
+{
+	m_actions.remove(action);
+}
+
 void ActionBuffer::clear()
 {
-	m_numActions = 0;
+	m_actions.clear();
 }
 
 uint32_t ActionBuffer::getCount() const
 {
-	return m_numActions;
+	return m_actions.getCount();
 }
 
 bool ActionBuffer::isEmpty() const
 {
-	return getCount() == 0;
+	return m_actions.getCount() == 0;
 }
 
 const input::Action* ActionBuffer::begin() const
 {
-	return m_actions;
+	return m_actions.begin();
 }
 
 const input::Action* ActionBuffer::end() const
 {
-	return m_actions + m_numActions;
+	return m_actions.end();
 }
 
 void ActionBuffer::readFromMessage(network::IncomingMessage& message)
@@ -65,15 +67,13 @@ void ActionBuffer::readFromMessage(network::IncomingMessage& message)
 		return;
 	}
 
-	message.data.readBytes(reinterpret_cast<char*>(m_actions), numActions * sizeof(Action));
-	m_numActions = numActions;
-	assert(m_numActions < s_maxActions);
+	message.data.readBytes(reinterpret_cast<char*>(m_actions.begin()), 
+		numActions * sizeof(Action));
 }
 
 void ActionBuffer::writeToMessage(network::Message& message)
 {
-	const uint32_t numActions = getCount();
-	assert(numActions < s_maxActions);
+	const int32_t numActions = m_actions.getCount();
 
 	message.data.writeInt32(numActions);
 	message.data.writeData(reinterpret_cast<const char*>(begin()),

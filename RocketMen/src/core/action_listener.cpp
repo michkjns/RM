@@ -1,5 +1,6 @@
 
 #include <core/action_listener.h>
+#include <core/debug.h>
 #include <network.h>
 
 static std::vector<ActionListener*> s_actionListeners;
@@ -28,23 +29,15 @@ ActionListener::~ActionListener()
 	}
 }
 
-void ActionListener::executeAction(size_t action)
+bool ActionListener::executeAction(size_t action)
 {
 	if (m_actionMap.find(action) != m_actionMap.end())
 	{
-		m_actionMap[action]();
+		return m_actionMap[action]();
 	}
-	else
-	{
-		printf("Action not found! %i\n", (int)action);
-	}
-}
-
-bool ActionListener::canRegisterAction(ActionType type) const
-{
-	return (type == ActionType::ClientPredicted)
-		|| (Network::isServer() && type == ActionType::Default)
-		|| (Network::isClient() && type == ActionType::ClientOnly);
+	
+	LOG_DEBUG("Action not found! %i\n", (int)action);
+	return false;
 }
 
 void ActionListener::clear()

@@ -20,7 +20,7 @@ namespace rm
 		virtual void fixedUpdate(float deltaTime) override;
 		virtual void debugDraw()                  override;
 
-		virtual void Fire();
+		virtual bool Fire();
 
 		virtual void startContact(Entity* other) override;
 		virtual void endContact(Entity* other)   override;

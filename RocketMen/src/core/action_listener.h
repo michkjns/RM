@@ -8,12 +8,12 @@
 #include <map>
 #include <vector>
 
-enum class ActionType
-{
-	Default,
-	ClientPredicted,
-	ClientOnly
-};
+//enum class ActionType
+//{
+//	Default,
+//	ClientPredicted,
+//	ClientOnly
+//};
 
 class ActionListener
 {
@@ -27,22 +27,19 @@ public:
 	int16_t getPlayerId() const;
 
 	template<typename F, class I>
-	void registerAction(const char* name, void(F::*function)(void), I* object, ActionType type = ActionType::Default)
+	void registerAction(const char* name, bool(F::*function)(void), I* object)
 	{
-		if (canRegisterAction(type))
-		{
-			std::string actionName(toLower(name));
-			m_actionMap[std::hash<std::string>()(actionName)] = std::bind(function, object);
-		}
+		std::string actionName(toLower(name));
+		m_actionMap[std::hash<std::string>()(actionName)] = std::bind(function, object);
 	}
 
-	void executeAction(size_t action);
-	bool canRegisterAction(ActionType type) const;
+	/* @return true if action is to be consumed */
+	bool executeAction(size_t action);
 
 	/* Clears all action bindings of this listener */
 	void clear();
 
 private:
-	std::map<size_t, std::function<void(void)>> m_actionMap;
+	std::map<size_t, std::function<bool(void)>> m_actionMap;
 	int16_t m_playerId;
 };

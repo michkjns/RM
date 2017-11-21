@@ -8,6 +8,14 @@
 using namespace network;
 using std::memcpy;
 
+Packet::Packet() :
+	m_read(0),
+	m_channel(ChannelType::ReliableOrdered),
+	m_error(false)
+{
+	header = {};
+}
+
 Packet::Packet(ChannelType channel) :
 	m_read(0),
 	m_channel(channel),

@@ -17,11 +17,11 @@
 class Game;
 class Time;
 class ActionBuffer;
-
 //=============================================================================
 
 namespace network 
 {
+	class PacketReceiver;
 	struct LocalPlayer
 	{
 		LocalPlayer() : 
@@ -92,22 +92,23 @@ namespace network
 		void readMessages();
 		void onConnectionCallback(ConnectionCallback type, Connection* connection);
 
-		Socket*     m_socket;
-		Game*       m_game;
-		Connection* m_connection;
-		Time&       m_gameTime;
-		Sequence    m_lastReceivedState;
-		Sequence    m_lastFrameSent;
-		Sequence    m_lastFrameSimulated;
-		uint32_t    m_lastOrderedMessaged;
-		State       m_state;
-		float       m_stateTimer;
-		float       m_timeSinceLastInputMessage;
-		float       m_maxInputMessageSentTime;
-		float       m_timeSinceLastClockSync;
-		float       m_clockResyncTime;
-		bool        m_isInitialized;
-		uint16_t    m_port;
+		Socket*         m_socket;
+		Game*           m_game;
+		Connection*     m_connection;
+		Time&           m_gameTime;
+		Sequence        m_lastReceivedState;
+		Sequence        m_lastFrameSent;
+		Sequence        m_lastFrameSimulated;
+		uint32_t        m_lastOrderedMessaged;
+		State           m_state;
+		float           m_stateTimer;
+		float           m_timeSinceLastInputMessage;
+		float           m_maxInputMessageSentTime;
+		float           m_timeSinceLastClockSync;
+		float           m_clockResyncTime;
+		bool            m_isInitialized;
+		uint16_t        m_port;
+		PacketReceiver* m_packetReceiver;
 
 		CircularBuffer<int32_t, s_sequenceMemorySize> 
 			m_recentlyProcessed;

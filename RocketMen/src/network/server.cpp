@@ -8,6 +8,7 @@
 #include <core/action_buffer.h>
 #include <network/common_network.h>
 #include <network/connection.h>
+#include <network/packet_receiver.h>
 #include <network/remote_client.h>
 #include <network/snapshot.h>
 #include <network/socket.h>
@@ -27,7 +28,8 @@ Server::Server(Time& gameTime, Game* game) :
 	m_networkIdCounter(0),
 	m_localClientId(INDEX_NONE),
 	m_numClients(0),
-	m_snapshotTime(0.0f)
+	m_snapshotTime(0.0f),
+	m_packetReceiver(new PacketReceiver(128))
 {
 	m_socket = Socket::create();
 	assert(m_socket != nullptr);
@@ -36,6 +38,7 @@ Server::Server(Time& gameTime, Game* game) :
 Server::~Server()
 {
 	delete m_socket;
+	delete m_packetReceiver;
 }
 
 void Server::update()
@@ -172,15 +175,23 @@ void Server::onPlayerInput(IncomingMessage& message)
 	}
 
 	ActionBuffer playerActions;
-	const int16_t playerId = message.data.readInt16();
-	if (playerId <= INDEX_NONE)
+	const int16_t numFrames = message.data.readInt16();
+	const int16_t startFrame = message.data.readInt16();
+	const int32_t numPlayers = client->getNumPlayers();
+	for (int16_t i = 0; i < numFrames; i++)
 	{
-		return;
+		const Sequence frameId = startFrame + i;
+		for (int32_t j = 0; j < numPlayers; j++)
+		{
+			const int16_t playerId = message.data.readInt16();
+			if (playerId <= INDEX_NONE)
+			{
+				return;
+			}
+			playerActions.readFromMessage(message);
+			m_game->processPlayerActions(playerActions, playerId);
+		}
 	}
-	const Sequence frameId = message.data.readInt16();
-	playerActions.readFromMessage(message);
-
-	m_game->processPlayerActions(playerActions, playerId);
 }
 
 void Server::onEntityRequest(IncomingMessage& inMessage)
@@ -455,73 +466,43 @@ void Server::updateConnections()
 }
 void Server::receivePackets()
 {
-	assert(m_socket != nullptr);
-	assert(m_socket->isInitialized());
+	m_packetReceiver->receivePackets(m_socket);
 
-	Address address;
-	char    buffer[g_maxPacketSize];
-	int32_t length = 0;
+	Buffer<Packet>&  packets   = m_packetReceiver->getPackets();
+	Buffer<Address>& addresses = m_packetReceiver->getAddresses();
 
-	while (m_socket->receive(address, buffer, length))
+	const int32_t packetCount = packets.getCount();
+	for (int32_t i = 0; i < packetCount; i++)
 	{
-		assert(length <= g_maxPacketSize);
-
-		// Reconstruct packet
-		BitStream stream;
-		stream.writeBuffer(buffer, length);
-
-		const uint32_t checksum = stream.readInt32();
-
-		PacketHeader packetHeader;
-		stream.readBytes((char*)&packetHeader, sizeof(PacketHeader));
-
-		if (packetHeader.dataLength < g_maxBlockSize)
+		Packet& packet = packets[i];
+		Address& address = addresses[i];
+		bool newConnection = true;
+		for (auto& client : m_clients)
 		{
-			ChannelType channel = (packetHeader.sequence == (Sequence)-1
-				&& packetHeader.ackBits == (uint32_t)-1
-				&& packetHeader.ackSequence == (Sequence)-1) ?
-				ChannelType::Unreliable :
-				ChannelType::ReliableOrdered;
-
-			Packet packet(channel);
-			packet.header = packetHeader;
-			stream.readBytes(packet.getData(), packet.header.dataLength);
-
-			// Write protocol ID after packet to include in the checksum
-			memcpy(packet.getData() + packet.header.dataLength, &g_protocolId, sizeof(g_protocolId));
-
-			if (checksum == crcFast((const unsigned char*)packet.getData(),
-				packet.header.dataLength + sizeof(uint32_t)))
+			if (client.isUsed())
 			{
-				bool newConnection = true;
-				for (auto& client : m_clients)
+				if (client.getConnection()->getAddress() == address)
 				{
-					if (client.isUsed())
-					{
-						if (client.getConnection()->getAddress() == address)
-						{
-							newConnection = false;
-							client.getConnection()->receivePacket(packet);
-							break;
-						}
-					}
+					newConnection = false;
+					client.getConnection()->receivePacket(packet);
+					break;
 				}
-				if (newConnection && m_numClients < s_maxConnectedClients)
-				{
-					IncomingMessage* message = packet.readNextMessage();
-					if (message->type == MessageType::RequestConnection)
-					{
-						onConnectionRequest(address, packet);
-					}
-					delete message;
-				}
-			}
-			else
-			{
-				LOG_DEBUG("PacketReceiver::receivePackets: Checksum mismatched, packet discarded.");
 			}
 		}
+
+		if (newConnection && m_numClients < s_maxConnectedClients)
+		{
+			IncomingMessage* message = packet.readNextMessage();
+			if (message->type == MessageType::RequestConnection)
+			{
+				onConnectionRequest(address, packet);
+			}
+			delete message;
+		}
 	}
+
+	packets.clear();
+	addresses.clear();
 }
 
 void Server::readMessages()

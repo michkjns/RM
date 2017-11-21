@@ -10,11 +10,10 @@
 #include <game_time.h>
 #include <network.h>
 #include <network/address.h>
+#include <network/packet_receiver.h>
 #include <network/server.h>
 #include <network/socket.h>
 #include <utility.h>
-
-extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 using namespace network;
 
@@ -40,6 +39,7 @@ Client::Client(Time& time, Game* game) :
 	m_timeSinceLastClockSync(0.f),
 	m_clockResyncTime(5.f),
 	m_isInitialized(false),
+	m_packetReceiver(new PacketReceiver(64)),
 	m_localPlayers(s_maxPlayersPerClient)
 
 {
@@ -51,6 +51,7 @@ Client::Client(Time& time, Game* game) :
 Client::~Client()
 {
 	delete m_socket;
+	delete m_packetReceiver;
 }
 
 void Client::initialize(uint16_t port)
@@ -85,7 +86,7 @@ void Client::update()
 			{
 				m_timeSinceLastInputMessage = 0.f;
 				sendPlayerActions();
-				for (LocalPlayer player : m_localPlayers)
+				for (LocalPlayer& player : m_localPlayers)
 				{
 					syncOwnedEntities(player.playerId);
 				}
@@ -116,28 +117,34 @@ void Client::sendPlayerActions()
 		return;
 	}
 
-	if (Frame* frame = m_clientHistory.getFrame(m_lastFrameSent))
-	{
-		const int16_t numFramesToSend = m_lastFrameSimulated - m_lastFrameSent;
+	const Sequence startFromFrame = m_lastFrameSent + 1;
+	const int16_t numFramesToSend = static_cast<int16_t>(sequenceDifference(m_lastFrameSimulated, m_lastFrameSent));
 		
-		for (int16_t i = 0; i < numFramesToSend; i++)
+	Message message = {};
+	message.type = MessageType::PlayerInput;
+	message.data.writeInt16(numFramesToSend);
+	message.data.writeInt16(startFromFrame);
+	for (int16_t i = 0; i < numFramesToSend; i++)
+	{
+		const int16_t frameId = startFromFrame + i;
+		if (Frame* frame = m_clientHistory.getFrame(frameId))
 		{
-			const int16_t frameId = m_lastFrameSent + i;
 			for (LocalPlayer& player : m_localPlayers)
 			{
-				Message message = {};
-				message.type = MessageType::PlayerInput;
 				message.data.writeInt16(player.playerId);
-				message.data.writeInt16(frameId);
 				frame->actions[player.playerId].writeToMessage(message);
 				frame->actions[player.playerId].clear();
-				sendMessage(message);
 			}
-
 			m_lastFrameSent = frameId;
-			frame++;
+		}
+		else
+		{
+			assert(false);
+			break;
 		}
 	}
+
+	sendMessage(message);
 }
 
 void Client::requestServerTime()
@@ -168,8 +175,8 @@ void Client::simulate(Sequence frameId)
 			ActionBuffer& playerActions = s_playerActions[player.playerId];
 			if (!playerActions.isEmpty())
 			{
-				currentFrame->actions[player.playerId].insert(playerActions);
 				m_game->processPlayerActions(playerActions, player.playerId);
+				currentFrame->actions[player.playerId].insert(playerActions);
 				playerActions.clear();
 			}
 		}
@@ -580,56 +587,26 @@ int32_t Client::getNextTempNetworkId()
 
 void Client::receivePackets()
 {
-	assert(m_socket != nullptr);
-	assert(m_socket->isInitialized());
+	m_packetReceiver->receivePackets(m_socket);
 
-	Address address;
-	char    buffer[g_maxPacketSize];
-	int32_t length = 0;
+	Buffer<Packet>&  packets   = m_packetReceiver->getPackets();
+	Buffer<Address>& addresses = m_packetReceiver->getAddresses();
 
-	while (m_socket->receive(address, buffer, length))
+	const int32_t packetCount = packets.getCount();
+	for (int32_t i = 0; i < packetCount; i++)
 	{
-		assert(length <= g_maxPacketSize);
-
-		// Reconstruct packet
-		BitStream stream;
-		stream.writeBuffer(buffer, length);
-
-		const uint32_t checksum = stream.readInt32();
-
-		PacketHeader packetHeader;
-		stream.readBytes((char*)&packetHeader, sizeof(PacketHeader));
-
-		if (packetHeader.dataLength < g_maxBlockSize)
+		Packet& packet = packets[i];
+		Address& address = addresses[i];
+		if (address == m_connection->getAddress())
 		{
-			ChannelType channel = (packetHeader.sequence == (Sequence)-1
-				&& packetHeader.ackBits == (uint32_t)-1
-				&& packetHeader.ackSequence == (Sequence)-1) ?
-				ChannelType::Unreliable :
-				ChannelType::ReliableOrdered;
-
-			Packet packet(channel);
-			packet.header = packetHeader;
-			stream.readBytes(packet.getData(), packet.header.dataLength);
-
-			// Write protocol ID after packet to include in the checksum
-			memcpy(packet.getData() + packet.header.dataLength, &g_protocolId, sizeof(g_protocolId));
-
-			if (checksum == crcFast((const unsigned char*)packet.getData(),
-				packet.header.dataLength + sizeof(uint32_t)))
-			{
-				if (address == m_connection->getAddress())
-				{
-					m_connection->receivePacket(packet);
-				}
-			}
-			else
-			{
-				LOG_DEBUG("PacketReceiver::receivePackets: Checksum mismatched, packet discarded.");
-			}
+			m_connection->receivePacket(packet);
 		}
 	}
+
+	packets.clear();
+	addresses.clear();
 }
+
 void Client::readMessages()
 {
 	while (IncomingMessage* message = m_connection->getNextMessage())

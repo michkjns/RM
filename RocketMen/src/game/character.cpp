@@ -45,7 +45,7 @@ void Character::fixedUpdate(float /*deltaTime*/)
 
 void Character::debugDraw()
 {
-	//if (Network::isClient()/* && Network::isLocalPlayer(getOwnerPlayerId())*/)
+	if (Network::isLocalPlayer(getOwnerPlayerId()))
 	{
 		Vector2 mp = Camera::mainCamera->screenToWorld(input::getMousePosition());
 		Vector2 pos = m_transform.getWorldPosition();
@@ -55,15 +55,18 @@ void Character::debugDraw()
 	}
 }
 
-void Character::Fire()
+bool Character::Fire()
 {
 	const float power = 20.f;
 
 	Rocket* rocket = new Rocket();
-	const Vector2 pos = m_transform.getWorldPosition() + m_aimDirection * 1.0f;
+	const Vector2 pos = m_transform.getWorldPosition() + m_aimDirection * 0.20f;
 	rocket->getTransform().setLocalPosition(pos);
 	rocket->initialize(this, m_aimDirection, power);
 	Entity::instantiate(rocket);
+
+	const bool consumeAction = true;
+	return consumeAction;
 }
 
 void Character::startContact(Entity* /*other*/)
@@ -85,7 +88,7 @@ void Character::posessbyPlayer(int16_t playerId)
 	assert(playerId != INDEX_NONE);
 
 	m_actionListener = new ActionListener(playerId);
-	m_actionListener->registerAction("Fire", &Character::Fire, this, ActionType::ClientOnly);
+	m_actionListener->registerAction("Fire", &Character::Fire, this);
 
 	m_ownerPlayerId = playerId;
 }

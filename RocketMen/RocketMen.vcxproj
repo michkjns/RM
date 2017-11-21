@@ -183,6 +183,7 @@
     <ClCompile Include="src\network\network_channel.cpp" />
     <ClCompile Include="src\network\network_message.cpp" />
     <ClCompile Include="src\network\packet.cpp" />
+    <ClCompile Include="src\network\packet_receiver.cpp" />
     <ClCompile Include="src\network\reliable_ordered_channel.cpp" />
     <ClCompile Include="src\network\remote_client.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
@@ -241,6 +242,7 @@
     <ClInclude Include="src\network\network_channel.h" />
     <ClInclude Include="src\network\network_message.h" />
     <ClInclude Include="src\network\packet.h" />
+    <ClInclude Include="src\network\packet_receiver.h" />
     <ClInclude Include="src\network\reliable_ordered_channel.h" />
     <ClInclude Include="src\network\remote_client.h" />
     <ClInclude Include="src\graphics\renderer.h" />

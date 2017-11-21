@@ -17,6 +17,7 @@ namespace network
 
 	struct IncomingMessage;
 	class  Packet;
+	class  PacketReceiver;
 	class  Socket;
 
 	class Server 
@@ -84,6 +85,7 @@ namespace network
 
 		/** Remote client buffer */
 		std::array<RemoteClient, s_maxConnectedClients> m_clients;
+		PacketReceiver* m_packetReceiver;
 	};
 
 }; // namespace network

@@ -7,7 +7,7 @@ class Buffer
 {
 public:
 	Buffer(uint32_t capacity);
-	~Buffer() {	delete[] m_buffer; }
+	~Buffer();
 
 	T& insert();
 	void remove(T& element);
@@ -30,9 +30,17 @@ private:
 
 template<typename T>
 inline Buffer<T>::Buffer(uint32_t capacity) :
-	m_capacity(capacity)
+	m_capacity(capacity),
+	m_count(0)
 {
-	m_buffer = (T*) new uint8_t[capacity * (uint32_t)sizeof(T)];
+	m_buffer = reinterpret_cast<T*>(new char[capacity * sizeof(T)]);
+}
+
+template<typename T>
+inline Buffer<T>::~Buffer()
+{
+	clear(); 
+	delete[] reinterpret_cast<char*>(m_buffer);
 }
 
 template<typename T>

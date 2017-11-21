@@ -1,13 +1,14 @@
 
 #pragma once
 
+#include <buffer.h>
 #include <common.h>
 #include <core/action.h>
 
 #include <string>
 
 static const uint32_t s_maxActions = 16;
-//==============================================================================
+//=============================================================================
 
 namespace network
 {
@@ -22,6 +23,7 @@ public:
 
 	void insert(const input::Action& action);
 	void insert(const ActionBuffer& other);
+	void remove(input::Action& action);
 	void clear();
 
 	uint32_t getCount() const;
@@ -34,19 +36,18 @@ public:
 	void writeToMessage(network::Message& message);
 
 private:
-	input::Action m_actions[s_maxActions];
-	uint32_t      m_numActions;
+	Buffer<input::Action> m_actions;
 
 public:
 	inline input::Action operator[] (uint32_t i) const
 	{
-		assert(i < m_numActions && i >= 0);
+		assert(i < getCount() && i >= 0);
 		return (m_actions[i]);
 	}
 
 	inline input::Action& operator[] (uint32_t i)
 	{
-		assert(i < m_numActions && i >= 0);
+		assert(i < getCount() && i >= 0);
 		return (m_actions[i]);
 	}
 };

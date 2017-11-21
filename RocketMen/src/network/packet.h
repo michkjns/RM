@@ -37,6 +37,7 @@ namespace network
 	class Packet
 	{
 	public:
+		Packet();
 		Packet(ChannelType channel);
 		~Packet() {}
 		PacketHeader header;
