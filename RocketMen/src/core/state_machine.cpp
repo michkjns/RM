@@ -1,49 +1,36 @@
 
 #include <core/state_machine.h>
-
+#include <core/game_state.h>
 #include <common.h>
-#include <core/game_state_factory.h>
 
 #include <algorithm>
 
-StateMachine::StateMachine(uint32_t maxDepth) :
-	m_currentIndex(INDEX_NONE),
-	m_maxDepth(maxDepth)
+StateMachine::StateMachine() :
+	m_currentState(nullptr)
 {
-	m_stack = new GameState*[maxDepth];
-	std::fill(m_stack, m_stack + maxDepth, nullptr);	
+
 }
 
 StateMachine::~StateMachine()
 {
-	assert(m_currentIndex == INDEX_NONE);
-	delete[] m_stack;
+	assert(m_currentState == nullptr);
 }
 
-GameState* StateMachine::getCurrentState() const
+GameState* StateMachine::getState() const
 {
-	if (m_currentIndex >= 0)
-	{
-		return m_stack[m_currentIndex];
-	}
-
-	return nullptr;
+	return m_currentState;
 }
 
-GameState* StateMachine::push(GameStateFactory* factory, uint32_t StateId)
+void StateMachine::push(GameState* state)
 {
-	assert(factory != nullptr);
-	if (m_currentIndex < static_cast<int32_t>(m_maxDepth))
-	{
-		m_stack[++m_currentIndex] = factory->getState(StateId);
-		return getCurrentState();
-	}
-
-	return nullptr;
+	assert(state != nullptr);
+	state->m_previousState = m_currentState;
+	m_currentState = state;
 }
 
-void StateMachine::pop()
+GameState* StateMachine::pop()
 {
-	assert(m_currentIndex >= 0);
-	delete m_stack[m_currentIndex--];
+	GameState* poppedState = m_currentState;
+	m_currentState = m_currentState->m_previousState;
+	return poppedState;
 }

@@ -1,6 +1,8 @@
 
 #include "menu_state.h"
 
+#include <common.h>
+#include <game/game_state_ids.h>
 #include <game/rocketmen.h>
 #include <network/network.h>
 
@@ -14,14 +16,18 @@ MenuState::~MenuState()
 {
 }
 
-void MenuState::initialize(Game* /*game*/)
+void MenuState::initialize(Game* game)
 {
-	//RocketMenGame* rm = static_cast<RocketMenGame*>(game);
+	game->pushState(GameStateID::Gameplay);
+}
+
+void MenuState::enter(Game* /*game*/)
+{
+
 }
 
 void MenuState::destroy(Game* /*game*/)
 {
-	//RocketMenGame* rm = static_cast<RocketMenGame*>(game);
 }
 
 void MenuState::update(Game* /*game*/, const Time& /*time*/)

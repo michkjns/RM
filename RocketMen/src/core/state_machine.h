@@ -8,15 +8,13 @@ class GameStateFactory;
 class StateMachine
 {
 public:
-	StateMachine(uint32_t maxDepth);
+	StateMachine();
 	~StateMachine();
 
-	GameState* getCurrentState() const;
-	GameState* push(GameStateFactory* factory, uint32_t stateId);
-	void pop();
+	GameState* getState() const;
+	void push(GameState* state);
+	GameState* pop();
 
 private:
-	GameState** m_stack;
-	int32_t     m_currentIndex;
-	uint32_t    m_maxDepth;
+	GameState* m_currentState;
 };

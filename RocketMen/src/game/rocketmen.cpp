@@ -15,8 +15,7 @@ using namespace rm;
 
 void RocketMenGame::initialize()
 {
-	Game::initialize(new RocketMenStateFactory());
-	pushState(uint32_t(GameStateID::Gameplay));
+	Game::initialize(new RocketMenStateFactory(), GameStateID::Menu);
 
 	const int32_t pixelsPerMeter = 16;
 

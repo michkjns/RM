@@ -10,32 +10,21 @@
 
 #include <map>
 
-Game::Game() :
-	m_stateMachine(16)
+Game::Game()
 {
 }
 
 Game::~Game()
 {
-	while (m_stateMachine.getCurrentState() != nullptr)
+	while (GameState* state = m_stateMachine.getState())
 	{
-		m_stateMachine.pop();
+		popState();
 	}
-}
-
-void Game::initialize(GameStateFactory* stateFactory)
-{
-	LOG_INFO("Game: [%s v%s]\n", getName(), getVersion());
-	
-	assert(stateFactory != nullptr);
-	m_stateFactory = stateFactory;
-		
-	setTimestep(33333ULL / 2);
 }
 
 void Game::update(const Time& time)
 {
-	if (GameState* state = m_stateMachine.getCurrentState())
+	if (GameState* state = m_stateMachine.getState())
 	{
 		state->update(this, time);
 	}
@@ -43,7 +32,7 @@ void Game::update(const Time& time)
 
 void Game::tick(float fixedDeltaTime)
 {
-	if (GameState* state = m_stateMachine.getCurrentState())
+	if (GameState* state = m_stateMachine.getState())
 	{
 		state->tick(this, fixedDeltaTime);
 	}
@@ -52,6 +41,17 @@ void Game::tick(float fixedDeltaTime)
 void Game::terminate()
 {
 	delete m_stateFactory;
+}
+
+void Game::initialize(GameStateFactory* stateFactory, uint32_t stateId)
+{
+	LOG_INFO("Game: [%s v%s]\n", getName(), getVersion());
+
+	assert(stateFactory != nullptr);
+	m_stateFactory = stateFactory;
+
+	setTimestep(33333ULL / 2);
+	pushState(stateId);
 }
 
 const char* const Game::getName() const
@@ -98,7 +98,23 @@ void Game::processPlayerActions(ActionBuffer& actions, int16_t playerId)
 
 GameState* Game::pushState(uint32_t stateId)
 {
-	GameState* state = m_stateMachine.push(m_stateFactory, stateId);
+	GameState* state = m_stateFactory->getState(stateId);
+	assert(state != nullptr);
+
+	m_stateMachine.push(state);
 	state->initialize(this);
+	state->enter(this);
+
 	return state;
+}
+
+void Game::popState()
+{
+	GameState* prevState = m_stateMachine.pop();
+	if (GameState* currentState = m_stateMachine.getState())
+	{
+		currentState->enter(this);
+	}
+	prevState->destroy(this);
+	delete prevState;
 }

@@ -5,7 +5,7 @@
 
 namespace rm
 {
-	enum class GameStateID : uint32_t
+	enum GameStateID : uint32_t
 	{
 		Menu = 0,
 		Gameplay

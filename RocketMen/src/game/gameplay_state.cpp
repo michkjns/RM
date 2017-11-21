@@ -40,9 +40,12 @@ void GameplayState::initialize(Game* /*game*/)
 	EntityFactory<Rocket>::initialize();
 }
 
+void GameplayState::enter(Game* /*game*/)
+{
+}
+
 void GameplayState::destroy(Game* /*game*/)
 {
-	//RocketMenGame* rm = static_cast<RocketMenGame*>(game);
 }
 
 void GameplayState::update(Game* /*game*/, const Time& time)

@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\core\game_state.cpp" />
     <ClCompile Include="src\core\state_machine.cpp" />
     <ClCompile Include="src\game\gameplay_state.cpp" />
     <ClCompile Include="src\utility\buffer.cpp" />
