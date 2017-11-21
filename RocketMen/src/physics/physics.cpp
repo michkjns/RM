@@ -1,12 +1,12 @@
 
-#include <physics.h>
+#include <physics/physics.h>
 
 #include <core/debug.h>
 #include <core/entity.h>
 #include <core/resource_manager.h>
 #include <graphics/camera.h>
 #include <graphics/renderer.h>
-#include <network.h>
+#include <network/network.h>
 #include <physics/physics_box2d.h>
 
 #include <array>

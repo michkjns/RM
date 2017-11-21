@@ -21,12 +21,6 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\bitstream.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\game_time.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\address.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,9 +78,6 @@
     <ClCompile Include="src\graphics\tile_map.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\physics.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\physics\rigidbody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -108,9 +99,6 @@
     <ClCompile Include="src\core\action_listener.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\network\server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -121,12 +109,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\crc\crc.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\tests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\circular_buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\core\entity_factory.cpp">
@@ -168,14 +150,32 @@
     <ClCompile Include="src\network\packet_receiver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\game\menu_state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\game_time.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utility\circular_buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utility\buffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\network.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\utility\bitstream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\physics\physics.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tests\tests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\bitstream.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\game_time.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\network\address.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -230,16 +230,10 @@
     <ClInclude Include="src\graphics\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\utility.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\graphics\tile_renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\graphics\tile_map.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\physics\rigidbody.h">
@@ -266,9 +260,6 @@
     <ClInclude Include="src\core\action_listener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\network\server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -279,9 +270,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\crc\crc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\circular_buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\core\entity_factory.h">
@@ -326,9 +314,6 @@
     <ClInclude Include="src\network\snapshot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\action.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -339,6 +324,33 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\packet_receiver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\game_state.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\menu_state.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utility\utility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\game_time.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utility\circular_buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utility\buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\network.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\utility\bitstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\physics\physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

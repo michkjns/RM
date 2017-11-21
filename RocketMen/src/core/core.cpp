@@ -9,11 +9,11 @@
 #include <core/entity_manager.h>
 #include <graphics/check_gl_error.h>
 #include <graphics/renderer.h>
-#include <network.h>
+#include <network/network.h>
 #include <network/address.h>
 #include <network/client.h>
 #include <network/server.h>
-#include <physics.h>
+#include <physics/physics.h>
 #include <time.h>
 
 extern "C" void crcInit(void);

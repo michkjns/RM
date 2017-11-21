@@ -7,13 +7,13 @@
 #include <core/game.h>
 #include <core/input.h>
 #include <core/debug.h>
-#include <game_time.h>
-#include <network.h>
+#include <game/game_time.h>
+#include <network/network.h>
 #include <network/address.h>
 #include <network/packet_receiver.h>
 #include <network/server.h>
 #include <network/socket.h>
-#include <utility.h>
+#include <utility/utility.h>
 
 using namespace network;
 

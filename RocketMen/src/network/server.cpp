@@ -13,7 +13,7 @@
 #include <network/snapshot.h>
 #include <network/socket.h>
 
-#include <utility.h>
+#include <utility/utility.h>
 
 extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 

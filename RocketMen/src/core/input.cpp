@@ -4,7 +4,7 @@
 #include <core/window.h>
 #include <core/debug.h>
 #include <GLFW/glfw3.h>
-#include <utility.h>
+#include <utility/utility.h>
 
 #include <algorithm>
 #include <functional>

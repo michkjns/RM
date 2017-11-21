@@ -10,7 +10,7 @@
 #include <graphics/check_gl_error.h>
 #include <graphics/sprite_renderer.h>
 #include <graphics/tile_renderer.h>
-#include <physics.h>
+#include <physics/physics.h>
 
 #include <GLFW/glfw3.h>
 

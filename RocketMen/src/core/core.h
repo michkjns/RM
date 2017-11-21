@@ -3,7 +3,7 @@
 
 #include <common.h>
 #include <core/input.h>
-#include <game_time.h>
+#include <game/game_time.h>
 
 static const Vector2i g_defaultResolution(640, 480);
 static const Vector2i g_defaultWindowSize = g_defaultResolution;

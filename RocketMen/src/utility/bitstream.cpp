@@ -1,8 +1,8 @@
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 
 #include <common.h>
-#include <utility.h>
+#include <utility/utility.h>
 
 #include <bitset>
 #include <assert.h>

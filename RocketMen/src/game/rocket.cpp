@@ -1,12 +1,12 @@
 
 #include <game/rocket.h>
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <core/debug.h>
 #include <core/entity_manager.h>
-#include <network.h>
-#include <physics.h>
-#include <utility.h>
+#include <network/network.h>
+#include <physics/physics.h>
+#include <utility/utility.h>
 
 using namespace rm;
 

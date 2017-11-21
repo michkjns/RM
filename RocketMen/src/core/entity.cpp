@@ -1,12 +1,12 @@
 
 #include <core/entity.h>
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <core/debug.h>
 #include <core/entity_factory.h>
 #include <core/entity_manager.h>
-#include <network.h>
-#include <physics.h>
+#include <network/network.h>
+#include <physics/physics.h>
 
 #include <functional>
 

@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <common.h>
 #include <core/entity_type.h>
 #include <core/transform.h>

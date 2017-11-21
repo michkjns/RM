@@ -1,7 +1,7 @@
 
 #include <core/action_listener.h>
 #include <core/debug.h>
-#include <network.h>
+#include <network/network.h>
 
 static std::vector<ActionListener*> s_actionListeners;
 

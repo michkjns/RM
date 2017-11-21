@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <network/address.h>
 #include <network/packet.h>
 

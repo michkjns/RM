@@ -2,7 +2,7 @@
 #include "connection.h"
 
 #include <core/debug.h>
-#include <game_time.h>
+#include <game/game_time.h>
 #include <network/reliable_ordered_channel.h>
 #include <network/socket.h>
 #include <network/unreliable_channel.h>

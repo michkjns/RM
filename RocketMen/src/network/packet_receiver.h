@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <buffer.h>
+#include <utility/buffer.h>
 #include <network/address.h>
 
 namespace network

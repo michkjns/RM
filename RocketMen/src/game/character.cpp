@@ -1,14 +1,14 @@
 
 #include <game/character.h>
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <core/debug.h>
 #include <core/input.h>
 #include <core/transform.h>
 #include <game/rocket.h>
 #include <graphics/camera.h>
-#include <network.h>
-#include <physics.h>
+#include <network/network.h>
+#include <physics/physics.h>
 
 using namespace rm;
 

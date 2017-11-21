@@ -9,8 +9,8 @@
 #include <game/character.h>
 #include <game/rocket.h>
 #include <graphics/camera.h>
-#include <network.h>
-#include <physics.h>
+#include <network/network.h>
+#include <physics/physics.h>
 
 using namespace input;
 using namespace rm;

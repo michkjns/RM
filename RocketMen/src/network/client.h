@@ -1,8 +1,6 @@
 
 #pragma once
 
-#include <buffer.h>
-#include <circular_buffer.h>
 #include <core/entity.h>
 #include <core/keys.h>
 #include <network/common_network.h>
@@ -10,6 +8,8 @@
 #include <network/connection_callback.h>
 #include <network/network_message.h>
 #include <network/client_history.h>
+#include <utility/buffer.h>
+#include <utility/circular_buffer.h>
 
 #include <array>
 #include <cstdint>

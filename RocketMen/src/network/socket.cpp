@@ -1,7 +1,7 @@
 
 #include <network/socket.h>
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <core/debug.h>
 
 #include <assert.h>

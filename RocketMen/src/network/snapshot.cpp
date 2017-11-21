@@ -4,7 +4,7 @@
 #include <core/entity.h>
 #include <core/entity_manager.h>
 #include <network/common_network.h>
-#include <utility.h>
+#include <utility/utility.h>
 
 using namespace network;
 

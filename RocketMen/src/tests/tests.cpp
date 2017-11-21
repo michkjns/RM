@@ -1,5 +1,5 @@
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 
 #include <game/character.h>
 #include <game/rocket.h>

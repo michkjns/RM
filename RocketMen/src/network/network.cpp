@@ -1,5 +1,5 @@
 
-#include <network.h>
+#include <network/network.h>
 
 #include <core/debug.h>
 #include <network/client.h>

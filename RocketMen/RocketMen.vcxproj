@@ -155,7 +155,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\circular_buffer.cpp" />
+    <ClCompile Include="src\utility\buffer.cpp" />
+    <ClCompile Include="src\utility\circular_buffer.cpp" />
     <ClCompile Include="src\common.cpp" />
     <ClCompile Include="src\core\action_listener.cpp" />
     <ClCompile Include="src\core\entity_factory.cpp" />
@@ -166,12 +167,13 @@
     <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\entity.cpp" />
+    <ClCompile Include="src\game\menu_state.cpp" />
     <ClCompile Include="src\game\rocket.cpp" />
     <ClCompile Include="src\graphics\tile_map.cpp" />
     <ClCompile Include="src\graphics\tile_renderer.cpp" />
-    <ClCompile Include="src\network.cpp" />
+    <ClCompile Include="src\network\network.cpp" />
     <ClCompile Include="src\network\address.cpp" />
-    <ClCompile Include="src\bitstream.cpp" />
+    <ClCompile Include="src\utility\bitstream.cpp" />
     <ClCompile Include="src\graphics\camera.cpp" />
     <ClCompile Include="src\graphics\check_gl_error.cpp" />
     <ClCompile Include="src\network\client.cpp" />
@@ -193,7 +195,7 @@
     <ClCompile Include="src\network\snapshot.cpp" />
     <ClCompile Include="src\network\client_history.cpp" />
     <ClCompile Include="src\network\unreliable_channel.cpp" />
-    <ClCompile Include="src\physics.cpp" />
+    <ClCompile Include="src\physics\physics.cpp" />
     <ClCompile Include="src\physics\rigidbody.cpp" />
     <ClCompile Include="src\physics\staticbody.cpp" />
     <ClCompile Include="src\network\server.cpp" />
@@ -201,14 +203,14 @@
     <ClCompile Include="src\network\socket.cpp" />
     <ClCompile Include="src\graphics\sprite_renderer.cpp" />
     <ClCompile Include="src\graphics\texture.cpp" />
-    <ClCompile Include="src\game_time.cpp" />
+    <ClCompile Include="src\game\game_time.cpp" />
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\core\transform.cpp" />
-    <ClCompile Include="src\tests.cpp" />
+    <ClCompile Include="src\tests\tests.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\buffer.h" />
-    <ClInclude Include="src\circular_buffer.h" />
+    <ClInclude Include="src\utility\buffer.h" />
+    <ClInclude Include="src\utility\circular_buffer.h" />
     <ClInclude Include="src\core\action_listener.h" />
     <ClInclude Include="src\core\entity_factory.h" />
     <ClInclude Include="src\core\entity_manager.h" />
@@ -216,8 +218,10 @@
     <ClInclude Include="src\game\character.h" />
     <ClInclude Include="src\core\action.h" />
     <ClInclude Include="src\core\action_buffer.h" />
-    <ClInclude Include="src\bitstream.h" />
+    <ClInclude Include="src\utility\bitstream.h" />
     <ClInclude Include="src\core\entity.h" />
+    <ClInclude Include="src\game\game_state.h" />
+    <ClInclude Include="src\game\menu_state.h" />
     <ClInclude Include="src\game\rocket.h" />
     <ClInclude Include="src\graphics\camera.h" />
     <ClInclude Include="src\graphics\check_gl_error.h" />
@@ -226,7 +230,7 @@
     <ClInclude Include="src\core\keys.h" />
     <ClInclude Include="src\graphics\tile_map.h" />
     <ClInclude Include="src\graphics\tile_renderer.h" />
-    <ClInclude Include="src\network.h" />
+    <ClInclude Include="src\network\network.h" />
     <ClInclude Include="src\core\core.h" />
     <ClInclude Include="src\core\debug.h" />
     <ClInclude Include="src\core\game.h" />
@@ -251,7 +255,7 @@
     <ClInclude Include="src\network\sequence_buffer.h" />
     <ClInclude Include="src\network\snapshot.h" />
     <ClInclude Include="src\network\unreliable_channel.h" />
-    <ClInclude Include="src\physics.h" />
+    <ClInclude Include="src\physics\physics.h" />
     <ClInclude Include="src\physics\rigidbody.h" />
     <ClInclude Include="src\physics\physics_box2d.h" />
     <ClInclude Include="src\physics\staticbody.h" />
@@ -260,9 +264,9 @@
     <ClInclude Include="src\network\socket.h" />
     <ClInclude Include="src\graphics\sprite_renderer.h" />
     <ClInclude Include="src\graphics\texture.h" />
-    <ClInclude Include="src\game_time.h" />
+    <ClInclude Include="src\game\game_time.h" />
     <ClInclude Include="src\core\window.h" />
-    <ClInclude Include="src\utility.h" />
+    <ClInclude Include="src\utility\utility.h" />
     <ClInclude Include="src\core\transform.h" />
   </ItemGroup>
   <ItemGroup>

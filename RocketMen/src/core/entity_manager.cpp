@@ -3,11 +3,11 @@
 
 #include "entity_manager.h"
 
-#include <bitstream.h>
-#include <buffer.h>
+#include <utility/bitstream.h>
+#include <utility/buffer.h>
 #include <core/entity.h>
 #include <core/entity_factory.h>
-#include <network.h>
+#include <network/network.h>
 #include <map>
 
 static std::map<EntityType, IEntityFactory*> s_factoryMap;

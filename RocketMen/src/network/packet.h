@@ -1,8 +1,8 @@
 
 #pragma once
 
-#include "bitstream.h"
-#include "network_message.h" 
+#include <network/network_message.h>
+#include <utility/bitstream.h>
 
 #include <cstdint>
 

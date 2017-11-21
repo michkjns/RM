@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <game_time.h>
+#include <game/game_time.h>
 #include <network/connection_callback.h>
 #include <network/remote_client.h>
 

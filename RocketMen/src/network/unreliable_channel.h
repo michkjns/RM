@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include <circular_buffer.h>
+#include <utility/circular_buffer.h>
 #include <network/network_channel.h>
 #include <network/packet.h>
 

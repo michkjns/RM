@@ -2,12 +2,12 @@
 #define ENABLE_VLD 0  // TODO Fix VLD error
 #define UNIT_TESTING 0
 
-#include <bitstream.h>
+#include <utility/bitstream.h>
 #include <core/core.h>
 #include <core/debug.h>
 #include <game/rocketmen.h>
 #include <network/address.h>
-#include <utility.h>
+#include <utility/utility.h>
 
 #include <algorithm>
 #include <cstring>
