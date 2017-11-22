@@ -4,6 +4,8 @@
 #include <game/game_session.h> 
 #include <core/game_state.h>
 
+class CommandLineOptions;
+
 namespace rm
 {
 	class MenuState : public GameState
@@ -19,11 +21,12 @@ namespace rm
 		virtual void tick(Game* game, float fixedDeltaTime) override;
 		virtual void render(Game* game)                     override;
 
-	private:
-		void singlePlayer(Game* game);
-		void host(Game* game);
+		void parseCommandLineOptions(const CommandLineOptions& options);
+		void hostAndJoin(Game* game);
+		void hostDedicated(Game* game);
 		void join(Game* game);
 
+	private:
 		void onResult(SessionResult result);
 
 		Game* m_game;

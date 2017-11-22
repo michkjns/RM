@@ -12,13 +12,14 @@ class Game;
 class Renderer;
 class Physics;
 class Window;
+class CommandLineOptions;
 
 class Core
 {
 public:
 	Core();
 	~Core();
-	void initialize(Game* game, int argc, char* argv[]);
+	void initialize(Game* game, const CommandLineOptions& options);
 	void run();
 	void destroy();
 

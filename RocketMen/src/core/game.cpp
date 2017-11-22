@@ -68,7 +68,7 @@ void Game::terminate()
 	delete m_stateFactory;
 }
 
-void Game::initialize(GameStateFactory* stateFactory, uint32_t stateId)
+GameState* Game::initialize(GameStateFactory* stateFactory, uint32_t stateId)
 {
 	LOG_INFO("Game: [%s v%s]\n", getName(), getVersion());
 
@@ -76,7 +76,7 @@ void Game::initialize(GameStateFactory* stateFactory, uint32_t stateId)
 	m_stateFactory = stateFactory;
 
 	setTimestep(33333ULL / 2);
-	pushState(stateId);
+	return pushState(stateId);
 }
 
 const char* const Game::getName() const

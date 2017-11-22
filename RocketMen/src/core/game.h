@@ -17,13 +17,15 @@ namespace network {
 	class Server;
 };
 
+class CommandLineOptions;
+
 class Game
 {
 public:
 	Game();
 	virtual ~Game();
 
-	virtual void initialize() = 0;
+	virtual void initialize(const CommandLineOptions& options) = 0;
 	virtual void update(const class Time& time);
 	virtual void tick(float fixedDeltaTime, Sequence frameid, class Physics* physics);
 	virtual void terminate();
@@ -31,7 +33,7 @@ public:
 	virtual void onPlayerLeave(int16_t playerId) = 0;
 
 public:
-	void initialize(GameStateFactory* stateFactory, uint32_t initialStateId);
+	GameState* initialize(GameStateFactory* stateFactory, uint32_t initialStateId);
 	virtual const char* const getName()    const;
 	virtual const char* const getVersion() const;
 

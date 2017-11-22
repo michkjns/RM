@@ -7,12 +7,12 @@
 #include <game/rocketmen.h>
 #include <network/address.h>
 #include <utility/utility.h>
+#include <utility/commandline_options.h>
 
 #include <algorithm>
 #include <cstring>
 #include <iostream>
 #include <utility>
-#include <vector>
 
 extern bool streamTests();
 
@@ -39,10 +39,16 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	CommandLineOptions options;
+	options.registerOption("-d", "--dedicated");
+	options.registerOption("-l", "--listen");
+	options.registerOption("-v", "--verbosity");
+	options.parse(argc, argv);
+
 	Core core;
 	Game* game = new rm::RocketMenGame();
 
-	core.initialize(game, argc, argv);
+	core.initialize(game, options);
 	core.run();
 	core.destroy();
 

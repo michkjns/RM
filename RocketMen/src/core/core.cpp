@@ -15,6 +15,7 @@
 #include <network/server.h>
 #include <physics/physics.h>
 #include <time.h>
+#include <utility/commandline_options.h>
 
 extern "C" void crcInit(void);
 
@@ -34,36 +35,22 @@ Core::~Core()
 {
 }
 
-void Core::initialize(Game* game, int argc, char* argv[])
+void Core::initialize(Game* game, const CommandLineOptions& options)
 {
 	assert(game != nullptr);
 
 	crcInit();
 
-	bool runDedicated = false;
-	bool runListen = false;
-	for (int i = 0; i < argc; i++)
+	bool runDedicated = options.isSet("--dedicated");
+	
+	if (options.isSet("--verbosity"))
 	{
-		const char* arg = argv[i];
-		if (strcmp(arg, "-d") == 0 || strcmp(arg, "--dedicated") == 0)
-		{
-			runDedicated = true;
-			runListen = false;
-		}
-		if (strcmp(arg, "-l") == 0 || strcmp(arg, "--listen") == 0)
-		{
-			runDedicated = false;
-			runListen = true;
-		}
-		if (strcmp(arg, "-v") == 0 || strcmp(arg, "--verbosity") == 0)
-		{
-			if (i < argc - 1)
-			{
-				int32_t verbosity = atoi(argv[i + 1]);
-				verbosity = std::max(0, std::min((int)Debug::Verbosity::Debug, verbosity));
-				Debug::setVerbosity(static_cast<Debug::Verbosity>(verbosity));
-			}
-		}
+		auto args = options.getArgs("--verbosity");
+		assert(args.size() == 1);
+
+		int32_t verbosity = atoi(args[0].c_str());
+		verbosity = std::max(0, std::min((int)Debug::Verbosity::Debug, verbosity));
+		Debug::setVerbosity(static_cast<Debug::Verbosity>(verbosity));
 	}
 
 	m_game = game;
@@ -95,6 +82,9 @@ void Core::initialize(Game* game, int argc, char* argv[])
 	LOG_INFO("Core: Initializing physics");
 	m_physics = new Physics();
 	m_physics->initialize();
+
+	LOG_INFO("Core: Initializing game..");
+	m_game->initialize(options);
 }
 
 bool Core::loadResources()
@@ -125,9 +115,6 @@ void Core::drawDebug()
 
 void Core::run()
 {
-	LOG_INFO("Core: Initializing game..");
-	m_game->initialize();
-
 	float currTime = m_gameTime.getSeconds();
 	float accumulator = 0.0f;
 	const float fixedDeltaTime = m_timestep / 1000000.0f;

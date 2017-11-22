@@ -9,13 +9,16 @@
 #include <graphics/camera.h>
 #include <core/entity_manager.h>
 #include <game/character.h>
+#include <utility/commandline_options.h>
 
 using namespace input;
 using namespace rm;
 
-void RocketMenGame::initialize()
+void RocketMenGame::initialize(const CommandLineOptions& options)
 {
-	Game::initialize(new RocketMenStateFactory(), GameStateID::Menu);
+	MenuState* menu = dynamic_cast<MenuState*>(Game::initialize(new RocketMenStateFactory(), GameStateID::Menu));
+	assert(menu != nullptr);
+	menu->parseCommandLineOptions(options);
 
 	const int32_t pixelsPerMeter = 16;
 

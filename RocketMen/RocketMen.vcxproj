@@ -210,6 +210,7 @@
     <ClCompile Include="src\core\window.cpp" />
     <ClCompile Include="src\core\transform.cpp" />
     <ClCompile Include="src\tests\tests.cpp" />
+    <ClCompile Include="src\utility\commandline_options.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\game_state_factory.h" />
@@ -285,6 +286,7 @@
     <None Include="data\shaders\sprite_shader.vert" />
     <None Include="data\shaders\tile_shader.frag" />
     <None Include="data\shaders\tile_shader.vert" />
+    <None Include="src\utility\commandline_options.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

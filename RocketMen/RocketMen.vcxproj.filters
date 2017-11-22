@@ -183,6 +183,9 @@
     <ClCompile Include="src\core\game_state.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\utility\commandline_options.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\network\address.h">
@@ -388,5 +391,6 @@
     <None Include="data\shaders\tile_shader.vert" />
     <None Include="data\shaders\line_shader.frag" />
     <None Include="data\shaders\line_shader.vert" />
+    <None Include="src\utility\commandline_options.h" />
   </ItemGroup>
 </Project>

@@ -6,6 +6,7 @@
 #include <game/game_state_ids.h>
 #include <game/rocketmen.h>
 #include <network/network.h>
+#include <utility/commandline_options.h>
 
 using namespace rm;
 
@@ -37,6 +38,7 @@ void MenuState::destroy(Game* /*game*/)
 
 void MenuState::update(Game* game, const Time& /*time*/)
 {
+	assert(game == m_game);
 	if (m_locked)
 	{
 		return;
@@ -44,11 +46,11 @@ void MenuState::update(Game* game, const Time& /*time*/)
 
 	if (input::getKey(input::Key::NUM_1))
 	{
-		singlePlayer(game);
+		hostAndJoin(game);
 	}
 	else if (input::getKey(input::Key::NUM_2))
 	{
-		host(game);
+		hostDedicated(game);
 	}
 	else if (input::getKey(input::Key::NUM_3))
 	{
@@ -64,17 +66,32 @@ void MenuState::render(Game* /*game*/)
 {
 }
 
-void MenuState::singlePlayer(Game* game)
+void MenuState::parseCommandLineOptions(const CommandLineOptions& options)
 {
+	if (options.isSet("--listen"))
+	{
+		hostAndJoin(m_game);
+	}
+	else if (options.isSet("--dedicated"))
+	{
+		hostDedicated(m_game);
+	}
+}
+
+void MenuState::hostAndJoin(Game* game)
+{
+	assert(game == m_game);
+
 	m_locked = true;
-	if (game->createSession(GameSessionType::Offline))
+	if (game->createSession(GameSessionType::Online))
 	{
 		game->joinSession(localhost, std::bind(&MenuState::onResult, this, std::placeholders::_1));
 	}
 }
 
-void MenuState::host(Game* game)
+void MenuState::hostDedicated(Game* game)
 {
+	assert(game == m_game);
 	m_locked = true;
 	if (game->createSession(GameSessionType::Online))
 	{
