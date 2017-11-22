@@ -24,8 +24,6 @@ Core::Core() :
 	m_game(nullptr),
 	m_renderer(nullptr),
 	m_window(nullptr),
-	m_client(nullptr),
-	m_server(nullptr),
 	m_physics(nullptr),		
 	m_timestep(33333ULL / 2),
 	m_enableDebugDraw(true)
@@ -83,21 +81,8 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 		m_renderer->initialize(m_window);
 	}
 
-	if (runDedicated || runListen)
-	{
-		LOG_INFO("Core: Creating server..");
-		m_server = new Server(m_gameTime, m_game);
-		Network::setServer(m_server);
-		m_server->host(s_defaultServerPort);
-	}
-
 	if(!runDedicated)
-	{
-		LOG_INFO("Core: Creating client..");
-		m_client = new Client(m_gameTime, m_game);
-		m_client->setPort(s_defaultClientPort);
-		Network::setClient(m_client);
-		
+	{	
 		LOG_INFO("Core: Initializing input..");
 		input::initialize(m_window);
 	}
@@ -161,20 +146,6 @@ void Core::run()
 		}
 		m_gameTime.update();
 		const float deltaTime = m_gameTime.getDeltaSeconds();
-
-		/****************
-		/** Server Update */
-		if (m_server)
-		{
-			m_server->update();
-		}
-
-		/****************/
-		/** Client Update */
-		if (m_client)
-		{
-			m_client->update();
-		}
 		
 		m_game->update(m_gameTime);
 		for (auto& it : EntityManager::getEntities())
@@ -194,13 +165,8 @@ void Core::run()
 		/****************/
 		/** Simulation Loop */
 		while (accumulator >= fixedDeltaTime)
-		{
-			if (m_client) 
-			{
-				m_client->tick(frameId);
-			}
-			
-			m_game->tick(fixedDeltaTime);
+		{	
+			m_game->tick(fixedDeltaTime, frameId, m_physics);
 
 			for (auto& it : EntityManager::getEntities())
 			{
@@ -209,11 +175,6 @@ void Core::run()
 					it->fixedUpdate(fixedDeltaTime);
 				}
 			}	
-
-			if (m_server)
-			{
-				m_physics->step(fixedDeltaTime);
-			}
 
 			t += fixedDeltaTime;
 			accumulator -= fixedDeltaTime;
@@ -259,12 +220,6 @@ void Core::destroy()
 
 	LOG_INFO("Core: Cleaning up resources..");
 	ResourceManager::clear();
-
-	Network::setClient(nullptr);
-	delete m_client;
-	
-	Network::setServer(nullptr);
-	delete m_server;
 
 	if (m_renderer != nullptr)
 	{

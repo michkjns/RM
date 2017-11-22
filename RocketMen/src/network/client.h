@@ -3,6 +3,7 @@
 
 #include <core/entity.h>
 #include <core/keys.h>
+#include <game/game_session.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/connection_callback.h>
@@ -41,7 +42,7 @@ namespace network
 		static const uint32_t s_recentlyDestroyedSize = 32;
 
 	public:
-		Client(Time& time, Game* game);
+		Client(Game* game);
 		~Client();
 
 		enum class State
@@ -54,12 +55,13 @@ namespace network
 
 	public:
 		void setPort(uint16_t port);
-		void update();
+		void update(const Time& time);
 
-		void requestServerTime();
+		void requestServerTime(const Time& localTime);
 		void readInput();
 		void tick(Sequence frameId);
-		void connect(const Address& address);
+		void connect(const Address& address, 
+			std::function<void(SessionResult)> callback);
 		void disconnect();
 
 		LocalPlayer& addLocalPlayer(int32_t controllerId, bool listenMouseKB = false);
@@ -74,30 +76,29 @@ namespace network
 	private:
 		void sendPlayerActions();
 		void syncOwnedEntities(int16_t playerId);
-		void readMessage(IncomingMessage& message);
+		void readMessage(IncomingMessage& message, const Time& localTime);
 		void onConnectionEstablished(IncomingMessage& message);
 		void onAcceptPlayer(IncomingMessage& message);
 		void onSpawnEntity(IncomingMessage& message);
 		void onAcceptEntity(IncomingMessage& message);
 		void onDestroyEntity(IncomingMessage& message);
 		void onGameState(IncomingMessage& message);
-		void onReceiveServerTime(IncomingMessage& message);
+		void onReceiveServerTime(IncomingMessage& message, const Time& localTime);
 		void onDisconnected();
 
 		void sendMessage(Message& message);
-		void sendPendingMessages();
+		void sendPendingMessages(const Time& localTime);
 		void setState(State state);
 		void clearSession();
 		int32_t getNextTempNetworkId();
 
 		void receivePackets();
-		void readMessages();
+		void readMessages(const Time& localTime);
 		void onConnectionCallback(ConnectionCallback type, Connection* connection);
 
 		Socket*         m_socket;
 		Game*           m_game;
 		Connection*     m_connection;
-		Time&           m_gameTime;
 		Sequence        m_lastReceivedState;
 		Sequence        m_lastFrameSent;
 		Sequence        m_lastFrameSimulated;
@@ -122,5 +123,6 @@ namespace network
 		Buffer<LocalPlayer>	m_localPlayers;	
 
 		ClientHistory m_clientHistory;
+		std::function<void(SessionResult)> m_sessionCallback;
 	};
 }; //namespace network

@@ -19,7 +19,7 @@ extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 using namespace network;
 
-Server::Server(Time& gameTime, Game* game) :
+Server::Server(Game* game) :
 	m_game(game),
 	m_packetReceiver(new PacketReceiver(128))
 {
@@ -59,7 +59,7 @@ void Server::reset()
 	assert(m_socket != nullptr);
 }
 
-void Server::update(Time& time)
+void Server::update(const Time& time)
 {
 	if (m_socket->isInitialized())
 	{
@@ -75,24 +75,26 @@ void Server::fixedUpdate()
 {
 }
 
-void Server::host(uint16_t port)
+bool Server::host(uint16_t port, GameSessionType /*type*/)
 {
 	assert(m_socket != nullptr);
 
 	if (!ensure(m_socket->isInitialized() == false))
 	{
 		LOG_WARNING("Server: Already listening to connections on port %d", m_socket->getPort());
-		return;
+		return false;
 	}
 
 	if (m_socket->initialize(port))
 	{
 		LOG_INFO("Server: Listening on port %d", port);
+		return true;
 	}
 	else
 	{
 		LOG_WARNING("Server: Failed to listen on port %d", port);
 	}
+	return false;
 }
 
 void Server::generateNetworkId(Entity* entity)
@@ -394,7 +396,7 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 	}
 }
 
-void Server::onClientPing(IncomingMessage& message, Time& time)
+void Server::onClientPing(IncomingMessage& message, const Time& time)
 {
 	const uint64_t clientTimestamp = message.data.readInt64();
 
@@ -407,7 +409,7 @@ void Server::onClientPing(IncomingMessage& message, Time& time)
 	client->getConnection()->sendMessage(pongMessage);
 }
 
-void Server::readMessage(IncomingMessage& message, Time& time)
+void Server::readMessage(IncomingMessage& message, const Time& time)
 {
 	switch (message.type)
 	{	
@@ -488,7 +490,7 @@ void Server::writeSnapshot(RemoteClient& client)
 	client.getConnection()->sendMessage(message);
 }
 
-void Server::updateConnections(Time& time)
+void Server::updateConnections(const Time& time)
 {
 	for (auto& client : m_clients)
 	{
@@ -539,7 +541,7 @@ void Server::receivePackets()
 	addresses.clear();
 }
 
-void Server::readMessages(Time& time)
+void Server::readMessages(const Time& time)
 {
 	for (RemoteClient& client : m_clients)
 	{
@@ -555,7 +557,7 @@ void Server::readMessages(Time& time)
 	}
 }
 
-void Server::sendMessages(Time& time)
+void Server::sendMessages(const Time& time)
 {
 	for (RemoteClient& client : m_clients)
 	{

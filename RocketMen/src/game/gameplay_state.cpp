@@ -25,10 +25,6 @@ void GameplayState::initialize(Game* /*game*/)
 	ResourceManager::loadTilemap("data/testmap.16x16.csv", "tilesheet", defaultMapName);
 	Physics::loadCollisionFromTilemap(defaultMapName);
 
-	//RocketMenGame* rm = static_cast<RocketMenGame*>(game);
-	const char* localHostAddress = "127.0.0.1";
-	Network::connect(network::Address(localHostAddress, s_defaultServerPort));
-
 	if (Network::isClient())
 	{
 		Network::addLocalPlayer(Controller::MouseAndKeyboard);
@@ -48,9 +44,8 @@ void GameplayState::destroy(Game* /*game*/)
 {
 }
 
-void GameplayState::update(Game* /*game*/, const Time& time)
+void GameplayState::update(Game* game, const Time& time)
 {
-	//RocketMenGame* rm = static_cast<RocketMenGame*>(game);
 	const float deltaTime = time.getDeltaSeconds();
 
 	const float axis = input::getAxis(ControllerId(0), 0);
@@ -79,7 +74,8 @@ void GameplayState::update(Game* /*game*/, const Time& time)
 
 	if (input::getKey(Key::ESCAPE))
 	{
-		Network::disconnect();
+		game->leaveSession();
+		game->popState();
 	}
 }
 

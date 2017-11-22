@@ -2,6 +2,7 @@
 #include <network/network.h>
 
 #include <core/debug.h>
+#include <core/game.h>
 #include <network/client.h>
 #include <network/server.h>
 
@@ -17,26 +18,7 @@ bool Network::isClient()
 
 bool Network::isServer()
 {
-	return (s_server != nullptr);
-}
-
-void Network::connect(const network::Address& address)
-{
-	assert(s_client != nullptr);
-	LOG_INFO("Network: connecting to %s...", address.toString().c_str());
-	s_client->connect(address);
-}
-
-void Network::disconnect()
-{
-	if (isClient())
-	{
-		s_client->disconnect();
-	}
-	if (isServer())
-	{
-		s_server->reset();
-	}
+	return s_server != nullptr;
 }
 
 void Network::generateNetworkId(Entity* entity)

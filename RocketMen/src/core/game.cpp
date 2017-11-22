@@ -7,10 +7,17 @@
 #include <core/game_state.h>
 #include <core/game_state_factory.h>
 #include <core/state_machine.h>
+#include <network/address.h>
+#include <network/client.h>
+#include <network/network.h>
+#include <network/server.h>
+#include <physics/physics.h>
 
 #include <map>
 
-Game::Game()
+Game::Game() :
+	m_client(nullptr),
+	m_server(nullptr)
 {
 }
 
@@ -24,14 +31,32 @@ Game::~Game()
 
 void Game::update(const Time& time)
 {
+	if (m_server)
+	{
+		m_server->update(time);
+	}
+
+	if (m_client)
+	{
+		m_client->update(time);
+	}
+
 	if (GameState* state = m_stateMachine.getState())
 	{
 		state->update(this, time);
 	}
 }
 
-void Game::tick(float fixedDeltaTime)
+void Game::tick(float fixedDeltaTime, Sequence frameId, Physics* physics)
 {
+	if (m_client)
+	{
+		m_client->tick(frameId);
+	}
+	if (m_server)
+	{
+		physics->step(fixedDeltaTime);
+	}
 	if (GameState* state = m_stateMachine.getState())
 	{
 		state->tick(this, fixedDeltaTime);
@@ -110,4 +135,46 @@ void Game::popState()
 {
 	GameState* state = m_stateMachine.pop(this);
 	delete state;
+}
+
+bool Game::createSession(GameSessionType type)
+{
+	assert(m_server == nullptr);
+
+	LOG_INFO("Game: Creating server..");
+	m_server = new network::Server(this);
+	Network::setServer(m_server);
+
+	return m_server->host(s_defaultServerPort, type);
+}
+
+void Game::joinSession(const network::Address& address, 
+	std::function<void(SessionResult)> callback)
+{
+	assert(m_client == nullptr);
+
+	LOG_INFO("Game: connecting to %s...", address.toString().c_str());
+	m_client = new network::Client(this);
+	Network::setClient(m_client);
+
+	m_client->connect(address, callback);
+}
+
+void Game::leaveSession()
+{
+	if (m_server)
+	{
+		m_server->reset();
+		delete m_server;
+		m_server = nullptr;
+		Network::setServer(nullptr);
+	}
+
+	if (m_client)
+	{
+		m_client->disconnect();
+		delete m_client;
+		m_client = nullptr;
+		Network::setClient(nullptr);
+	}
 }

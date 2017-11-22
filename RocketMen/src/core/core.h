@@ -13,11 +13,6 @@ class Renderer;
 class Physics;
 class Window;
 
-namespace network {
-	class Server;
-	class Client;
-}; // namespace network
-
 class Core
 {
 public:
@@ -34,8 +29,6 @@ private:
 	class Game*		 m_game;
 	class Renderer*	 m_renderer;
 	class Window*    m_window;
-	network::Client* m_client;
-	network::Server* m_server;
 	Time             m_gameTime;
 	class Physics*   m_physics;
 	uint64_t         m_timestep;

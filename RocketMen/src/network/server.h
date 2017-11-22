@@ -2,6 +2,7 @@
 #pragma once
 
 #include <core/game_time.h>
+#include <game/game_session.h>
 #include <network/connection_callback.h>
 #include <network/remote_client.h>
 
@@ -23,14 +24,14 @@ namespace network
 	class Server 
 	{
 	public:
-		Server(Time& time, Game* game);
+		Server(Game* game);
 		~Server();
 		void reset();
 
-		void update(Time& time);
+		void update(const Time& time);
 		void fixedUpdate();
 
-		void host(uint16_t port);
+		bool host(uint16_t port, GameSessionType type);
 
 		void generateNetworkId(Entity* entity);
 		void registerLocalClientId(int32_t clientId);
@@ -50,16 +51,16 @@ namespace network
 		void sendEntitySpawn(Entity* entity);
 		void acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client);
 
-		void onClientPing(IncomingMessage& message, Time& time);
+		void onClientPing(IncomingMessage& message, const Time& time);
 
-		void readMessage(IncomingMessage& message, Time& time);
+		void readMessage(IncomingMessage& message, const Time& time);
 		void createSnapshots(float deltaTime);
 		void writeSnapshot(RemoteClient& client);
 
-		void updateConnections(Time& time);
+		void updateConnections(const Time& time);
 		void receivePackets();
-		void readMessages(Time& time);
-		void sendMessages(Time& time);
+		void readMessages(const Time& time);
+		void sendMessages(const Time& time);
 		void onConnectionCallback(ConnectionCallback type, 
 			Connection* connection);
 

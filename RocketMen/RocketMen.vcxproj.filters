@@ -377,6 +377,9 @@
     <ClInclude Include="src\core\state_machine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\game\game_session.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="data\shaders\sprite_shader.frag" />

@@ -24,8 +24,7 @@ static ActionBuffer s_playerActions[s_maxPlayersPerClient];
 
 //=============================================================================
 
-Client::Client(Time& time, Game* game) :
-	m_gameTime(time),
+Client::Client(Game* game) :
 	m_game(game),
 	m_connection(nullptr),
 	m_lastReceivedState((Sequence)INDEX_NONE),
@@ -39,7 +38,6 @@ Client::Client(Time& time, Game* game) :
 	m_clockResyncTime(5.f),
 	m_packetReceiver(new PacketReceiver(64)),
 	m_localPlayers(s_maxPlayersPerClient)
-
 {
 	clearSession();
 	m_socket = Socket::create();
@@ -57,9 +55,9 @@ void Client::setPort(uint16_t port)
 	m_port = port;
 }
 
-void Client::update()
+void Client::update(const Time& time)
 {
-	const float deltaTime = m_gameTime.getDeltaSeconds();
+	const float deltaTime = time.getDeltaSeconds();
 
 	const State state = m_state;
 	if (m_state != State::Disconnected)
@@ -73,7 +71,7 @@ void Client::update()
 			return;
 		}
 
-		readMessages();
+		readMessages(time);
 
 		if (m_state == State::Connected)
 		{
@@ -90,14 +88,14 @@ void Client::update()
 
 			if (m_timeSinceLastClockSync > m_clockResyncTime)
 			{
-				requestServerTime();
+				requestServerTime(time);
 			}		
 		}
 
-		sendPendingMessages();
+		sendPendingMessages(time);
 		if (!Network::isServer())
 		{
-			m_connection->update(m_gameTime);
+			m_connection->update(time);
 		}
 
 		if (m_state == State::Disconnected)
@@ -145,11 +143,11 @@ void Client::sendPlayerActions()
 	sendMessage(message);
 }
 
-void Client::requestServerTime()
+void Client::requestServerTime(const Time& localTime)
 {
 	OutgoingMessage pingMessage = {};
 	pingMessage.type = MessageType::ClockSync;
-	pingMessage.data.writeInt64(m_gameTime.getMilliSeconds());
+	pingMessage.data.writeInt64(localTime.getMilliSeconds());
 	sendMessage(pingMessage);
 }
 
@@ -182,7 +180,7 @@ void Client::tick(Sequence frameId)
 	m_lastFrameSimulated = frameId;
 }
 
-void Client::connect(const Address& address)
+void Client::connect(const Address& address, std::function<void(SessionResult)> callback)
 {
 	if (!ensure(m_state == Client::State::Disconnected))
 	{
@@ -195,11 +193,12 @@ void Client::connect(const Address& address)
 
 	if (m_socket->initialize(m_port))
 	{
+		m_sessionCallback = callback;
 		m_connection = new Connection(m_socket, address, 
 			std::bind(&Client::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2));
 
 		m_connection->tryConnect();
-		m_state = Client::State::Connecting;		
+		m_state = Client::State::Connecting;
 	}
 	else
 	{
@@ -323,7 +322,7 @@ void Client::syncOwnedEntities(int16_t playerId)
 	}
 }
 
-void Client::readMessage(IncomingMessage& message)
+void Client::readMessage(IncomingMessage& message, const Time& localTime)
 {
 	switch (message.type)
 	{
@@ -366,7 +365,7 @@ void Client::readMessage(IncomingMessage& message)
 		}
 		case MessageType::ClockSync:
 		{
-			onReceiveServerTime(message);
+			onReceiveServerTime(message, localTime);
 			break;
 		}
 		case MessageType::Disconnect:
@@ -403,6 +402,8 @@ void Client::onConnectionEstablished(IncomingMessage& msg)
 	{
 		Network::getLocalServer()->registerLocalClientId(id);
 	}
+
+	m_sessionCallback(SessionResult::Joined);
 
 	// Introduce Players
 	Message outMessage = {};
@@ -541,11 +542,11 @@ void Client::onGameState(IncomingMessage& msg)
 	}	
 }
 
-void Client::onReceiveServerTime(IncomingMessage& message)
+void Client::onReceiveServerTime(IncomingMessage& message, const Time& localTime)
 {
 	const uint64_t pingSentTime    = message.data.readInt64();
 	const uint64_t pongReceiveTime = message.data.readInt64();
-	const uint64_t currentTime     = m_gameTime.getMilliSeconds();
+	const uint64_t currentTime     = localTime.getMilliSeconds();
 	const uint64_t latency         = currentTime - pingSentTime;
 
 	// TODO resync game clock
@@ -564,11 +565,11 @@ void Client::sendMessage(Message& message)
 	m_connection->sendMessage(message);
 }
 
-void Client::sendPendingMessages()
+void Client::sendPendingMessages(const Time& localTime)
 {
 	assert(m_connection != nullptr);
 
-	m_connection->sendPendingMessages(m_gameTime);
+	m_connection->sendPendingMessages(localTime);
 }
 
 void Client::setState(State state)
@@ -622,11 +623,11 @@ void Client::receivePackets()
 	addresses.clear();
 }
 
-void Client::readMessages()
+void Client::readMessages(const Time& localTime)
 {
 	while (IncomingMessage* message = m_connection->getNextMessage())
 	{
-		readMessage(*message);
+		readMessage(*message, localTime);
 		message->type = MessageType::None;
 	}
 }
@@ -649,6 +650,7 @@ void Client::onConnectionCallback(ConnectionCallback type, Connection* connectio
 			setState(State::Disconnected);
 			connection->close();
 			clearSession();
+			m_sessionCallback(SessionResult::Failed);
 			break;
 		}
 		case ConnectionCallback::ConnectionLost:

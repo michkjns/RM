@@ -19,9 +19,6 @@ public:
 	static bool isClient();
 	static bool isServer();
 
-	static void connect(const network::Address& address);
-	static void disconnect();
-
 	static void generateNetworkId(class Entity* entity);
 
 	static void addLocalPlayer(int32_t controllerId);
@@ -38,7 +35,8 @@ protected:
 	static class network::Server* getLocalServer();
 
 public:
-	friend class Core;
+	//friend class Core;
+	friend class Game;
 	friend class network::Client;
 	friend class network::Server;
 };

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <game/game_session.h> 
 #include <core/game_state.h>
 
 namespace rm
@@ -19,5 +20,13 @@ namespace rm
 		virtual void render(Game* game)                     override;
 
 	private:
+		void singlePlayer(Game* game);
+		void host(Game* game);
+		void join(Game* game);
+
+		void onResult(SessionResult result);
+
+		Game* m_game;
+		bool  m_locked;
 	};
 }; //namespace rm

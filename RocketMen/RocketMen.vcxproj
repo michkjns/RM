@@ -215,6 +215,7 @@
     <ClInclude Include="src\core\game_state_factory.h" />
     <ClInclude Include="src\core\state_machine.h" />
     <ClInclude Include="src\game\gameplay_state.h" />
+    <ClInclude Include="src\game\game_session.h" />
     <ClInclude Include="src\game\game_state_ids.h" />
     <ClInclude Include="src\game\rocketmen_state_factory.h" />
     <ClInclude Include="src\utility\buffer.h" />
