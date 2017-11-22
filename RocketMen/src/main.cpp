@@ -1,5 +1,4 @@
 																																			
-#define ENABLE_VLD 0  // TODO Fix VLD error
 #define UNIT_TESTING 0
 
 #include <utility/bitstream.h>
@@ -14,10 +13,6 @@
 #include <iostream>
 #include <utility>
 #include <vector>
-
-#if ENABLE_VLD
-#include <C:\Program Files (x86)\Visual Leak Detector\include\vld.h>
-#endif
 
 extern bool streamTests();
 
@@ -37,6 +32,10 @@ int main(int argc, char *argv[])
 	if (!streamTests())
 	{
 		LOG_ERROR("Bitstream tests failed!");
+	}
+	else
+	{
+		LOG_INFO("Bitstream tests succesful!");
 	}
 #endif
 
