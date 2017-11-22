@@ -18,7 +18,7 @@ class Core
 public:
 	Core();
 	~Core();
-	bool initialize(Game* game, int argc, char* argv[]);
+	void initialize(Game* game, int argc, char* argv[]);
 	void run();
 	void destroy();
 

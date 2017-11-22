@@ -34,7 +34,7 @@ Core::~Core()
 {
 }
 
-bool Core::initialize(Game* game, int argc, char* argv[])
+void Core::initialize(Game* game, int argc, char* argv[])
 {
 	assert(game != nullptr);
 
@@ -95,8 +95,6 @@ bool Core::initialize(Game* game, int argc, char* argv[])
 	LOG_INFO("Core: Initializing physics");
 	m_physics = new Physics();
 	m_physics->initialize();
-
-	return true;
 }
 
 bool Core::loadResources()
