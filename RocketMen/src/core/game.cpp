@@ -108,5 +108,6 @@ GameState* Game::pushState(uint32_t stateId)
 
 void Game::popState()
 {
-	m_stateMachine.pop(this);
+	GameState* state = m_stateMachine.pop(this);
+	delete state;
 }

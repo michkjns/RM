@@ -18,7 +18,7 @@ public:
 	void push(GameState* state, T* owner);
 
 	template<typename T>
-	void pop(T* owner);
+	GameState* pop(T* owner);
 
 private:
 	GameState* m_currentState;
@@ -36,7 +36,7 @@ void StateMachine::push(GameState* state, T* owner)
 }
 
 template<typename T>
-void StateMachine::pop(T* owner)
+GameState* StateMachine::pop(T* owner)
 {
 	GameState* poppedState = m_currentState;
 	m_currentState = m_currentState->m_previousState;
@@ -46,5 +46,5 @@ void StateMachine::pop(T* owner)
 	}
 
 	poppedState->destroy(owner);
-	delete poppedState;
+	return poppedState;
 }
