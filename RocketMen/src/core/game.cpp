@@ -101,20 +101,12 @@ GameState* Game::pushState(uint32_t stateId)
 	GameState* state = m_stateFactory->getState(stateId);
 	assert(state != nullptr);
 
-	m_stateMachine.push(state);
-	state->initialize(this);
-	state->enter(this);
+	m_stateMachine.push(state, this);
 
 	return state;
 }
 
 void Game::popState()
 {
-	GameState* prevState = m_stateMachine.pop();
-	if (GameState* currentState = m_stateMachine.getState())
-	{
-		currentState->enter(this);
-	}
-	prevState->destroy(this);
-	delete prevState;
+	m_stateMachine.pop(this);
 }

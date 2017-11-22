@@ -20,17 +20,3 @@ GameState* StateMachine::getState() const
 {
 	return m_currentState;
 }
-
-void StateMachine::push(GameState* state)
-{
-	assert(state != nullptr);
-	state->m_previousState = m_currentState;
-	m_currentState = state;
-}
-
-GameState* StateMachine::pop()
-{
-	GameState* poppedState = m_currentState;
-	m_currentState = m_currentState->m_previousState;
-	return poppedState;
-}
