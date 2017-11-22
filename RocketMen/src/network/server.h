@@ -27,7 +27,7 @@ namespace network
 		~Server();
 		void reset();
 
-		void update();
+		void update(Time& time);
 		void fixedUpdate();
 
 		void host(uint16_t port);
@@ -50,16 +50,16 @@ namespace network
 		void sendEntitySpawn(Entity* entity);
 		void acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client);
 
-		void onClientPing(IncomingMessage& message);
+		void onClientPing(IncomingMessage& message, Time& time);
 
-		void readMessage(IncomingMessage& message);
+		void readMessage(IncomingMessage& message, Time& time);
 		void createSnapshots(float deltaTime);
 		void writeSnapshot(RemoteClient& client);
 
-		void updateConnections();
+		void updateConnections(Time& time);
 		void receivePackets();
-		void readMessages();
-		void sendMessages();
+		void readMessages(Time& time);
+		void sendMessages(Time& time);
 		void onConnectionCallback(ConnectionCallback type, 
 			Connection* connection);
 
@@ -77,7 +77,6 @@ namespace network
 		Socket* m_socket;
 		Game*   m_game;
 		bool    m_isInitialized;
-		Time&   m_gameTime;
 		int32_t m_clientIdCounter;
 		int16_t m_playerIdCounter;
 		int32_t m_networkIdCounter;

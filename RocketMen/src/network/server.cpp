@@ -20,7 +20,6 @@ extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 using namespace network;
 
 Server::Server(Time& gameTime, Game* game) :
-	m_gameTime(gameTime),
 	m_game(game),
 	m_packetReceiver(new PacketReceiver(128))
 {
@@ -60,15 +59,15 @@ void Server::reset()
 	assert(m_socket != nullptr);
 }
 
-void Server::update()
+void Server::update(Time& time)
 {
 	if (m_socket->isInitialized())
 	{
 		receivePackets();
-		readMessages();
-		createSnapshots(m_gameTime.getDeltaSeconds());
-		sendMessages();
-		updateConnections();
+		readMessages(time);
+		createSnapshots(time.getDeltaSeconds());
+		sendMessages(time);
+		updateConnections(time);
 	}
 }
 
@@ -395,20 +394,20 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 	}
 }
 
-void Server::onClientPing(IncomingMessage& message)
+void Server::onClientPing(IncomingMessage& message, Time& time)
 {
 	const uint64_t clientTimestamp = message.data.readInt64();
 
 	Message pongMessage = {};
 	pongMessage.type = MessageType::ClockSync;
 	pongMessage.data.writeInt64(clientTimestamp);
-	pongMessage.data.writeInt64(m_gameTime.getMilliSeconds());
+	pongMessage.data.writeInt64(time.getMilliSeconds());
 
 	RemoteClient* client = getClient(message.address);
 	client->getConnection()->sendMessage(pongMessage);
 }
 
-void Server::readMessage(IncomingMessage& message)
+void Server::readMessage(IncomingMessage& message, Time& time)
 {
 	switch (message.type)
 	{	
@@ -434,7 +433,7 @@ void Server::readMessage(IncomingMessage& message)
 		}
 		case MessageType::ClockSync:
 		{
-			onClientPing(message);
+			onClientPing(message, time);
 			break;
 		}
 		case MessageType::Gamestate:
@@ -489,13 +488,13 @@ void Server::writeSnapshot(RemoteClient& client)
 	client.getConnection()->sendMessage(message);
 }
 
-void Server::updateConnections()
+void Server::updateConnections(Time& time)
 {
 	for (auto& client : m_clients)
 	{
 		if (client.isUsed() && client.getId() != m_localClientId)
 		{
-			client.getConnection()->update(m_gameTime);
+			client.getConnection()->update(time);
 		}
 	}
 }
@@ -540,7 +539,7 @@ void Server::receivePackets()
 	addresses.clear();
 }
 
-void Server::readMessages()
+void Server::readMessages(Time& time)
 {
 	for (RemoteClient& client : m_clients)
 	{
@@ -549,20 +548,20 @@ void Server::readMessages()
 			Connection* connection = client.getConnection();
 			while (IncomingMessage* message = connection->getNextMessage())
 			{
-				readMessage(*message);
+				readMessage(*message, time);
 				message->type = MessageType::None;
 			}
 		}
 	}
 }
 
-void Server::sendMessages()
+void Server::sendMessages(Time& time)
 {
 	for (RemoteClient& client : m_clients)
 	{
 		if (client.isUsed())
 		{
-			client.getConnection()->sendPendingMessages(m_gameTime);
+			client.getConnection()->sendPendingMessages(time);
 		}
 	}
 }
