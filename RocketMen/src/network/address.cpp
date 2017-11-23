@@ -99,6 +99,14 @@ std::string Address::toString() const
 	return std::to_string(getA()) + "." + std::to_string(getB()) + "." + std::to_string(getC()) + "." + std::to_string(getD()) + ":" + std::to_string(getPort());
 }
 
+bool Address::isFromLAN() const 
+{
+	return getA() == 127
+		&& getB() == 0
+		&& getC() == 0
+		&& getD() == 1;
+}
+
 bool Address::operator==(const Address& other) const
 {
 	return (m_address == other.getAddress()) && (m_port == other.getPort());

@@ -66,7 +66,7 @@ void Server::fixedUpdate()
 {
 }
 
-bool Server::host(uint16_t port, GameSessionType /*type*/)
+bool Server::host(uint16_t port, GameSessionType type)
 {
 	assert(m_socket != nullptr);
 
@@ -79,6 +79,7 @@ bool Server::host(uint16_t port, GameSessionType /*type*/)
 	if (m_socket->initialize(port))
 	{
 		LOG_INFO("Server: Listening on port %d", port);
+		m_type = type;
 		return true;
 	}
 	else
@@ -239,7 +240,7 @@ void Server::onClientGameState(IncomingMessage& inMessage)
 		assert(networkId != INDEX_NONE);
 		Entity* entity = findPtrByPredicate(entities.begin(), entities.end(), [networkId](Entity* entity)
 		{
-			return  entity->getNetworkId() == networkId;
+			return entity->getNetworkId() == networkId;
 		});
 		if (entity != nullptr)
 		{
@@ -345,7 +346,8 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 
 	for (auto& otherClient : m_clients)
 	{
-		if (otherClient.isUsed() && otherClient != *client && otherClient.getId() != m_clients.getLocalClientId())
+		if (otherClient.isUsed() && otherClient != *client 
+			&& otherClient.getId() != m_clients.getLocalClientId())
 		{
 			otherClient.getConnection()->sendMessage(spawnMessage);
 		}
@@ -449,6 +451,11 @@ void Server::writeSnapshot(RemoteClient& client)
 
 void Server::receivePackets()
 {
+	if (m_type == GameSessionType::Offline)
+	{
+		return;
+	}
+
 	m_packetReceiver->receivePackets(m_socket);
 
 	Buffer<Packet>&  packets   = m_packetReceiver->getPackets();
@@ -460,18 +467,17 @@ void Server::receivePackets()
 	{
 		Packet& packet = packets[i];
 		Address& address = addresses[i];
-		bool newConnection = true;
-		for (auto& client : m_clients)
+
+		if (m_type == GameSessionType::LAN && !address.isFromLAN())
 		{
-			if (client.isUsed())
-			{
-				if (client.getConnection()->getAddress() == address)
-				{
-					newConnection = false;
-					client.getConnection()->receivePacket(packet);
-					break;
-				}
-			}
+			continue;
+		}
+
+		bool newConnection = true;
+		if(RemoteClient* client = m_clients.getClient(address))
+		{
+			newConnection = false;
+			client->getConnection()->receivePacket(packet);
 		}
 
 		if (newConnection && numClients < s_maxConnectedClients)
@@ -513,21 +519,15 @@ void Server::onConnectionCallback(ConnectionCallback type, Connection* connectio
 	{
 		case ConnectionCallback::ConnectionLost:
 		{
-			if (RemoteClient* client = m_clients.getClient(connection))
+			RemoteClient* client = m_clients.getClient(connection);
+			assert(client != nullptr);
+
+			for (auto playerId : client->getPlayerIds())
 			{
-				if (!connection->isClosed())
-				{
-					LOG_INFO("Server: Client %i has timed out", client->getId());
-					connection->close();
-				}
-
-				for (auto playerId : client->getPlayerIds())
-				{
-					m_game->onPlayerLeave(playerId);
-				}
-
-				client->clear();
+				m_game->onPlayerLeave(playerId);
 			}
+
+			m_clients.remove(client);
 			break;
 		}
 		case ConnectionCallback::ConnectionEstablished:

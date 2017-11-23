@@ -30,6 +30,7 @@ namespace network
 		uint8_t     getD()       const;
 		uint16_t    getPort()    const;
 		std::string toString()   const;
+		bool        isFromLAN()  const;
 
 		bool operator == (const Address& other) const;
 		bool operator != (const Address& other) const;

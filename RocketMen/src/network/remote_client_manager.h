@@ -18,10 +18,10 @@ namespace network
 		~RemoteClientManager();
 
 		RemoteClient* add(Connection* connection);
+		void remove(RemoteClient* client);
 		int32_t getMaxClients() const;
 		int32_t count() const;
 		void clear();
-
 
 		void sendMessage(const struct Message& message, bool skipLocalClient = false);
 		void updateConnections(const Time& time);

@@ -1,6 +1,7 @@
 
 #include <network/remote_client_manager.h>
 
+#include <core/debug.h>
 #include <network/connection.h>
 #include <network/remote_client.h>
 
@@ -25,7 +26,6 @@ RemoteClient* RemoteClientManager::add(Connection* connection)
 	assert(connection != nullptr);
 	if (getClient(connection))
 	{
-		assert(false);
 		return nullptr;
 	}
 
@@ -39,6 +39,19 @@ RemoteClient* RemoteClientManager::add(Connection* connection)
 	}
 
 	return nullptr;
+}
+
+void RemoteClientManager::remove(RemoteClient* client)
+{
+	assert(client != nullptr);
+
+	if (!client->getConnection()->isClosed())
+	{
+		LOG_INFO("Server: Client %i has timed out", client->getId());
+		client->getConnection()->close();
+	}
+
+	client->clear();
 }
 
 int32_t RemoteClientManager::getMaxClients() const

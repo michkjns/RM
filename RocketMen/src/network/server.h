@@ -70,9 +70,7 @@ namespace network
 
 		/* Time since last snapshot */
 		float m_snapshotTime;
-
-		/** Remote client buffer */
-		
+		GameSessionType m_type;		
 		PacketReceiver* m_packetReceiver;
 		NetworkIdManager m_networkIdManager;
 		RemoteClientManager m_clients;
