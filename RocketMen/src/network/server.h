@@ -4,8 +4,8 @@
 #include <core/game_time.h>
 #include <game/game_session.h>
 #include <network/connection_callback.h>
-#include <network/network_id_manager.h>
 #include <network/remote_client_manager.h>
+#include <utility/id_manager.h>
 
 #include <array>
 
@@ -72,7 +72,7 @@ namespace network
 		float m_snapshotTime;
 		GameSessionType m_type;		
 		PacketReceiver* m_packetReceiver;
-		NetworkIdManager m_networkIdManager;
+		IdManager m_networkIdManager;
 		RemoteClientManager m_clients;
 	};
 

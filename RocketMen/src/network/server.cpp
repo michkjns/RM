@@ -40,7 +40,7 @@ void Server::reset()
 	m_isInitialized    = false;
 	m_playerIdCounter  = 0;
 	m_snapshotTime     = 0.0f;
-	m_networkIdManager.reset();
+	m_networkIdManager.clear();
 	m_clients.clear();
 
 	EntityManager::killEntities();
@@ -91,7 +91,7 @@ bool Server::host(uint16_t port, GameSessionType type)
 
 void Server::generateNetworkId(Entity* entity)
 {
-	int32_t networkId = m_networkIdManager.next();
+	int32_t networkId = m_networkIdManager.getNext();
 	LOG_DEBUG("netId: %d", networkId);
 	entity->setNetworkId(networkId);
 	sendEntitySpawn(entity);
@@ -319,7 +319,7 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 		return;
 	}
 
-	const int32_t networkId = m_networkIdManager.next();
+	const int32_t networkId = m_networkIdManager.getNext();
 	entity->setNetworkId(networkId);
 
 	Message outMessage = {};

@@ -186,10 +186,10 @@
     <ClCompile Include="src\utility\commandline_options.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\network_id_manager.cpp">
+    <ClCompile Include="src\network\remote_client_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\network\remote_client_manager.cpp">
+    <ClCompile Include="src\utility\id_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -389,10 +389,10 @@
     <ClInclude Include="src\game\game_session.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\network_id_manager.h">
+    <ClInclude Include="src\network\remote_client_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\network\remote_client_manager.h">
+    <ClInclude Include="src\utility\id_manager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
