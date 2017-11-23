@@ -42,7 +42,7 @@ namespace network
 		}
 
 		void set(int32_t networkId);
-		void clear(int32_t networkId);
+		void remove(int32_t networkId);
 		void reset();
 		int32_t next();
 

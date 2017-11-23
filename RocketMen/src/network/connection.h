@@ -33,7 +33,7 @@ namespace network
 
 		void update(const Time& time);
 
-		void sendMessage(Message& message);
+		void sendMessage(const Message& message);
 		void sendPendingMessages(const Time& time);
 		void receivePacket(Packet& packet);
 		void close();

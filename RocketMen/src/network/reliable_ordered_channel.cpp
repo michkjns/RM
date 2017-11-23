@@ -33,7 +33,7 @@ ReliableOrderedChannel::~ReliableOrderedChannel()
 {
 }
 
-void ReliableOrderedChannel::sendMessage(Message& message)
+void ReliableOrderedChannel::sendMessage(const Message& message)
 {
 	assert(canSendMessage());
 	if (OutgoingMessage* messageEntry = m_messageSendQueue.insert(m_sendMessageId))

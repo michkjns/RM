@@ -26,7 +26,7 @@ namespace network
 		Address  address;
 	};
 
-	inline ChannelType getMessageChannel(struct Message message)
+	inline ChannelType getMessageChannel(const struct Message message)
 	{
 		return getMessageChannel(message.type);
 	}

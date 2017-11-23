@@ -14,7 +14,7 @@ namespace network
 	class NetworkChannel
 	{
 	public:
-		virtual void sendMessage(Message& message)       = 0;
+		virtual void sendMessage(const Message& message)       = 0;
 		virtual void sendPendingMessages(Socket* socket, 
 			const Address& address, const Time& time)    = 0;
 

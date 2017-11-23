@@ -22,7 +22,8 @@ using namespace network;
 Server::Server(Game* game) :
 	m_game(game),
 	m_packetReceiver(new PacketReceiver(128)),
-	m_networkIdManager(s_maxNetworkedEntities)
+	m_networkIdManager(s_maxNetworkedEntities),
+	m_clients(s_maxConnectedClients)
 {
 	m_socket = nullptr;
 	reset();
@@ -37,24 +38,13 @@ Server::~Server()
 void Server::reset()
 {
 	m_isInitialized    = false;
-	m_clientIdCounter  = 0;
 	m_playerIdCounter  = 0;
-	m_localClientId    = INDEX_NONE;
-	m_numClients       = 0;
 	m_snapshotTime     = 0.0f;
 	m_networkIdManager.reset();
+	m_clients.clear();
 
 	EntityManager::killEntities();
-
-	for (auto& client : m_clients)
-	{
-		if (client.isUsed())
-		{
-			client.getConnection()->close();
-			client.clear();
-		}
-	}
-
+	
 	delete m_socket;
 	m_socket = Socket::create();
 	assert(m_socket != nullptr);
@@ -67,8 +57,8 @@ void Server::update(const Time& time)
 		receivePackets();
 		readMessages(time);
 		createSnapshots(time.getDeltaSeconds());
-		sendMessages(time);
-		updateConnections(time);
+		m_clients.sendPendingMessages(time);
+		m_clients.updateConnections(time);
 	}
 }
 
@@ -108,7 +98,7 @@ void Server::generateNetworkId(Entity* entity)
 
 void Server::registerLocalClientId(int32_t clientId)
 {
-	m_localClientId = clientId;
+	m_clients.setLocalClientId(clientId);
 }
 
 void Server::destroyEntity(int32_t networkId)
@@ -117,44 +107,14 @@ void Server::destroyEntity(int32_t networkId)
 	Message message   = {};
 	message.type      = MessageType::DestroyEntity;
 	message.data.writeInt32(networkId);
-	for (auto& client : m_clients)
-	{
-		if (client.isUsed() && client.getId() != m_localClientId)
-		{
-			client.getConnection()->sendMessage(message);
-		}
-	}
 
-	m_networkIdManager.clear(networkId);
-}
-
-RemoteClient* Server::addClient(const Address& address, Connection* connection)
-{
-	assert(connection != nullptr);
-	LOG_DEBUG("Server: Adding new client");
-	
-	if (RemoteClient* existingClient = getClient(address))
-	{
-		LOG_DEBUG("Server: Adding new client error: address duplicate");
-		return nullptr;
-	}
-	
-	// Accept the client
-	RemoteClient* client = findUnusedClient();
-	assert(client != nullptr);
-	client->initialize(m_clientIdCounter++, connection);
-	
-	Message message = {};
-	message.type = MessageType::AcceptClient;
-	message.data.writeInt32(client->getId());
-	client->getConnection()->sendMessage(message);
-	LOG_DEBUG("Sent clientId  %d", client->getId());
-	return client;
+	m_clients.sendMessage(message, true);
+	m_networkIdManager.remove(networkId);
 }
 
 void Server::onClientDisconnect(IncomingMessage& inMessage)
 {
-	RemoteClient* client = getClient(inMessage.address);
+	RemoteClient* client = m_clients.getClient(inMessage.address);
 	if (client == nullptr)
 	{
 		return;
@@ -173,7 +133,7 @@ void Server::onClientDisconnect(IncomingMessage& inMessage)
 
 void Server::onPlayerIntroduction(IncomingMessage& inMessage)
 {
-	RemoteClient* client = getClient(inMessage.address);
+	RemoteClient* client = m_clients.getClient(inMessage.address);
 	assert(client != nullptr);
 	if (client->getNumPlayers() > 0)
 		return;
@@ -205,7 +165,7 @@ void Server::onPlayerIntroduction(IncomingMessage& inMessage)
 
 void Server::onPlayerInput(IncomingMessage& message)
 {
-	RemoteClient* client = getClient(message.address);
+	RemoteClient* client = m_clients.getClient(message.address);
 	if (client == nullptr)
 	{
 		LOG_WARNING("Server: onPlayerInput: Client non-existent (%s)", message.address.toString());
@@ -234,7 +194,7 @@ void Server::onPlayerInput(IncomingMessage& message)
 
 void Server::onEntityRequest(IncomingMessage& inMessage)
 {
-	RemoteClient* client = getClient(inMessage.address);
+	RemoteClient* client = m_clients.getClient(inMessage.address);
 	if (client == nullptr)
 	{
 		LOG_WARNING("Server: onEntityRequest: Client non-existent (%s)", inMessage.address.toString());
@@ -259,7 +219,7 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 
 void Server::onClientGameState(IncomingMessage& inMessage)
 {
-	RemoteClient* client = getClient(inMessage.address);
+	RemoteClient* client = m_clients.getClient(inMessage.address);
 	if (client == nullptr)
 	{
 		LOG_WARNING("Server: onClientGameState: unknown client (%s)", inMessage.address.toString());
@@ -292,7 +252,7 @@ void Server::onClientGameState(IncomingMessage& inMessage)
 
 void Server::onKeepAliveMessage(IncomingMessage& inMessage)
 {
-	if (RemoteClient* client = getClient(inMessage.address))
+	if (RemoteClient* client = m_clients.getClient(inMessage.address))
 	{
 		Message message = {};
 		message.type = MessageType::KeepAlive;
@@ -337,17 +297,10 @@ void Server::sendEntitySpawn(Entity* entity)
 		return;
 	}
 	message.data.writeFromStream(stream);
-
-	for (auto& client : m_clients)
-	{
-		if (client.isUsed() && client.getId() != m_localClientId)
-		{
-			client.getConnection()->sendMessage(message);
+	m_clients.sendMessage(message, true);
 #ifdef _DEBUG
-			LOG_DEBUG("Server: spawning Entity id: %d netId: %d", entity->getId(), entity->getNetworkId());
+	LOG_DEBUG("Server: spawning Entity id: %d netId: %d", entity->getId(), entity->getNetworkId());
 #endif // _DEBUG
-		}
-	}
 }
 
 void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client)
@@ -392,7 +345,7 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 
 	for (auto& otherClient : m_clients)
 	{
-		if (otherClient.isUsed() && otherClient != *client && otherClient.getId() != m_localClientId)
+		if (otherClient.isUsed() && otherClient != *client && otherClient.getId() != m_clients.getLocalClientId())
 		{
 			otherClient.getConnection()->sendMessage(spawnMessage);
 		}
@@ -408,7 +361,7 @@ void Server::onClientPing(IncomingMessage& message, const Time& time)
 	pongMessage.data.writeInt64(clientTimestamp);
 	pongMessage.data.writeInt64(time.getMilliSeconds());
 
-	RemoteClient* client = getClient(message.address);
+	RemoteClient* client = m_clients.getClient(message.address);
 	client->getConnection()->sendMessage(pongMessage);
 }
 
@@ -471,9 +424,10 @@ void Server::createSnapshots(float deltaTime)
 	if (m_snapshotTime >= s_snapshotCreationRate)
 	{
 		m_snapshotTime -= s_snapshotCreationRate;
+		const int32_t localClientId = m_clients.getLocalClientId();
 		for (auto& client : m_clients)
 		{
-			if (client.isUsed() && client.getId() != m_localClientId)
+			if (client.isUsed() && client.getId() != localClientId)
 			{
 				writeSnapshot(client);
 			}
@@ -493,16 +447,6 @@ void Server::writeSnapshot(RemoteClient& client)
 	client.getConnection()->sendMessage(message);
 }
 
-void Server::updateConnections(const Time& time)
-{
-	for (auto& client : m_clients)
-	{
-		if (client.isUsed() && client.getId() != m_localClientId)
-		{
-			client.getConnection()->update(time);
-		}
-	}
-}
 void Server::receivePackets()
 {
 	m_packetReceiver->receivePackets(m_socket);
@@ -510,8 +454,9 @@ void Server::receivePackets()
 	Buffer<Packet>&  packets   = m_packetReceiver->getPackets();
 	Buffer<Address>& addresses = m_packetReceiver->getAddresses();
 
-	const int32_t packetCount = packets.getCount();
-	for (int32_t i = 0; i < packetCount; i++)
+	const int32_t numClients = m_clients.count();
+	const int32_t numPackets = packets.getCount();
+	for (int32_t i = 0; i < numPackets; i++)
 	{
 		Packet& packet = packets[i];
 		Address& address = addresses[i];
@@ -529,7 +474,7 @@ void Server::receivePackets()
 			}
 		}
 
-		if (newConnection && m_numClients < s_maxConnectedClients)
+		if (newConnection && numClients < s_maxConnectedClients)
 		{
 			IncomingMessage* message = packet.readNextMessage();
 			if (message->type == MessageType::RequestConnection)
@@ -560,17 +505,6 @@ void Server::readMessages(const Time& time)
 	}
 }
 
-void Server::sendMessages(const Time& time)
-{
-	for (RemoteClient& client : m_clients)
-	{
-		if (client.isUsed())
-		{
-			client.getConnection()->sendPendingMessages(time);
-		}
-	}
-}
-
 void Server::onConnectionCallback(ConnectionCallback type, Connection* connection)
 {
 	assert(connection != nullptr);
@@ -579,7 +513,7 @@ void Server::onConnectionCallback(ConnectionCallback type, Connection* connectio
 	{
 		case ConnectionCallback::ConnectionLost:
 		{
-			if (RemoteClient* client = getClient(connection))
+			if (RemoteClient* client = m_clients.getClient(connection))
 			{
 				if (!connection->isClosed())
 				{
@@ -607,13 +541,19 @@ void Server::onConnectionCallback(ConnectionCallback type, Connection* connectio
 
 void Server::onConnectionRequest(const Address& address, Packet& packet)
 {
-	if (m_numClients < s_maxConnectedClients)
+	if (m_clients.count() < s_maxConnectedClients)
 	{
 		Connection* connection = new Connection(m_socket, address, 
 			std::bind(&Server::onConnectionCallback, this, std::placeholders::_1, std::placeholders::_2));
 		
-		if (addClient(address, connection))
+		if (RemoteClient* client = m_clients.add(connection))
 		{
+			Message message = {};
+			message.type = MessageType::AcceptClient;
+			message.data.writeInt32(client->getId());
+			client->sendMessage(message);
+			LOG_DEBUG("Sent clientId  %d", client->getId());
+
 			connection->setState(Connection::State::Connected);
 			packet.resetReading();
 			connection->receivePacket(packet);
@@ -621,46 +561,11 @@ void Server::onConnectionRequest(const Address& address, Packet& packet)
 		else
 		{
 			delete connection;
+			assert(false);
 		}
 	}
 	else
 	{
 		LOG_WARNING("connection attempt dropped, client limit reached");
 	}
-}
-
-RemoteClient* Server::findUnusedClient()
-{
-	for (RemoteClient& client : m_clients)
-	{
-		if (client.isAvailable())
-		{
-			return &client;
-		}
-	}
-	return nullptr;
-}
-
-RemoteClient* Server::getClient(const Address& address)
-{
-	for (RemoteClient& client : m_clients)
-	{
-		if (client.isUsed()	&& client.getConnection()->getAddress() == address)
-		{
-			return &client;
-		}
-	}
-	return nullptr;
-}
-
-RemoteClient* Server::getClient(const Connection* connection)
-{
-	for (RemoteClient& client : m_clients)
-	{
-		if (client.isUsed() && client.getConnection() == connection)
-		{
-			return &client;
-		}
-	}
-	return nullptr;
 }

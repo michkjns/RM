@@ -21,7 +21,7 @@ UnreliableChannel::~UnreliableChannel()
 {
 }
 
-void UnreliableChannel::sendMessage(Message& message)
+void UnreliableChannel::sendMessage(const Message& message)
 {
 	assert(getMessageChannel(message) == ChannelType::Unreliable);
 	m_sendQueue.insert(message);

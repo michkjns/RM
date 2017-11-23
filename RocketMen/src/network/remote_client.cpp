@@ -45,6 +45,12 @@ void RemoteClient::addPlayer(int16_t playerId)
 	playerIdEntry = playerId;
 }
 
+void RemoteClient::sendMessage(const Message& message)
+{
+	assert(m_connection != nullptr);
+	m_connection->sendMessage(message);
+}
+
 bool RemoteClient::isUsed() const
 {
 	return (m_id > INDEX_NONE);

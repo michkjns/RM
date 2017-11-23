@@ -26,7 +26,7 @@ void NetworkIdManager::set(int32_t networkId)
 	m_ids[index] |= (1ULL << remainder);
 }
 
-void NetworkIdManager::clear(int32_t networkId)
+void NetworkIdManager::remove(int32_t networkId)
 {
 	assert(networkId >= 0 && networkId <= getMax());
 

@@ -13,7 +13,7 @@ namespace network
 		UnreliableChannel();
 		~UnreliableChannel();
 
-		virtual void sendMessage(Message& message)       override;
+		virtual void sendMessage(const Message& message) override;
 
 		virtual void sendPendingMessages(Socket* socket, 
 			const Address& address, const Time& time)    override;

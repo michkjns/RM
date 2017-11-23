@@ -159,6 +159,7 @@
     <ClCompile Include="src\core\state_machine.cpp" />
     <ClCompile Include="src\game\gameplay_state.cpp" />
     <ClCompile Include="src\network\network_id_manager.cpp" />
+    <ClCompile Include="src\network\remote_client_manager.cpp" />
     <ClCompile Include="src\utility\buffer.cpp" />
     <ClCompile Include="src\utility\circular_buffer.cpp" />
     <ClCompile Include="src\common.cpp" />
@@ -221,6 +222,7 @@
     <ClInclude Include="src\game\game_state_ids.h" />
     <ClInclude Include="src\game\rocketmen_state_factory.h" />
     <ClInclude Include="src\network\network_id_manager.h" />
+    <ClInclude Include="src\network\remote_client_manager.h" />
     <ClInclude Include="src\utility\buffer.h" />
     <ClInclude Include="src\utility\circular_buffer.h" />
     <ClInclude Include="src\core\action_listener.h" />

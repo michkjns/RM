@@ -68,7 +68,7 @@ void Connection::update(const Time& time)
 	}
 }
 
-void Connection::sendMessage(Message& message)
+void Connection::sendMessage(const Message& message)
 {
 	if (getMessageChannel(message) == ChannelType::ReliableOrdered)
 	{
