@@ -4,6 +4,7 @@
 #include <core/game_time.h>
 #include <game/game_session.h>
 #include <network/connection_callback.h>
+#include <network/network_id_manager.h>
 #include <network/remote_client.h>
 
 #include <array>
@@ -80,7 +81,6 @@ namespace network
 		bool    m_isInitialized;
 		int32_t m_clientIdCounter;
 		int16_t m_playerIdCounter;
-		int32_t m_networkIdCounter;
 		int32_t m_localClientId;
 		int32_t m_numClients;
 
@@ -90,6 +90,7 @@ namespace network
 		/** Remote client buffer */
 		std::array<RemoteClient, s_maxConnectedClients> m_clients;
 		PacketReceiver* m_packetReceiver;
+		NetworkIdManager m_networkIdManager;
 	};
 
 }; // namespace network

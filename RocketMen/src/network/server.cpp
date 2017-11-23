@@ -21,7 +21,8 @@ using namespace network;
 
 Server::Server(Game* game) :
 	m_game(game),
-	m_packetReceiver(new PacketReceiver(128))
+	m_packetReceiver(new PacketReceiver(128)),
+	m_networkIdManager(s_maxNetworkedEntities)
 {
 	m_socket = nullptr;
 	reset();
@@ -38,10 +39,10 @@ void Server::reset()
 	m_isInitialized    = false;
 	m_clientIdCounter  = 0;
 	m_playerIdCounter  = 0;
-	m_networkIdCounter = 0;
 	m_localClientId    = INDEX_NONE;
 	m_numClients       = 0;
 	m_snapshotTime     = 0.0f;
+	m_networkIdManager.reset();
 
 	EntityManager::killEntities();
 
@@ -99,9 +100,9 @@ bool Server::host(uint16_t port, GameSessionType /*type*/)
 
 void Server::generateNetworkId(Entity* entity)
 {
-	int32_t networkId = m_networkIdCounter++;
+	int32_t networkId = m_networkIdManager.next();
+	LOG_DEBUG("netId: %d", networkId);
 	entity->setNetworkId(networkId);
-
 	sendEntitySpawn(entity);
 }
 
@@ -123,6 +124,8 @@ void Server::destroyEntity(int32_t networkId)
 			client.getConnection()->sendMessage(message);
 		}
 	}
+
+	m_networkIdManager.clear(networkId);
 }
 
 RemoteClient* Server::addClient(const Address& address, Connection* connection)
@@ -362,7 +365,7 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 		return;
 	}
 
-	const int32_t networkId = m_networkIdCounter++;
+	const int32_t networkId = m_networkIdManager.next();
 	entity->setNetworkId(networkId);
 
 	Message outMessage = {};
