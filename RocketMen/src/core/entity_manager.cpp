@@ -8,12 +8,13 @@
 #include <core/entity.h>
 #include <core/entity_factory.h>
 #include <network/network.h>
+#include <utility/id_manager.h>
 #include <map>
 
 static std::map<EntityType, IEntityFactory*> s_factoryMap;
 static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
-static uint32_t s_entityId;
+static IdManager s_entityIds(s_maxEntities);
 
 inline bool isReplicated(Entity* entity)
 {
@@ -44,8 +45,9 @@ void EntityManager::instantiateEntity(Entity* entity, bool enableReplication)
 {
 	assert(entity != nullptr);
 	assert(!isReplicated(entity));
+	s_entityIds.hasAvailable();
 
-	entity->m_id = ++s_entityId;
+	entity->m_id = s_entityIds.getNext();
 	s_newEntities.push_back(entity);
 
 	if (enableReplication && entity->getNetworkId() == INDEX_NONE)
@@ -141,12 +143,17 @@ void EntityManager::flushEntities()
 }
 
 void EntityManager::killEntities()
-{
+{ 
 	for (auto it = s_entities.begin(); it != s_entities.end();)
 	{
 		delete (*it);
 		it = s_entities.erase(it);
 	}
+}
+
+void EntityManager::freeEntityId(int32_t id)
+{
+	s_entityIds.remove(id);
 }
 
 std::vector<Entity*>& EntityManager::getEntities()

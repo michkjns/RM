@@ -13,9 +13,6 @@
 	static EntityType getTypeStatic() { return s_type; }; \
 	virtual EntityType getType() override { return s_type; };
 
-static const int32_t  s_maxSpawnPredictedEntities = 16;
-static const uint32_t s_maxNetworkedEntities = 256;
-
 //==============================================================================
 
 class Entity
@@ -61,16 +58,16 @@ public:
 	virtual void startContact(Entity* other);
 	virtual void endContact(Entity* other);
 
-#ifdef _DEBUG
-	uint32_t getId() const;
-#endif // _DEBUG
+	int32_t getId() const;
 
 protected:
 	Transform   m_transform;
 	std::string m_sprite;
-	uint32_t    m_id;
 	int32_t     m_networkId;
 	int16_t     m_ownerPlayerId;
+
+private:
+	int32_t     m_id;
 
 public:
 	friend class EntityManager;

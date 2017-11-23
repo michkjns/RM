@@ -580,8 +580,6 @@ void Client::setState(State state)
 void Client::clearSession()
 {
 	m_localPlayers.clear();
-	m_recentlyProcessed.fill(INDEX_NONE);
-	m_recentlyDestroyedEntities.fill(INDEX_NONE);
 	m_requestedEntities.fill(INDEX_NONE);
 	
 	delete m_connection;

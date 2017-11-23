@@ -4,6 +4,7 @@
 #include <core/entity.h>
 #include <core/keys.h>
 #include <game/game_session.h>
+#include <core/entity_manager.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/connection_callback.h>
@@ -110,12 +111,6 @@ namespace network
 		float           m_clockResyncTime;
 		uint16_t        m_port;
 		PacketReceiver* m_packetReceiver;
-
-		CircularBuffer<int32_t, s_sequenceMemorySize> 
-			m_recentlyProcessed;
-
-		CircularBuffer<int32_t, s_recentlyDestroyedSize>
-			m_recentlyDestroyedEntities;
 
 		CircularBuffer<int32_t, s_maxSpawnPredictedEntities>
 			m_requestedEntities;

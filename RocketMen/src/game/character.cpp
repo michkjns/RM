@@ -3,6 +3,7 @@
 
 #include <utility/bitstream.h>
 #include <core/debug.h>
+#include <core/entity_manager.h>
 #include <core/input.h>
 #include <core/transform.h>
 #include <game/rocket.h>

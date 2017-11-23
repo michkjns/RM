@@ -5,6 +5,11 @@
 
 #include <vector>
 
+static const int32_t  s_maxSpawnPredictedEntities = 16;
+static const uint32_t s_maxNetworkedEntities = 256;
+static const int32_t  s_maxEntities = 12;
+
+//=============================================================================
 class Entity;
 
 class EntityManager
@@ -32,4 +37,10 @@ public:
 	static void killEntities();
 
 	static std::vector<Entity*>& getEntities();
+
+private:
+	static void freeEntityId(int32_t id);
+
+public:
+	friend class Entity;
 };

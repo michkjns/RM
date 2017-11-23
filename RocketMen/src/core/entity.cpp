@@ -18,7 +18,7 @@ void Entity::instantiate(Entity* entity)
 //=============================================================================
 
 Entity::Entity() :
-	m_id(0),
+	m_id(INDEX_NONE),
 	m_networkId(INDEX_NONE)
 {
 }
@@ -29,7 +29,8 @@ Entity::~Entity()
 
 void Entity::kill()
 {
-	m_id = 0;
+	EntityManager::freeEntityId(m_id);
+	m_id = INDEX_NONE;
 	if (Network::isServer())
 	{
 		Network::destroyEntity(m_networkId);
@@ -38,7 +39,7 @@ void Entity::kill()
 
 bool Entity::isAlive() const
 {
-	return (m_id != 0);
+	return (m_id != INDEX_NONE);
 }
 
 std::string Entity::getSpriteName() const
@@ -48,7 +49,7 @@ std::string Entity::getSpriteName() const
 
 void Entity::setNetworkId(int32_t networkId)
 {
-	assert(m_networkId < 0);
+	assert(m_networkId == INDEX_NONE);
 	m_networkId = networkId;
 }
 
@@ -72,12 +73,10 @@ bool Entity::isSpawnPrediction() const
 	return m_networkId < INDEX_NONE;
 }
 
-#ifdef _DEBUG
-uint32_t Entity::getId() const
+int32_t Entity::getId() const
 {
 	return m_id;
 }
-#endif // _DEBUG
 
 void Entity::startContact(Entity* /*other*/)
 {
