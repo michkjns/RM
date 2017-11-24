@@ -13,7 +13,7 @@
 	static EntityType getTypeStatic() { return s_type; }; \
 	virtual EntityType getType() override { return s_type; };
 
-//==============================================================================
+//=============================================================================
 
 class Entity
 {

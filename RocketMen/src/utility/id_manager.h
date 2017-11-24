@@ -39,7 +39,7 @@ public:
 
 	inline bool exists(int32_t id) const
 	{
-		assert(id >= 0 && id <= getMax());
+		assert(id >= 0 && id < m_max);
 		const int32_t index = id == 0 ? 0 : id / 64;
 		const int64_t remainder = static_cast<uint64_t>(id % 64);
 
@@ -51,21 +51,21 @@ public:
 		return false;
 	}
 
-	inline void set(int32_t networkId)
+	inline void set(int32_t id)
 	{
-		assert(networkId >= 0 && networkId <= m_max);
+		assert(id >= 0 && id <= m_max);
 
-		const int32_t index = networkId == 0 ? 0 : networkId / 64;
-		const int32_t remainder = networkId % 64;
+		const int32_t index = id == 0 ? 0 : id / 64;
+		const int32_t remainder = id % 64;
 		m_ids[index] |= (1ULL << remainder);
 	}
 
-	inline void remove(int32_t networkId)
+	inline void remove(int32_t id)
 	{
-		assert(networkId >= 0 && networkId <= m_max);
+		assert(id >= 0 && id < m_max);
 
-		const int32_t index = networkId == 0 ? 0 : networkId / 64;
-		const int32_t remainder = networkId % 64;
+		const int32_t index = id == 0 ? 0 : id / 64;
+		const int32_t remainder = id % 64;
 		m_ids[index] &= ~(1ULL << remainder);
 	}
 
@@ -83,24 +83,23 @@ public:
 		}
 
 		const int32_t result = m_nextId;
-		increment();
-		while (exists(m_nextId))
-		{
-			increment();
-		}
 		set(result);
+
+		if (hasAvailable())
+		{
+			while (exists(m_nextId))
+			{
+				m_nextId++;
+				if (m_nextId >= m_max)
+				{
+					m_nextId -= m_max;
+				}
+			}
+		}
 		return result;
 	}
 
 private:
-	inline void increment()
-	{
-		m_nextId++;
-		if (m_nextId >= m_max)
-		{
-			m_nextId -= m_max;
-		}
-	}
 	int32_t m_max;
 	int32_t m_size;
 
