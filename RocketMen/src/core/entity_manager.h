@@ -7,7 +7,7 @@
 
 static const int32_t  s_maxSpawnPredictedEntities = 16;
 static const uint32_t s_maxNetworkedEntities = 256;
-static const int32_t  s_maxEntities = 12;
+static const int32_t  s_maxEntities = 256;
 
 //=============================================================================
 class Entity;
@@ -19,7 +19,8 @@ public:
 	static void registerFactory(class IEntityFactory* factory);
 
 	static void instantiateEntity(Entity* entity, bool enableReplication = true);
-	static Entity* instantiateEntity(class ReadStream& stream, bool enableReplication = true);
+	static Entity* instantiateEntity(class ReadStream& stream);
+	static Entity* instantiateEntity(class ReadStream& stream, int32_t networkId);
 
 	static bool serializeFullEntity(Entity* entity, class ReadStream& stream,
 		bool includeType = true);

@@ -49,7 +49,7 @@ std::string Entity::getSpriteName() const
 
 void Entity::setNetworkId(int32_t networkId)
 {
-	assert(m_networkId == INDEX_NONE);
+	assert(m_networkId <= INDEX_NONE);
 	m_networkId = networkId;
 }
 
@@ -91,7 +91,7 @@ void Entity::setSprite(std::string name)
 	m_sprite = name;
 }
 
-Transform& Entity::getTransform()
+Transform2D& Entity::getTransform()
 {
 	return m_transform;
 }

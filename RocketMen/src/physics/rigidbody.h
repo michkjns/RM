@@ -42,9 +42,40 @@ public:
 
 private:
 	RigidbodyImpl* m_impl;
+
+public:
+	template<typename Stream>
+	bool serializeFull(Stream& stream);
+
+	template<typename Stream>
+	bool serialize(Stream& stream);
 };
 
 inline bool operator==(const Rigidbody&a, const Rigidbody& b)
 {
 	return (a.getImpl() == b.getImpl());
+}
+
+template<typename Stream>
+bool Rigidbody::serializeFull(Stream& stream)
+{
+	return ensure(serialize(stream));
+}
+
+template<typename Stream>
+bool Rigidbody::serialize(Stream& stream)
+{
+	Vector2 velocity;
+	if (Stream::isWriting)
+	{
+		velocity = getLinearVelocity();
+	}
+
+	if (!serializeVector2(stream, velocity))
+		return ensure(false);
+
+	if (Stream::isReading)
+		setLinearVelocity(velocity);
+
+	return true;
 }

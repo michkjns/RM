@@ -5,7 +5,7 @@
 #include <core/debug.h>
 #include <core/entity_manager.h>
 #include <core/input.h>
-#include <core/transform.h>
+#include <core/transform2d.h>
 #include <game/rocket.h>
 #include <graphics/camera.h>
 #include <network/network.h>
@@ -13,7 +13,7 @@
 
 using namespace rm;
 
-EntityFactory<Character> EntityFactory<Character>::s_factory;
+DECLARE_ENTITY_IMPL(Character);
 
 Character::Character() :
 	m_rigidbody(nullptr),
@@ -97,43 +97,7 @@ void Character::posessbyPlayer(int16_t playerId)
 template<typename Stream>
 bool Character::serializeFull(Stream& stream)
 {
-	Vector2 pos;
-	Vector2 vel;
-	int32_t sprLength = 0;
-
-	if (Stream::isWriting)
-	{
-		pos = m_transform.getLocalPosition();
-		vel = m_rigidbody->getLinearVelocity();
-		sprLength = int32_t(m_sprite.length());
-	}
-
-	serializeInt(stream, m_networkId, -s_maxSpawnPredictedEntities - 1, s_maxNetworkedEntities);
-
-	serializeInt(stream, sprLength, 0, 32);
-
-	if (Stream::isReading)
-		m_sprite.resize(sprLength);
-
-	for (int32_t i = 0; i < sprLength; i++)
-	{
-		int32_t character = int32_t(m_sprite[i]);
-		serializeInt(stream, character, CHAR_MIN, CHAR_MAX);
-		if (Stream::isReading)
-			m_sprite[i] = char(character);
-	}
-
-	if (!serializeVector2(stream, pos))
-		return false;
-
-	if (Stream::isReading)
-		m_transform.setLocalPosition(pos);
-
-	if (!serializeVector2(stream, vel))
-		return false;
-
-	if (Stream::isReading)
-		m_rigidbody->setLinearVelocity(vel);
+	Entity::serializeFull(stream);
 
 	int32_t playerId = INDEX_NONE;
 	if (Stream::isWriting)
@@ -141,6 +105,7 @@ bool Character::serializeFull(Stream& stream)
 		playerId = m_actionListener ? static_cast<int32_t>(m_actionListener->getPlayerId()) : INDEX_NONE;
 	}
 	serializeInt(stream, playerId);
+
 	if (Stream::isReading)
 	{
 		if (m_actionListener == nullptr && playerId != INDEX_NONE)
@@ -149,40 +114,20 @@ bool Character::serializeFull(Stream& stream)
 		}
 	}
 
-	return true;
+	return ensure(serialize(stream));
 }
 
 template<typename Stream>
 bool Character::serialize(Stream& stream)
 {
-	Vector2 pos;
-	Vector2 vel;
-	if (Stream::isWriting)
-	{
-		pos = m_transform.getLocalPosition();
-		vel = m_rigidbody->getLinearVelocity();
-	}
-
-	if (!serializeVector2(stream, pos))
-		return false;
-
-	if (Stream::isReading)
-		m_transform.setLocalPosition(pos);
-
-	if (!serializeVector2(stream, vel))
-		return false;
-
-	if (Stream::isReading)
-		m_rigidbody->setLinearVelocity(vel);
-
-	return true;
+	return ensure(m_transform.serialize(stream));
 }
 
 template<typename Stream>
 bool Character::reverseSerialize(Stream& stream)
 {
 	if (!serializeVector2(stream, m_aimDirection))
-		return false;
+		return ensure(false);
 
 //	LOG_DEBUG("serialized aimDirection %f,%f", m_aimDirection.x, m_aimDirection.y);
 

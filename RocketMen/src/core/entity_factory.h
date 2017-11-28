@@ -3,6 +3,7 @@
 
 #include <utility/bitstream.h>
 #include <core/entity_type.h>
+#include <core/entity_manager.h>
 
 class Entity;
 
@@ -29,11 +30,10 @@ template<typename T>
 class EntityFactory : public IEntityFactory
 {
 public:
-	EntityFactory() {};
-
-	static void initialize()
+	EntityFactory()
 	{
-		EntityManager::registerFactory(dynamic_cast<IEntityFactory*>(&s_factory));
+		assert(EntityManager::getFactory(getType()) == nullptr);
+		EntityManager::registerFactory(dynamic_cast<IEntityFactory*>(this));
 	}
 
 	EntityType getType() override 
@@ -84,4 +84,7 @@ public:
 	}
 
 	static EntityFactory<T> s_factory;
+
+#define DECLARE_ENTITY_IMPL(EntityClass) \
+	EntityFactory<EntityClass> EntityFactory<EntityClass>::s_factory
 };

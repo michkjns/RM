@@ -6,42 +6,32 @@
 
 namespace rm
 {
-	class Rocket : public Entity
+	class MovingCube : public Entity
 	{
 	public:
-		DECLARE_ENTITY(EntityType::Rocket);
+		DECLARE_ENTITY(EntityType::MovingCube);
 
 	public:
-		Rocket();
-		virtual ~Rocket();
-
-		void initialize(Entity* owner, Vector2 direction, float power);
+		MovingCube();
+		virtual ~MovingCube();
 
 		virtual void update(float deltaTime)      override;
 		virtual void fixedUpdate(float deltaTime) override;
-
-		void setAccelerationPower(float accelerationPower);
-		float getAccelerationPower() const;
-		Rigidbody* getRigidbody() const;
+		virtual void debugDraw()                  override;
 
 		virtual void startContact(Entity* other) override;
 		virtual void endContact(Entity* other)   override;
 
 	private:
-		bool       m_isInitialized;
-		Rigidbody* m_rigidbody;
-		Entity*    m_owner;
-		Vector2    m_direction;
-		float      m_accelerationPower;
-		float      m_lifetimeSeconds;
-		bool       m_gracePeriod;
+		float m_speed;
+		float m_direction;
 
 	public:
-		/** Serialize whole object */
+		/** Serialize complete object */
 		template<typename Stream>
 		bool serializeFull(Stream& stream);
 
-		/** Serialize commonly updated properties */
+		/** Serialize commonly updated variables */
 		template<typename Stream>
 		bool serialize(Stream& stream);
 
@@ -50,4 +40,4 @@ namespace rm
 		bool reverseSerialize(Stream& stream);
 	};
 
-};
+};// namespace rm

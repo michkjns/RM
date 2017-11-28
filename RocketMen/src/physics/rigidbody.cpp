@@ -4,8 +4,6 @@
 
 #include <physics/physics_box2d.h>
 
-//using namespace physics;
-
 #ifdef PHYSICS_BOX2D
 
 extern b2World g_boxWorld;

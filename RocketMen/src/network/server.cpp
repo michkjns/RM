@@ -91,8 +91,7 @@ bool Server::host(uint16_t port, GameSessionType type)
 
 void Server::generateNetworkId(Entity* entity)
 {
-	int32_t networkId = m_networkIdManager.getNext();
-	LOG_DEBUG("netId: %d", networkId);
+	const int32_t networkId = m_networkIdManager.getNext();
 	entity->setNetworkId(networkId);
 	sendEntitySpawn(entity);
 }
@@ -306,27 +305,35 @@ void Server::sendEntitySpawn(Entity* entity)
 
 void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client)
 {
+	assert(client != nullptr);
 	const int32_t bufferLength = int32_t(inMessage.data.getLength()) - inMessage.data.getReadTotalBytes();
-
-	LOG_DEBUG("Server::acknowledgeEntitySpawn tempId_%d", tempId);
 
 	ReadStream readStream(bufferLength);
 	inMessage.data.readBytes((char*)readStream.getBuffer(), bufferLength);
 
-	Entity* entity = EntityManager::instantiateEntity(readStream);
+	Entity* entity = nullptr;
+	if (client->getId() == m_clients.getLocalClientId())
+	{
+		entity = findPtrByPredicate(EntityManager::getEntities().begin(), EntityManager::getEntities().end(), [tempId](Entity* ent)
+		{
+			return ent->getNetworkId() == tempId;
+		});
+		entity->setNetworkId(m_networkIdManager.getNext());
+	}
+	else
+	{
+		entity = EntityManager::instantiateEntity(readStream, m_networkIdManager.getNext());
+	}
 	if (entity == nullptr)
 	{
 		return;
 	}
 
-	const int32_t networkId = m_networkIdManager.getNext();
-	entity->setNetworkId(networkId);
-
 	Message outMessage = {};
 	outMessage.type = MessageType::AcceptEntity;
 	outMessage.data.writeInt32(tempId);
-	outMessage.data.writeInt32(networkId); // TODO Compress in range (0, s_maxNetworkedEntities)
-
+	outMessage.data.writeInt32(entity->getNetworkId());
+	LOG_DEBUG("Server::acknowledgeEntitySpawn tempId_%d newId %d", tempId, entity->getNetworkId());
 	WriteStream writeStream(128);
 	if (!EntityManager::serializeFullEntity(entity, writeStream))
 	{
@@ -341,7 +348,7 @@ void Server::acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t te
 	Message spawnMessage = {};
 	spawnMessage.type = MessageType::SpawnEntity;
 
-	spawnMessage.data.writeInt32(networkId);
+	spawnMessage.data.writeInt32(entity->getNetworkId());
 	spawnMessage.data.writeFromStream(writeStream);
 
 	for (auto& otherClient : m_clients)

@@ -73,7 +73,7 @@ bool Network::requestEntity(Entity* entity)
 
 void Network::destroyEntity(int32_t networkId)
 {
-	if (s_server)
+	if (s_server && networkId > INDEX_NONE)
 	{
 		s_server->destroyEntity(networkId);
 	}

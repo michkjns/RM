@@ -75,34 +75,34 @@ namespace network
 		return ChannelType::Unreliable;
 	};
 
-#define ReturnStringEnumCase(name) \
+#define CASE_RETURN_STRING(name) \
 	case name: return #name
 
 	static inline const char* messageTypeAsString(MessageType type)
 	{
 		switch (type)
 		{
-			ReturnStringEnumCase(MessageType::None);
-			ReturnStringEnumCase(MessageType::ClockSync);
-			ReturnStringEnumCase(MessageType::KeepAlive);
-			ReturnStringEnumCase(MessageType::Disconnect);
-			ReturnStringEnumCase(MessageType::AcceptClient);
-			ReturnStringEnumCase(MessageType::AcceptPlayer);
-			ReturnStringEnumCase(MessageType::Gamestate);
-			ReturnStringEnumCase(MessageType::SpawnEntity);
-			ReturnStringEnumCase(MessageType::AcceptEntity);
-			ReturnStringEnumCase(MessageType::DestroyEntity);
-			ReturnStringEnumCase(MessageType::GameEvent);
-			ReturnStringEnumCase(MessageType::RequestConnection);
-			ReturnStringEnumCase(MessageType::IntroducePlayer);
-			ReturnStringEnumCase(MessageType::PlayerInput);
-			ReturnStringEnumCase(MessageType::RequestEntity);
-			ReturnStringEnumCase(MessageType::NUM_MESSAGE_TYPES);
+			CASE_RETURN_STRING(MessageType::None);
+			CASE_RETURN_STRING(MessageType::ClockSync);
+			CASE_RETURN_STRING(MessageType::KeepAlive);
+			CASE_RETURN_STRING(MessageType::Disconnect);
+			CASE_RETURN_STRING(MessageType::AcceptClient);
+			CASE_RETURN_STRING(MessageType::AcceptPlayer);
+			CASE_RETURN_STRING(MessageType::Gamestate);
+			CASE_RETURN_STRING(MessageType::SpawnEntity);
+			CASE_RETURN_STRING(MessageType::AcceptEntity);
+			CASE_RETURN_STRING(MessageType::DestroyEntity);
+			CASE_RETURN_STRING(MessageType::GameEvent);
+			CASE_RETURN_STRING(MessageType::RequestConnection);
+			CASE_RETURN_STRING(MessageType::IntroducePlayer);
+			CASE_RETURN_STRING(MessageType::PlayerInput);
+			CASE_RETURN_STRING(MessageType::RequestEntity);
+			CASE_RETURN_STRING(MessageType::NUM_MESSAGE_TYPES);
 		}
 
 		assert(false);
 		return "Invalid MessageType";
 	}
-#undef ReturnStringEnumCase
+#undef CASE_RETURN_STRING
 
 };

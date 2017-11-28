@@ -158,6 +158,7 @@
     <ClCompile Include="src\core\game_state.cpp" />
     <ClCompile Include="src\core\state_machine.cpp" />
     <ClCompile Include="src\game\gameplay_state.cpp" />
+    <ClCompile Include="src\game\moving_cube.cpp" />
     <ClCompile Include="src\utility\id_manager.cpp" />
     <ClCompile Include="src\network\remote_client_manager.cpp" />
     <ClCompile Include="src\utility\buffer.cpp" />
@@ -210,7 +211,7 @@
     <ClCompile Include="src\graphics\texture.cpp" />
     <ClCompile Include="src\core\game_time.cpp" />
     <ClCompile Include="src\core\window.cpp" />
-    <ClCompile Include="src\core\transform.cpp" />
+    <ClCompile Include="src\core\transform2d.cpp" />
     <ClCompile Include="src\tests\tests.cpp" />
     <ClCompile Include="src\utility\commandline_options.cpp" />
   </ItemGroup>
@@ -220,6 +221,7 @@
     <ClInclude Include="src\game\gameplay_state.h" />
     <ClInclude Include="src\game\game_session.h" />
     <ClInclude Include="src\game\game_state_ids.h" />
+    <ClInclude Include="src\game\moving_cube.h" />
     <ClInclude Include="src\game\rocketmen_state_factory.h" />
     <ClInclude Include="src\utility\id_manager.h" />
     <ClInclude Include="src\network\remote_client_manager.h" />
@@ -281,7 +283,7 @@
     <ClInclude Include="src\core\game_time.h" />
     <ClInclude Include="src\core\window.h" />
     <ClInclude Include="src\utility\utility.h" />
-    <ClInclude Include="src\core\transform.h" />
+    <ClInclude Include="src\core\transform2d.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="data\shaders\line_shader.frag" />

@@ -11,20 +11,18 @@
 #include <utility/id_manager.h>
 #include <map>
 
-static std::map<EntityType, IEntityFactory*> s_factoryMap;
+static IEntityFactory* s_factories[static_cast<int32_t>(EntityType::NUM_ENTITY_TYPES)];
 static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
 static IdManager s_entityIds(s_maxEntities);
 
 inline bool isReplicated(Entity* entity)
 {
-	if (assert(entity != nullptr))
+	assert(entity != nullptr);
+	for (const auto& ent : s_entities)
 	{
-		for (const auto& ent : s_entities)
-		{
-			if (ent == entity)
-				return true;
-		}
+		if (ent == entity)
+			return true;
 	}
 
 	return false;
@@ -32,20 +30,20 @@ inline bool isReplicated(Entity* entity)
 
 IEntityFactory* EntityManager::getFactory(EntityType type)
 {
-	return s_factoryMap.at(type);
+	return s_factories[static_cast<int32_t>(type)];
 }
 
 void EntityManager::registerFactory(IEntityFactory* factory)
 {
 	assert(factory != nullptr);
-	s_factoryMap[factory->getType()] = factory;
+	s_factories[static_cast<int32_t>(factory->getType())] = factory;
 }
 
 void EntityManager::instantiateEntity(Entity* entity, bool enableReplication)
 {
 	assert(entity != nullptr);
 	assert(!isReplicated(entity));
-	s_entityIds.hasAvailable();
+	ensure(s_entityIds.hasAvailable());
 
 	entity->m_id = s_entityIds.getNext();
 	s_newEntities.push_back(entity);
@@ -56,7 +54,7 @@ void EntityManager::instantiateEntity(Entity* entity, bool enableReplication)
 	}
 }
 
-Entity* EntityManager::instantiateEntity(ReadStream& stream, bool enableReplication)
+Entity* EntityManager::instantiateEntity(ReadStream& stream)
 {
 	EntityType type = EntityType::Entity;
 	int32_t intType = INDEX_NONE;
@@ -65,7 +63,28 @@ Entity* EntityManager::instantiateEntity(ReadStream& stream, bool enableReplicat
 	assert(intType > INDEX_NONE && intType < s_numEntityTypes);
 	type = static_cast<EntityType>(intType);
 	Entity* entity = getFactory(type)->instantiate(stream);
-	instantiateEntity(entity, enableReplication);
+
+	instantiateEntity(entity);
+
+	return entity;
+}
+
+Entity* EntityManager::instantiateEntity(ReadStream& stream, int32_t networkId)
+{
+	assert(networkId >= INDEX_NONE);
+	EntityType type = EntityType::Entity;
+	int32_t intType = INDEX_NONE;
+	stream.serializeInt(intType, 0, s_numEntityTypes);
+
+	assert(intType > INDEX_NONE && intType < s_numEntityTypes);
+	type = static_cast<EntityType>(intType);
+	Entity* entity = getFactory(type)->instantiate(stream);
+
+	if (entity->getNetworkId() <= INDEX_NONE)
+	{
+		entity->setNetworkId(networkId);
+	}
+	instantiateEntity(entity);
 
 	return entity;
 }
@@ -149,6 +168,8 @@ void EntityManager::killEntities()
 		delete (*it);
 		it = s_entities.erase(it);
 	}
+
+	s_entityIds.clear();
 }
 
 void EntityManager::freeEntityId(int32_t id)

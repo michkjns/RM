@@ -55,11 +55,11 @@ void Game::tick(float fixedDeltaTime, Sequence frameId, Physics* physics)
 	}
 	if (m_server)
 	{
+		if (GameState* state = m_stateMachine.getState())
+		{
+			state->tick(this, fixedDeltaTime);
+		}
 		physics->step(fixedDeltaTime);
-	}
-	if (GameState* state = m_stateMachine.getState())
-	{
-		state->tick(this, fixedDeltaTime);
 	}
 }
 

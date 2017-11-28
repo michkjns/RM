@@ -10,35 +10,27 @@
 
 using namespace rm;
 
-EntityFactory<Rocket> EntityFactory<Rocket>::s_factory;
+DECLARE_ENTITY_IMPL(Rocket);
 
 static float s_maxRocketLifetime = 5.0f;
 
 Rocket::Rocket() :
 	m_isInitialized(false),
-	m_rigidbody(nullptr),
 	m_owner(nullptr),
 	m_lifetimeSeconds(0.f),
 	m_gracePeriod(true)
 {
-}
-
-Rocket::Rocket(Vector2 direction, float accelerationPower) :
-	m_rigidbody(nullptr),
-	m_owner(nullptr),
-	m_direction(direction),
-	m_accelerationPower(accelerationPower),
-	m_lifetimeSeconds(0.f)
-{
+	physics::Fixture fixture;
+	fixture.isSensor = true;
+	m_rigidbody = Physics::createBoxRigidbody(Vector2(0.50f, 0.50f), fixture, this);
+	m_transform.setRigidbody(m_rigidbody);
 	m_sprite = "demoTexture";
+	m_transform.setScale(Vector2(0.5f));
 }
 
 Rocket::~Rocket()
 {
-	if (m_rigidbody)
-	{
-		Physics::destroyRigidbody(m_rigidbody);
-	}
+	Physics::destroyRigidbody(m_rigidbody);
 }
 
 void Rocket::initialize(Entity* owner, Vector2 direction, float power)
@@ -47,12 +39,6 @@ void Rocket::initialize(Entity* owner, Vector2 direction, float power)
 	m_accelerationPower = power;
 	m_direction         = glm::normalize(direction);
 
-	if (m_rigidbody == nullptr)
-	{
-		setupRigidBody();
-	}
-
-	m_transform.setRigidbody(m_rigidbody);
 	m_rigidbody->setLinearVelocity(m_accelerationPower * m_direction);
 	m_isInitialized = true;
 }
@@ -97,116 +83,6 @@ Rigidbody* Rocket::getRigidbody() const
 	return m_rigidbody;
 }
 
-template<typename Stream>
-bool Rocket::serializeFull(Stream& stream)
-{
-	int32_t ownerId = -1;
-	Entity* owner = nullptr;
-	Vector2 vel;
-	Vector2 pos;
-
-	serializeInt(stream, m_networkId, -s_maxSpawnPredictedEntities, s_maxNetworkedEntities);
-	if (Stream::isReading)
-	{
-		if (m_networkId < -s_maxSpawnPredictedEntities || std::abs(m_networkId) > s_maxNetworkedEntities)
-		{
-			LOG_WARNING("Rocket: Received invalid networkID");
-			return false;
-		}
-	}
-	if (Stream::isWriting)
-	{
-		ownerId = m_owner->getNetworkId();
-		vel     = m_rigidbody->getLinearVelocity();
-		pos     = m_transform.getLocalPosition();
-	}
-
-	serializeInt(stream, ownerId, 0, s_maxNetworkedEntities);
-	if (Stream::isReading)
-	{
-		if (ownerId >= s_maxNetworkedEntities || ownerId < 0)
-			return false;
-
-		auto entityList = EntityManager::getEntities();
-		owner = findPtrByPredicate(entityList.begin(), entityList.end(),
-			[ownerId](Entity* entity) -> bool { return entity->getNetworkId() == ownerId; });
-	}
-	
-	if (!serializeVector2(stream, vel, -100.0f, 100.0f, 0.01f))
-	{
-		return false;
-	}
-
-	if (!serializeFloat(stream, m_accelerationPower))
-	{
-		return false;
-	}
-
-	if (!m_isInitialized)
-	{
-		initialize(owner, glm::normalize(vel), m_accelerationPower);
-	}
-
-	if (!serializeVector2(stream, pos, -100.0f, 100.0f, 0.01f))
-	{
-		return false;
-	}
-
-	if (Stream::isReading)
-	{
-		m_transform.setLocalPosition(pos);
-		m_rigidbody->setLinearVelocity(vel);
-	}
-
-	return true;
-}
-
-template<typename Stream>
-bool Rocket::serialize(Stream& stream)
-{
-	float angle;
-	Vector2 vel;
-	Vector2 pos;
-
-	if (Stream::isWriting)
-	{
-		pos = m_transform.getLocalPosition();
-		vel = m_rigidbody->getLinearVelocity();
-	}
-
-	if (serializeFloat(stream, angle, 0.0f, 2.0f, 0.01f))
-	{
-		if (Stream::isReading)
-		{
-			m_transform.setLocalRotation(angle);
-		}
-	}
-	else
-	{
-		return false;
-	}
-
-	serializeVector2(stream, pos);
-	if (Stream::isReading)
-	{
-		m_transform.setLocalPosition(pos);
-	}
-
-	serializeVector2(stream, vel);
-	if (Stream::isReading)
-	{
-		m_rigidbody->setLinearVelocity(vel);
-	}
-
-	return true;
-}
-
-template<typename Stream>
-bool Rocket::reverseSerialize(Stream& /*stream*/)
-{
-	return true;
-}
-
 void Rocket::startContact(Entity* other)
 {
 	if (m_gracePeriod && other == m_owner)
@@ -226,10 +102,56 @@ void Rocket::endContact(Entity* /*other*/)
 {
 }
 
-void Rocket::setupRigidBody()
+template<typename Stream>
+bool Rocket::serializeFull(Stream& stream)
 {
-	assert(m_rigidbody == nullptr);
-	physics::Fixture fixture;
-	fixture.isSensor = true;
-	m_rigidbody = Physics::createBoxRigidbody(Vector2(0.50f, 0.50f), fixture, this);
+	ensure(Entity::serializeFull(stream));
+
+	int32_t ownerId = INDEX_NONE;
+	if (Stream::isWriting)
+	{
+		assert(m_owner != nullptr);
+		ownerId = m_owner->getNetworkId();
+	}
+
+	serializeInt(stream, ownerId, 0, s_maxNetworkedEntities);
+	if (Stream::isReading)
+	{
+		if (ownerId >= s_maxNetworkedEntities || ownerId < 0)
+			return ensure(false);
+
+		auto& entityList = EntityManager::getEntities();
+		m_owner = findPtrByPredicate(entityList.begin(), entityList.end(),
+			[ownerId](Entity* entity) -> bool { return entity->getNetworkId() == ownerId; });
+	}
+	
+	if (!serializeFloat(stream, m_accelerationPower))
+	{
+		return ensure(false);
+	}
+
+	if (!serialize(stream))
+		return ensure(false);
+
+	if (Stream::isReading)
+	{
+		initialize(m_owner, glm::normalize(m_rigidbody->getLinearVelocity()), m_accelerationPower);
+	}
+
+	return true;
+}
+
+template<typename Stream>
+bool Rocket::serialize(Stream& stream)
+{	
+	if (!m_transform.serialize(stream))
+		return ensure(false);
+
+	return true;
+}
+
+template<typename Stream>
+bool Rocket::reverseSerialize(Stream& /*stream*/)
+{
+	return true;
 }

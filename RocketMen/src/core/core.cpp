@@ -153,14 +153,6 @@ void Core::run()
 		{	
 			m_game->tick(fixedDeltaTime, frameId, m_physics);
 
-			for (auto& it : EntityManager::getEntities())
-			{
-				if (it->isAlive())
-				{
-					it->fixedUpdate(fixedDeltaTime);
-				}
-			}	
-
 			t += fixedDeltaTime;
 			accumulator -= fixedDeltaTime;
 			frameId++;

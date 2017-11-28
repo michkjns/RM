@@ -4,7 +4,7 @@
 #include <utility/bitstream.h>
 #include <common.h>
 #include <core/entity_type.h>
-#include <core/transform.h>
+#include <core/transform2d.h>
 
 #include <functional>
 
@@ -34,7 +34,7 @@ public:
 	
 	void setSprite(std::string name);
 
-	Transform& getTransform();
+	Transform2D& getTransform();
 
 	/* Flags entity to be destroyed */
 	void kill();
@@ -61,7 +61,7 @@ public:
 	int32_t getId() const;
 
 protected:
-	Transform   m_transform;
+	Transform2D m_transform;
 	std::string m_sprite;
 	int32_t     m_networkId;
 	int16_t     m_ownerPlayerId;
@@ -71,4 +71,37 @@ private:
 
 public:
 	friend class EntityManager;
+
+	template<typename Stream>
+	bool serializeFull(Stream& stream)
+	{
+		int32_t sprLength = 0;
+
+		if (Stream::isWriting)
+		{
+			sprLength = int32_t(m_sprite.length());
+		}
+
+		serializeInt(stream, m_networkId, -s_maxSpawnPredictedEntities - 1, s_maxNetworkedEntities);
+		serializeInt(stream, sprLength, 0, 32);
+
+		if (Stream::isReading)
+			m_sprite.resize(sprLength);
+
+		for (int32_t i = 0; i < sprLength; i++)
+		{
+			int32_t character = int32_t(m_sprite[i]);
+			serializeInt(stream, character, CHAR_MIN, CHAR_MAX);
+			if (Stream::isReading)
+				m_sprite[i] = char(character);
+		}
+
+		return true;
+	}
+
+	template<typename Stream>
+	bool serialize(Stream& stream)
+	{
+		return true;
+	}
 };

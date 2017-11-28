@@ -10,20 +10,22 @@ enum class EntityType : int16_t
 	Entity = 0,
 	Character,
 	Rocket,
+	MovingCube,
 
 	NUM_ENTITY_TYPES
 };
 
-#define ReturnStringEnumCase(name) \
+#define CASE_RETURN_STRING(name) \
 	case name: return #name
 
 static inline const char* entityTypeAsString(EntityType type)
 {
 	switch (type)
 	{
-		ReturnStringEnumCase(EntityType::Entity);
-		ReturnStringEnumCase(EntityType::Character);
-		ReturnStringEnumCase(EntityType::Rocket);
+		CASE_RETURN_STRING(EntityType::Entity);
+		CASE_RETURN_STRING(EntityType::Character);
+		CASE_RETURN_STRING(EntityType::Rocket);
+		CASE_RETURN_STRING(EntityType::MovingCube);
 		case EntityType::NUM_ENTITY_TYPES:
 		{
 			return "Invalid EntityType";
@@ -33,4 +35,4 @@ static inline const char* entityTypeAsString(EntityType type)
 	assert(false);
 	return "Invalid EntityType";
 }
-#undef ReturnStringEnumCase
+#undef CASE_RETURN_STRING

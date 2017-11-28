@@ -7,6 +7,7 @@
 #include <core/input.h>
 #include <core/resource_manager.h>
 #include <game/character.h>
+#include <game/moving_cube.h>
 #include <game/rocket.h>
 #include <game/rocketmen.h>
 #include <graphics/camera.h>
@@ -31,13 +32,15 @@ void GameplayState::initialize(Game* /*game*/)
 		input::mapAction("Fire", MouseButton::Left, ButtonState::Press);
 		input::mapAction("Fire", ControllerButton(0), ButtonState::Press, Controller::Controller_0);
 	}
-
-	EntityFactory<Character>::initialize();
-	EntityFactory<Rocket>::initialize();
 }
 
 void GameplayState::enter(Game* /*game*/)
 {
+	if (Network::isServer())
+	{
+		MovingCube* cube = new MovingCube();
+		Entity::instantiate(cube);
+	}
 }
 
 void GameplayState::destroy(Game* /*game*/)
@@ -49,7 +52,7 @@ void GameplayState::update(Game* game, const Time& time)
 	const float deltaTime = time.getDeltaSeconds();
 
 	const float axis = input::getAxis(ControllerId(0), 0);
-	const float cameraSpeed = 0.20f * deltaTime;
+	const float cameraSpeed = 2.20f * deltaTime;
 	Camera::mainCamera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
 
 	if (input::getKey(Key::LEFT))
@@ -79,8 +82,15 @@ void GameplayState::update(Game* game, const Time& time)
 	}
 }
 
-void GameplayState::tick(Game* /*game*/, float /*fixedDeltaTime*/)
+void GameplayState::tick(Game* /*game*/, float fixedDeltaTime)
 {
+	for (auto& it : EntityManager::getEntities())
+	{
+		if (it->isAlive())
+		{
+			it->fixedUpdate(fixedDeltaTime);
+		}
+	}
 }
 
 void GameplayState::render(Game* /*game*/)

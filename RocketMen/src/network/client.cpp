@@ -259,6 +259,10 @@ void Client::requestEntity(int32_t netId)
 	{
 		m_requestedEntities.insert(netId);
 		LOG_DEBUG("Client::requestEntity %d", netId);
+		if (netId > 0)
+		{
+		//	ensure(false);
+		}
 		Message message = {};
 		message.type = MessageType::RequestEntity;
 		message.data.writeInt32(netId);
@@ -450,8 +454,8 @@ void Client::onSpawnEntity(IncomingMessage& msg)
 		}
 
 #ifdef _DEBUG
-		Entity* entity = EntityManager::instantiateEntity(readStream);
-		LOG_DEBUG("Client: Spawned entity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
+		Entity* entity = EntityManager::instantiateEntity(readStream, networkId);
+		LOG_DEBUG("Client::onSpawnEntity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
 #else
 		EntityManager::instantiateEntity(readStream);
 #endif // _DEBUG
@@ -460,8 +464,8 @@ void Client::onSpawnEntity(IncomingMessage& msg)
 
 void Client::onAcceptEntity(IncomingMessage& msg)
 {
-	int32_t localId  = msg.data.readInt32();
-	int32_t remoteId = msg.data.readInt32();
+	const int32_t localId  = msg.data.readInt32();
+	const int32_t remoteId = msg.data.readInt32();
 
 	int32_t index = m_requestedEntities.find(localId);
 	if (index != INDEX_NONE)
@@ -474,7 +478,7 @@ void Client::onAcceptEntity(IncomingMessage& msg)
 		[localId](Entity* it) { return it->getNetworkId() == localId; } ))
 	{
 		entity->setNetworkId(remoteId);
-#ifdef _DEBUG
+#ifdef _DEBUG1
 		LOG_DEBUG("Client: Accepted entity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
 #endif
 	}

@@ -115,7 +115,6 @@ void Renderer_glfw::render()
 		
 		renderTiles();
 		renderSprites();
-		//renderUI();
 	}
 }
 
