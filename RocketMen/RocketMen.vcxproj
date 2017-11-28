@@ -286,6 +286,7 @@
     <ClInclude Include="src\core\transform2d.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\README.md" />
     <None Include="data\shaders\line_shader.frag" />
     <None Include="data\shaders\line_shader.vert" />
     <None Include="data\shaders\sprite_shader.frag" />

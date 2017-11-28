@@ -410,5 +410,6 @@
     <None Include="data\shaders\line_shader.frag" />
     <None Include="data\shaders\line_shader.vert" />
     <None Include="src\utility\commandline_options.h" />
+    <None Include="..\README.md" />
   </ItemGroup>
 </Project>
