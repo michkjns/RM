@@ -18,7 +18,7 @@ TileMap::TileMap() :
 {
 }
 
-bool TileMap::initialize(std::string tileSheet,
+bool TileMap::initialize(const std::string& tileSheet,
 				 char*       map,
 				 const char* name,
 				 uint32_t    mapWidth,

@@ -55,7 +55,7 @@ void Core::initialize(Game* game, const CommandLineOptions& options)
 
 	m_game = game;
 
-	if(!runDedicated || (runDedicated && Debug::getVerbosity() == Debug::Verbosity::Debug))
+	if(!runDedicated || Debug::getVerbosity() == Debug::Verbosity::Debug)
 	{
 		LOG_INFO("Core: Creating window..");
 		m_window = Window::create();

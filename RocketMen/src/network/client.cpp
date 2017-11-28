@@ -474,7 +474,8 @@ void Client::onAcceptEntity(IncomingMessage& msg)
 	if (remoteId < 0 || remoteId >= s_maxNetworkedEntities)
 		return;
 
-	if (int32_t index = m_requestedEntities.find(localId) != INDEX_NONE)
+	const int32_t index = m_requestedEntities.find(localId);
+	if (index != INDEX_NONE)
 	{
 		m_requestedEntities[index] = INDEX_NONE;
 	}

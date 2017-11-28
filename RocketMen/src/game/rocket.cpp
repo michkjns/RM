@@ -33,7 +33,7 @@ Rocket::~Rocket()
 	Physics::destroyRigidbody(m_rigidbody);
 }
 
-void Rocket::initialize(Entity* owner, Vector2 direction, float power)
+void Rocket::initialize(Entity* owner, const Vector2& direction, float power)
 {
 	m_owner             = owner;
 	m_accelerationPower = power;

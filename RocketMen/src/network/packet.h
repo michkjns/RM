@@ -72,8 +72,8 @@ namespace network
 
 	private:
 		unsigned char m_data[g_packetBufferSize];
-		int32_t       m_read;
 		Sequence      m_messageIDs[g_maxMessagesPerPacket];
+		int32_t       m_read;
 		ChannelType   m_channel;
 		bool          m_error;
 	};

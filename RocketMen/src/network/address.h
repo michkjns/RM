@@ -10,7 +10,7 @@ namespace network
 	class Address
 	{
 	public:
-		Address() {}
+		Address();
 		Address(uint8_t a,
 		        uint8_t b,
 		        uint8_t c,

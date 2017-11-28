@@ -15,7 +15,7 @@ namespace rm
 		Rocket();
 		virtual ~Rocket();
 
-		void initialize(Entity* owner, Vector2 direction, float power);
+		void initialize(Entity* owner, const Vector2& direction, float power);
 
 		virtual void update(float deltaTime)      override;
 		virtual void fixedUpdate(float deltaTime) override;

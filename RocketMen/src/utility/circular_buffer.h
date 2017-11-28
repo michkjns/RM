@@ -13,7 +13,8 @@ template<class T, size_t N>
 class CircularBuffer
 {
 public:
-	CircularBuffer() { m_index = 0; };
+	CircularBuffer() : 
+		m_buffer(), m_index(0) {};
 	~CircularBuffer() {};
 
 	bool contains(const T& value)

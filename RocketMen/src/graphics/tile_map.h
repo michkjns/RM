@@ -9,7 +9,7 @@ public:
 	TileMap();
 	~TileMap();
 
-	bool initialize(std::string tileSheet,
+	bool initialize(const std::string& tileSheet,
 					char*       map,
 					const char* name,
 					uint32_t    mapWidth,

@@ -15,7 +15,7 @@ public:
 	                          const char* fragmentShaderFile,
 	                          const char* name);
 
-	static Shader& getShader(std::string name);
+	static Shader& getShader(const std::string& name);
 
 	static Texture& createTexture(const void*        imageData,
 	                              uint32_t           width, 
@@ -25,7 +25,7 @@ public:
 	static Texture& loadTexture(const char* file, 
 								const char* name);
 
-	static Texture& getTexture(std::string name);
+	static Texture& getTexture(const std::string& name);
 
 	static TileMap& loadTilemap(const char* file,
 	                            const char* sheetName,

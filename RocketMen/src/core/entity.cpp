@@ -87,7 +87,7 @@ void Entity::endContact(Entity* /*other*/)
 {
 }
 
-void Entity::setSprite(std::string name)
+void Entity::setSprite(const std::string& name)
 {
 	m_sprite = name;
 }

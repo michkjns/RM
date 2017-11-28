@@ -55,7 +55,8 @@ Socket_win32::Socket_win32() :
 	m_bytesSent(0),
 	m_packetsReceived(0),
 	m_packetsSent(0),
-	m_port(0)
+	m_port(0),
+	m_winSocket(0)
 {
 }
 

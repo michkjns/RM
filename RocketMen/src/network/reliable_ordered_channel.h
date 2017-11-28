@@ -27,6 +27,7 @@ namespace network
 	private:
 		void writeAcksToPacket(Packet* packet);
 		void readAcksFromPacket(const PacketHeader& packetHeader);
+		void ack(const Sequence &ackSequence);
 		bool hasMessagesToSend(const Time& time) const;
 		bool canSendMessage() const;
 

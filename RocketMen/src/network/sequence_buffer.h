@@ -28,15 +28,15 @@ private:
 	T*        m_buffer;
 	bool*     m_exist;
 	Sequence* m_sequences;
-	Sequence  m_currentSequence;
 	int32_t   m_size;
-	bool      m_firstEntry;
+	Sequence  m_currentSequence;
+	bool      m_firstEntry : 1;
 };
 
 template<typename T>
 SequenceBuffer<T>::SequenceBuffer(int32_t size) :
-	m_currentSequence(0),
 	m_size(size),
+	m_currentSequence(0),
 	m_firstEntry(true)
 {
 	m_buffer    = new T[size];

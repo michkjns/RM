@@ -2,6 +2,8 @@
 #include <core/window.h>
 
 #include <core/debug.h>
+#include <utility/utility.h>
+
 #include <GLFW/glfw3.h>
 
 void onResizeCallback(GLFWwindow* window, int32_t width, int32_t height);
@@ -12,12 +14,12 @@ public:
 	Window_glfw();
 	~Window_glfw();
 
-	bool initialize(const char* title, Vector2i size) override;
+	bool initialize(const char* title, const Vector2i& size) override;
 	void terminate() override;
 	void setTitle(const char* title) override;
 	void swapBuffers() override;
 	bool pollEvents() override;
-	void onResize(GLFWwindow* window, Vector2i newSize) override;
+	void onResize(GLFWwindow* window, const Vector2i& newSize) override;
 
 	Vector2i     getSize()   const override;
 	unsigned int getWidth()  const override;
@@ -32,7 +34,8 @@ private:
 };
 
 Window_glfw::Window_glfw() :
-	m_glfwWindow(nullptr)
+	m_glfwWindow(nullptr),
+	m_title(nullptr)
 {
 }
 
@@ -50,7 +53,7 @@ Window* Window::create()
 	return new Window_glfw();
 }
 
-bool Window_glfw::initialize(const char* title, Vector2i size)
+bool Window_glfw::initialize(const char* title, const Vector2i& size)
 {
 	assert(title != nullptr);
 	assert(size.x > 0);
@@ -102,7 +105,7 @@ void Window_glfw::swapBuffers()
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR)
 	{
-		printf("Window::swapBuffers: OpenGL Error: %d", error);
+		printf("Window::swapBuffers: OpenGL Error: %s", glErrorToString(error));
 	}
 
 	glfwSwapBuffers(m_glfwWindow);
@@ -115,7 +118,7 @@ bool Window_glfw::pollEvents()
 	return (glfwWindowShouldClose(m_glfwWindow) == 1);
 }
 
-void Window_glfw::onResize(GLFWwindow* glfwWindow, Vector2i newSize)
+void Window_glfw::onResize(GLFWwindow* glfwWindow, const Vector2i& newSize)
 {
 	assert(glfwWindow == m_glfwWindow);
 

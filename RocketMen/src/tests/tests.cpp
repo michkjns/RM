@@ -81,66 +81,64 @@ bool streamTests()
 	WriteStream writeStream(256);
 	ReadStream  readStream(256);
 	
-	packet.value = true;
 	packet.serialize(writeStream);
 	packet2.serialize(writeStream);
 	memcpy(readStream.getBuffer(), writeStream.getBuffer(), writeStream.getLength());
 
-	SamplePacket  r_packet;
-	SamplePacket2 r_packet2;
-	r_packet.serialize(readStream);
-	r_packet2.serialize(readStream);
+	SamplePacket  receivePacket;
+	SamplePacket2 receivePacket2;
+	receivePacket.serialize(readStream);
+	receivePacket2.serialize(readStream);
 
-	if (!assert(r_packet.value == packet.value))
-	{
-		return false;
-	}
-
-	if (!assert(r_packet.value == packet.value))
-	{
-		return false;
-	}
-	if(!assert(r_packet.value2 == packet.value2))
-	{
-		return false;
-	}
-	if(!assert(r_packet2.value == packet2.value))
+	if (!assert(receivePacket.value == packet.value))
 	{
 		return false;
 	}
 
-	if(!assert(r_packet2.fvalue == packet2.fvalue))
+	if (!assert(receivePacket.value == packet.value))
+	{
+		return false;
+	}
+	if(!assert(receivePacket.value2 == packet.value2))
+	{
+		return false;
+	}
+	if(!assert(receivePacket2.value == packet2.value))
 	{
 		return false;
 	}
 
-	if(!assert(glm::distance(r_packet2.vector, packet2.vector) < 0.01f))
+	if(!assert(receivePacket2.fvalue == packet2.fvalue))
 	{
 		return false;
 	}
 
-	if(!assert(glm::distance(r_packet2.vector2, packet2.vector2) < 0.1f))
+	if(!assert(glm::distance(receivePacket2.vector, packet2.vector) < 0.01f))
 	{
 		return false;
 	}
 
-	if(!assert(r_packet2.fvalue2 == packet2.fvalue2))
-	{
-		assert(false);
-		return false;
-	}
-
-	if(!assert(r_packet2.value2 == packet2.value2))
+	if(!assert(glm::distance(receivePacket2.vector2, packet2.vector2) < 0.1f))
 	{
 		return false;
 	}
 
-	if (!assert(glm::distance(r_packet2.vector3, packet2.vector3) < 0.01f))
+	if(!assert(receivePacket2.fvalue2 == packet2.fvalue2))
 	{
 		return false;
 	}
 
-	if (!assert(glm::distance(r_packet2.vector4, packet2.vector4) < 0.01f))
+	if(!assert(receivePacket2.value2 == packet2.value2))
+	{
+		return false;
+	}
+
+	if (!assert(glm::distance(receivePacket2.vector3, packet2.vector3) < 0.01f))
+	{
+		return false;
+	}
+
+	if (!assert(glm::distance(receivePacket2.vector4, packet2.vector4) < 0.01f))
 	{
 		return false;
 	}

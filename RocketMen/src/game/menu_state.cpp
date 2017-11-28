@@ -13,7 +13,9 @@ using namespace rm;
 static const network::Address localhost("127.0.0.1", s_defaultServerPort);
 //=============================================================================
 
-MenuState::MenuState()
+MenuState::MenuState() :
+	m_game(nullptr),
+	m_locked(false)
 {
 }
 

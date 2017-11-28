@@ -38,12 +38,8 @@ private:
 	int32_t   m_wordIndex;
 	uint32_t* m_buffer;
 	int32_t   m_bufferLength;
+	int32_t   m_numBitsWritten;
 	bool      m_isFull;
-	
-#ifdef _DEBUG
-	int32_t m_bitsWritten;
-#endif // ifdef _DEBUG
-
 };
 
 class ReadStream
@@ -66,15 +62,11 @@ public:
 private:
 	uint64_t  m_scratch;
 	int32_t   m_scratchBits;
-	int32_t   m_numBitsRead;
 	int32_t   m_wordIndex;
 	int32_t   m_bufferLength;
 	uint32_t* m_buffer;
+	int32_t   m_numBitsRead;
 	bool      m_corrupted;
-
-#ifdef _DEBUG
-	int32_t m_bitsRead;
-#endif // _DEBUG
 
 };
 

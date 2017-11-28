@@ -25,7 +25,7 @@ ActionListener::~ActionListener()
 			s_actionListeners.erase(it);
 			return;
 		}
-		it++;
+		++it;
 	}
 }
 

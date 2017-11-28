@@ -49,7 +49,9 @@ bool SpriteRenderer::initialize()
 	return true;
 }
 
-void SpriteRenderer::render(const glm::mat4& modelMatrix, const glm::mat4& projectionMatrix, std::string texture)
+void SpriteRenderer::render(const glm::mat4& modelMatrix, 
+	const glm::mat4& projectionMatrix, 
+	const std::string& texture)
 {
 	assert(m_spriteShader != nullptr);
 	if (m_spriteShader != nullptr)

@@ -12,7 +12,7 @@ public:
 
 	void render(const glm::mat4& modelMatrix,
 				const glm::mat4& projectionMatrix,
-				std::string texture);
+				const std::string& texture);
 
 private:
 	GLuint m_VAO;

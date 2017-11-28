@@ -46,13 +46,10 @@ public:
 	static bool        destroyStaticbody(Staticbody* sb);
 	static bool        destroyRigidbody(Rigidbody* rb);
 	
-	static void        applyBlastImpulse(Rigidbody* rb, Vector2 position, 
-										 float force);
-
-	static void        blastExplosion(Vector2 position, float radius, 
+	static void        blastExplosion(const Vector2& position, float radius,
 									  float power);
 
-	static void        loadCollisionFromTilemap(std::string tilemap);
+	static void        loadCollisionFromTilemap(const std::string& tilemap);
 	static void        drawDebug();
 
 	static void        destroyBodies();

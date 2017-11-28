@@ -17,6 +17,18 @@ void Shader::unbindShader()
 	glUseProgram(0);
 }
 
+Shader::Shader() :
+	m_isInitialized(false),
+	m_glProgramID(0)
+{
+	m_glShader[0] = 0;
+	m_glShader[1] = 0;
+}
+
+Shader::~Shader()
+{
+}
+
 void Shader::use()
 {
 	if (!m_isInitialized)
@@ -73,7 +85,7 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 
 			std::cerr << infoLog << std::endl;
 
-			delete infoLog;
+			delete[] infoLog;
 
 			switch (type[i])
 			{
@@ -111,7 +123,7 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 
 		printf("%s\n", infoLog);
 
-		delete infoLog;
+		delete[] infoLog;
 		return false;
 	}
 

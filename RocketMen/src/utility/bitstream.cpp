@@ -7,12 +7,17 @@
 #include <bitset>
 #include <assert.h>
 
-WriteStream::WriteStream(size_t size)
+WriteStream::WriteStream(size_t size) :
+	m_scratch(0),
+	m_scratchBits(0),
+	m_wordIndex(0),
+	m_isFull(false)
 {
 	assert(size > 0);
 
 	m_bufferLength = static_cast<int32_t>(size);
 	m_buffer = new uint32_t[size];
+	memset(m_buffer, 0, size * sizeof(uint32_t));
 }
 
 WriteStream::~WriteStream()
@@ -53,7 +58,7 @@ void WriteStream::serializeBits(uint32_t value, uint32_t numBits)
 	flush(m_scratchBits >= 32);
 
 #ifdef _DEBUG
-	m_bitsWritten += numBits;
+	m_numBitsWritten += numBits;
 #endif // _DEBUG
 }
 
@@ -61,16 +66,14 @@ void WriteStream::serializeBits(uint32_t value, uint32_t numBits)
 void WriteStream::serializeBool(bool& value)
 {
 	if (value)
+	{
 		m_scratch |= (uint64_t(1) << m_scratchBits);
-
+	}
 	m_scratchBits++;
 	
 	flush(m_scratchBits >= 32);
 
-#ifdef _DEBUG
-	m_bitsWritten += 1;
-#endif // _DEBUG
-
+	m_numBitsWritten += 1;
 }
 
 /* Write and compress a 32-bit integer in in range [min, max] */
@@ -115,7 +118,7 @@ void WriteStream::serializeData(const char* data, int32_t dataLength)
 		m_wordIndex += bytesToCopy;
 
 #ifdef _DEBUG
-		m_bitsWritten += (dataLength-bytesToWrite) * 8;
+		m_numBitsWritten += (dataLength-bytesToWrite) * 8;
 #endif // _DEBUG
 
 	}
@@ -138,7 +141,12 @@ uint32_t* WriteStream::getBuffer() const
 	return m_buffer;
 }
 
-ReadStream::ReadStream(size_t size)
+ReadStream::ReadStream(size_t size) :
+	m_scratch(0),
+	m_scratchBits(0),
+	m_wordIndex(0),
+	m_corrupted(false),
+	m_numBitsRead(0)
 {
 	assert(size > 0);
 
@@ -181,11 +189,7 @@ void ReadStream::serializeBits(uint32_t& value, uint32_t numBits)
 	value = m_scratch & (uint64_t(1) << numBits) - 1;
 	m_scratch >>= numBits;
 	m_scratchBits-= numBits;
-
-#ifdef _DEBUG
-	m_bitsRead += numBits;
-#endif // _DEBUG
-	
+	m_numBitsRead += numBits;	
 }
 
 void ReadStream::serializeBool(bool& dest)
@@ -195,11 +199,7 @@ void ReadStream::serializeBool(bool& dest)
 	dest = (m_scratch & 1);
 	m_scratch >>= 1;
 	m_scratchBits--;
-
-#ifdef _DEBUG
-	m_bitsRead += 1;
-#endif // _DEBUG
-
+	m_numBitsRead += 1;
 }
 
 void ReadStream::serializeInt(int32_t& value, int32_t min, int32_t max)

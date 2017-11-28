@@ -6,7 +6,9 @@
 Texture* Texture::s_currentTexture = nullptr;
 
 Texture::Texture() :
-	m_id(0)
+	m_id(0),
+	m_width(0),
+	m_height(0)
 {
 }
 

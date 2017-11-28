@@ -16,6 +16,8 @@
 #include <map>
 
 Game::Game() :
+	m_timestep(0),
+	m_stateFactory(nullptr),
 	m_client(nullptr),
 	m_server(nullptr)
 {

@@ -148,7 +148,7 @@ bool Physics::destroyRigidbody(Rigidbody* rigidBody)
 {
 	assert(rigidBody != nullptr);
 
-	for (auto it = s_rigidbodies.begin(); it != s_rigidbodies.end(); it++)
+	for (auto it = s_rigidbodies.begin(); it != s_rigidbodies.end(); ++it)
 	{
 		if ((*it) == rigidBody)
 		{
@@ -167,9 +167,9 @@ bool Physics::destroyRigidbody(Rigidbody* rigidBody)
 void _applyBlastImpulse(b2Body* body, b2Vec2 pos, float force)
 {
 	b2Vec2 blastDir = body->GetWorldCenter() - pos;
-	float distance = blastDir.Normalize();
+	const float distance = glm::abs(blastDir.Normalize());
 
-	if (distance != 0)
+	if (distance > glm::epsilon<float>())
 	{
 		float invDistance = 1 / distance;
 		float impulseMag = force * invDistance * invDistance;
@@ -177,7 +177,7 @@ void _applyBlastImpulse(b2Body* body, b2Vec2 pos, float force)
 	}
 }
 
-void Physics::blastExplosion(Vector2 position, float radius, float power)
+void Physics::blastExplosion(const Vector2& position, float radius, float power)
 {
 	QueryCallback queryCallback;
 	b2AABB aabb;
@@ -217,7 +217,7 @@ bool Physics::destroyStaticbody(Staticbody* staticBody)
 	return false;
 }
 
-void Physics::loadCollisionFromTilemap(std::string tilemapName)
+void Physics::loadCollisionFromTilemap(const std::string& tilemapName)
 {
 	TileMap& tilemap = ResourceManager::getTileMap(tilemapName.c_str());
 

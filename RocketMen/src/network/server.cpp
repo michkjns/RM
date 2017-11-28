@@ -21,6 +21,7 @@ using namespace network;
 
 Server::Server(Game* game) :
 	m_game(game),
+	m_type(GameSessionType::Offline),
 	m_packetReceiver(new PacketReceiver(128)),
 	m_networkIdManager(s_maxNetworkedEntities),
 	m_clients(s_maxConnectedClients)
@@ -168,7 +169,7 @@ void Server::onPlayerInput(IncomingMessage& message)
 	RemoteClient* client = m_clients.getClient(message.address);
 	if (client == nullptr)
 	{
-		LOG_WARNING("Server: onPlayerInput: Client non-existent (%s)", message.address.toString());
+		LOG_WARNING("Server: onPlayerInput: Client non-existent (%s)", message.address.toString().c_str());
 		return;
 	}
 
@@ -197,7 +198,7 @@ void Server::onEntityRequest(IncomingMessage& inMessage)
 	RemoteClient* client = m_clients.getClient(inMessage.address);
 	if (client == nullptr)
 	{
-		LOG_WARNING("Server: onEntityRequest: Client non-existent (%s)", inMessage.address.toString());
+		LOG_WARNING("Server: onEntityRequest: Client non-existent (%s)", inMessage.address.toString().c_str());
 		return;
 	}
 
@@ -222,7 +223,7 @@ void Server::onClientGameState(IncomingMessage& inMessage)
 	RemoteClient* client = m_clients.getClient(inMessage.address);
 	if (client == nullptr)
 	{
-		LOG_WARNING("Server: onClientGameState: unknown client (%s)", inMessage.address.toString());
+		LOG_WARNING("Server: onClientGameState: unknown client (%s)", inMessage.address.toString().c_str());
 		return;
 	}
 

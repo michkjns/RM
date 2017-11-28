@@ -15,12 +15,11 @@ public:
 	bool initialize();
 
 	void render(TileMap* tileMap,
-				const glm::mat4& projectionMatrix);
+			const glm::mat4& projectionMatrix);
 
 private:
 	GLuint  m_VAO;
 	GLuint  m_VBO;
-	GLfloat m_vertices;
 
 	std::string m_tilemap;
 	Shader*     m_tileShader;

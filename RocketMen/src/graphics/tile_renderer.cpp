@@ -8,6 +8,8 @@
 #include <core/resource_manager.h>
 
 TileRenderer::TileRenderer() :
+	m_VAO(0),
+	m_VBO(0),
 	m_tileShader(nullptr)
 {
 

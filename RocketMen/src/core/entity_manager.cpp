@@ -150,7 +150,7 @@ void EntityManager::flushEntities()
 		}
 		else
 		{
-			it++;
+			++it;
 		}
 	}
 

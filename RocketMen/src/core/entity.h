@@ -32,7 +32,7 @@ public:
 	virtual void fixedUpdate(float deltaTime) = 0;
 	virtual void debugDraw() {};
 	
-	void setSprite(std::string name);
+	void setSprite(const std::string& name);
 
 	Transform2D& getTransform();
 

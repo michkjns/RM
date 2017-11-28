@@ -46,7 +46,7 @@ public:
 		T* entity = new T();
 		if (!entity->serializeFull(rs))
 		{
-			entity->kill();
+			delete entity;
 			return nullptr;
 		}
 
@@ -55,31 +55,37 @@ public:
 
 	virtual bool serializeFull(Entity* entity, WriteStream& stream) override
 	{
+		assert(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serializeFull(stream);
 	}
 
 	bool serializeFull(Entity* entity, ReadStream& stream) override
 	{
+		assert(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serializeFull(stream);
 	}
 
 	bool serialize(Entity* entity, WriteStream& stream) override
 	{
+		assert(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 
 	bool serialize(Entity* entity, ReadStream& stream) override
 	{
+		assert(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 
 	bool serializeClientVars(Entity* entity, WriteStream& stream) override
 	{
+		assert(entity != nullptr);
 		return dynamic_cast<T*>(entity)->reverseSerialize(stream);
 	}
 
 	bool serializeClientVars(Entity* entity, ReadStream& stream) override
 	{
+		assert(entity != nullptr);
 		return dynamic_cast<T*>(entity)->reverseSerialize(stream);
 	}
 

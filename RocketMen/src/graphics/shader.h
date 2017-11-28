@@ -16,8 +16,8 @@ public:
 	static void unbindShader();
 
 public:
-	Shader() { }
-	~Shader() = default;
+	Shader();
+	~Shader();
 
 	void use();
 	bool isUsed() const;

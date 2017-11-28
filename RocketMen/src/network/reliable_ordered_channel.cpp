@@ -140,20 +140,26 @@ void ReliableOrderedChannel::readAcksFromPacket(const PacketHeader& packetHeader
 		return;
 	}
 
-	for (Sequence i = 0; i < 33; i++)
+	for (Sequence i = 0; i < 32; i++)
 	{
-		if (packetHeader.ackBits & (1 << (i - 1)) || i == 0)
+		if (packetHeader.ackBits & (1 << i))
 		{
-			const Sequence ackSequence = packetHeader.ackSequence - i;
-			if (SentPacketData* packetData = m_sentPackets.getEntry(ackSequence))
-			{
-				for (int16_t j = 0; j < packetData->numMessages; j++)
-				{
-					m_messageSendQueue.remove(packetData->messageIds[j]);
-				}
-				m_sentPackets.remove(ackSequence);
-			}
+			const Sequence ackSequence = packetHeader.ackSequence - i - 1;
+			ack(ackSequence);
 		}
+	}
+	ack(packetHeader.ackSequence);
+}
+
+void ReliableOrderedChannel::ack(const Sequence &ackSequence)
+{
+	if (SentPacketData* packetData = m_sentPackets.getEntry(ackSequence))
+	{
+		for (int16_t j = 0; j < packetData->numMessages; j++)
+		{
+			m_messageSendQueue.remove(packetData->messageIds[j]);
+		}
+		m_sentPackets.remove(ackSequence);
 	}
 }
 
