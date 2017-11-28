@@ -12,6 +12,7 @@
 #include <network/client_history.h>
 #include <utility/buffer.h>
 #include <utility/circular_buffer.h>
+#include <utility/id_manager.h>
 
 #include <array>
 #include <cstdint>
@@ -91,7 +92,6 @@ namespace network
 		void sendPendingMessages(const Time& localTime);
 		void setState(State state);
 		void clearSession();
-		int32_t getNextTempNetworkId();
 
 		void receivePackets();
 		void readMessages(const Time& localTime);
@@ -119,5 +119,7 @@ namespace network
 
 		ClientHistory m_clientHistory;
 		std::function<void(SessionResult)> m_sessionCallback;
+
+		IdManager m_tempNetworkIdManager;
 	};
 }; //namespace network

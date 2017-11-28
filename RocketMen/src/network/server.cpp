@@ -559,8 +559,6 @@ void Server::onConnectionRequest(const Address& address, Packet& packet)
 			message.type = MessageType::AcceptClient;
 			message.data.writeInt32(client->getId());
 			client->sendMessage(message);
-			LOG_DEBUG("Sent clientId  %d", client->getId());
-
 			connection->setState(Connection::State::Connected);
 			packet.resetReading();
 			connection->receivePacket(packet);

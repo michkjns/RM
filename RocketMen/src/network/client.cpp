@@ -37,7 +37,8 @@ Client::Client(Game* game) :
 	m_timeSinceLastClockSync(0.f),
 	m_clockResyncTime(5.f),
 	m_packetReceiver(new PacketReceiver(64)),
-	m_localPlayers(s_maxPlayersPerClient)
+	m_localPlayers(s_maxPlayersPerClient),
+	m_tempNetworkIdManager(s_maxSpawnPredictedEntities)
 {
 	clearSession();
 	m_socket = Socket::create();
@@ -235,8 +236,13 @@ bool Client::requestEntity(Entity* entity)
 {
 	assert(entity != nullptr);
 	assert(entity->getNetworkId() == INDEX_NONE);
+	if (!m_tempNetworkIdManager.hasAvailable())
+	{
+		LOG_WARNING("Client::requestEntity: too many entities requested!");
+		return false;
+	}
 
-	const int32_t tempId = getNextTempNetworkId();
+	const int32_t tempId = -m_tempNetworkIdManager.getNext() + s_firstTempNetworkId;
 	entity->setNetworkId(tempId);
 
 	Message message = {};
@@ -453,32 +459,34 @@ void Client::onSpawnEntity(IncomingMessage& msg)
 			return;
 		}
 
-#ifdef _DEBUG
 		Entity* entity = EntityManager::instantiateEntity(readStream, networkId);
 		LOG_DEBUG("Client::onSpawnEntity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
-#else
-		EntityManager::instantiateEntity(readStream);
-#endif // _DEBUG
 	}
 }
 
 void Client::onAcceptEntity(IncomingMessage& msg)
 {
 	const int32_t localId  = msg.data.readInt32();
-	const int32_t remoteId = msg.data.readInt32();
+	if (localId > s_firstTempNetworkId)
+		return;
 
-	int32_t index = m_requestedEntities.find(localId);
-	if (index != INDEX_NONE)
+	const int32_t remoteId = msg.data.readInt32();
+	if (remoteId < 0 || remoteId >= s_maxNetworkedEntities)
+		return;
+
+	if (int32_t index = m_requestedEntities.find(localId) != INDEX_NONE)
 	{
 		m_requestedEntities[index] = INDEX_NONE;
 	}
+	
+	m_tempNetworkIdManager.remove(-localId + s_firstTempNetworkId);
 
 	auto& entities = EntityManager::getEntities();
 	if (Entity* entity = findPtrByPredicate(entities.begin(), entities.end(),
 		[localId](Entity* it) { return it->getNetworkId() == localId; } ))
 	{
 		entity->setNetworkId(remoteId);
-#ifdef _DEBUG1
+#ifdef _DEBUG
 		LOG_DEBUG("Client: Accepted entity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
 #endif
 	}
@@ -590,17 +598,6 @@ void Client::clearSession()
 	m_connection = nullptr;
 
 	EntityManager::killEntities();
-}
-
-int32_t Client::getNextTempNetworkId()
-{
-	int32_t tempNetworkId = s_nextTempNetworkId--;
-	if (s_nextTempNetworkId <= -s_maxSpawnPredictedEntities - 1)
-	{
-		s_nextTempNetworkId = s_firstTempNetworkId;
-	}
-
-	return tempNetworkId;
 }
 
 void Client::receivePackets()

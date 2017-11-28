@@ -19,7 +19,8 @@ void Entity::instantiate(Entity* entity)
 
 Entity::Entity() :
 	m_id(INDEX_NONE),
-	m_networkId(INDEX_NONE)
+	m_networkId(INDEX_NONE),
+	m_ownerPlayerId(INDEX_NONE)
 {
 }
 
