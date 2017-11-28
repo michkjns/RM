@@ -130,13 +130,13 @@ bool EntityManager::serializeEntity(Entity* entity, ReadStream& stream)
 bool EntityManager::serializeClientVars(Entity* entity, WriteStream& stream)
 {
 	assert(entity != nullptr);
-	return getFactory(entity->getType())->reverseSerialize(entity, stream);
+	return getFactory(entity->getType())->serializeClientVars(entity, stream);
 }
 
 bool EntityManager::serializeClientVars(Entity* entity, ReadStream& stream)
 {
 	assert(entity != nullptr);
-	return getFactory(entity->getType())->reverseSerialize(entity, stream);
+	return getFactory(entity->getType())->serializeClientVars(entity, stream);
 }
 
 void EntityManager::flushEntities()
