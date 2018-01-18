@@ -1,5 +1,5 @@
 																																			
-#define UNIT_TESTING 0
+#define UNIT_TESTING 1
 
 #include <utility/bitstream.h>
 #include <core/core.h>
@@ -14,7 +14,7 @@
 #include <iostream>
 #include <utility>
 
-extern bool streamTests();
+extern bool bitstreamTests();
 
 static std::string getOutputFile(int argc, char* argv[]);
 
@@ -29,13 +29,13 @@ int main(int argc, char *argv[])
 #endif
 
 #if UNIT_TESTING
-	if (!streamTests())
+	if (!bitstreamTests())
 	{
-		LOG_ERROR("Bitstream tests failed!");
+		LOG_ERROR("Bitstream tests: FAIL");
 	}
 	else
 	{
-		LOG_INFO("Bitstream tests succesful!");
+		LOG_INFO("Bitstream tests: SUCCES");
 	}
 #endif
 

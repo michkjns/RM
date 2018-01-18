@@ -68,7 +68,7 @@ void Connection::update(const Time& time)
 	}
 }
 
-void Connection::sendMessage(const Message& message)
+void Connection::sendMessage(Message* message)
 {
 	if (getMessageChannel(message) == ChannelType::ReliableOrdered)
 	{
@@ -90,13 +90,19 @@ void Connection::receivePacket(Packet& packet)
 {
 	m_timeSinceLastPacketReceived = 0.f;
 
-	if (packet.getChannel() == ChannelType::Unreliable)
+	const ChannelType channel = (packet.header.sequence == (Sequence)INDEX_NONE
+		&& packet.header.ackBits                        == (uint32_t)INDEX_NONE
+		&& packet.header.ackSequence                    == (Sequence)INDEX_NONE) ?
+		ChannelType::Unreliable :
+		ChannelType::ReliableOrdered;
+
+	if (channel == ChannelType::Unreliable)
 	{
 		m_unreliableChannel->receivePacket(packet);
 	}
 	else
 	{
-		assert(packet.getChannel() == ChannelType::ReliableOrdered);
+		assert(channel == ChannelType::ReliableOrdered);
 		m_reliableOrderedChannel->receivePacket(packet);
 	}
 
@@ -151,9 +157,7 @@ void Connection::tryConnect()
 {
 	assert(m_state == State::Disconnected);
 
-	Message message = {};
-	message.type = MessageType::RequestConnection;
-	sendMessage(message);
+	sendMessage(new Message(MessageType::RequestConnection));
 	setState(State::Connecting);
 }
 

@@ -60,22 +60,29 @@ void ActionBuffer::readFromMessage(network::IncomingMessage& message)
 {
 	assert(message.type == network::MessageType::PlayerInput);
 
-	const uint32_t numActions = message.data.readInt32();
+	uint32_t numActions = 0;
+	serializeInt(message.data, numActions);
 	if (numActions > s_maxActions)
 	{
 		assert(false);
 		return;
 	}
 
-	message.data.readBytes(reinterpret_cast<char*>(m_actions.begin()), 
-		numActions * sizeof(Action));
+	if (numActions > 0)
+	{
+		message.data.serializeData(reinterpret_cast<char*>(m_actions.begin()),
+			numActions * sizeof(Action));
+	}
 }
 
-void ActionBuffer::writeToMessage(network::Message& message)
+void ActionBuffer::writeToMessage(network::Message* message)
 {
-	const int32_t numActions = m_actions.getCount();
+	uint32_t numActions = m_actions.getCount();
 
-	message.data.writeInt32(numActions);
-	message.data.writeData(reinterpret_cast<const char*>(begin()),
-		numActions * sizeof(input::Action));
+	serializeInt(message->data, numActions);
+	if (numActions > 0)
+	{
+		message->data.serializeData(reinterpret_cast<const char*>(begin()),
+			numActions * sizeof(input::Action));
+	}
 }

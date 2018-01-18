@@ -1,8 +1,5 @@
 
-/* New bitstream read/write classes
-	Based on
-	http://gafferongames.com/building-a-game-network-protocol/
-	Many thanks go to Glenn Fiedler for his awesome articles.
+/* 	http://gafferongames.com/building-a-game-network-protocol/
 */
 
 #pragma once
@@ -12,34 +9,88 @@
 #include <algorithm>
 #include <memory>
 
+#define RM_SERIALIZE_CHECK 1
+
+class BitReader
+{
+public:
+	BitReader(const char* data, int32_t numBytes);
+	~BitReader();
+
+	int32_t readBits(int32_t numBits);
+	void readBytes(char* dest, int32_t numBytes);
+
+	char*  getData() const { return reinterpret_cast<char*>(m_data); }
+	int32_t getDataLength() const { return m_size; }
+
+
+private:
+	void align();
+	uint64_t  m_scratch;
+	uint32_t* m_data;
+	int32_t   m_scratchBits;
+	int32_t   m_numWords;
+	int32_t   m_wordIndex;
+	int32_t   m_size;
+	int32_t   m_numBitsRead;
+	int32_t   m_numBits;
+};
+
+class BitWriter
+{
+public:
+	BitWriter(char* buffer, int32_t numBytes);
+	~BitWriter();
+
+	void writeBits(uint32_t value, int32_t numBits);
+	void writeBytes(const char* data, int32_t numBytes);
+	void flush();
+
+	char*  getData() const { return reinterpret_cast<char*>(m_data); }
+	int32_t getDataLength() const {  return (m_wordIndex + 1) * (sizeof(uint32_t) / sizeof(char)); }
+	
+private:
+	void alignToByte();
+
+	uint64_t  m_scratch;
+	uint32_t* m_data;
+	int32_t   m_scratchBits;
+	int32_t   m_numWords;
+	int32_t   m_wordIndex;
+	int32_t   m_size;
+	int32_t   m_numBits;
+	int32_t   m_numBitsWritten;
+};
+
 class WriteStream
 {
 public:
 	static const bool isReading = false;
 	static const bool isWriting = true;
 
-	WriteStream(size_t size);
+	WriteStream(int32_t numBytes);
 	~WriteStream();
 
-	void flush(bool increment);
-	void serializeBits(uint32_t value, uint32_t numBits);
-	void serializeBool(bool& value);
-	void serializeInt(int32_t& value, int32_t min, int32_t max);
-	void serializeByte(const char byte);
-	void serializeData(const char* data, int32_t dataLength);
-	uint32_t* getBuffer() const;
+	bool serializeBits(uint32_t value, int32_t numBits);
+	bool serializeBool(bool& value);
+	bool serializeInt(int32_t& value, int32_t min, int32_t max);
+	bool serializeInt(uint32_t& value, uint32_t min, uint32_t max);
+	bool serializeByte(const char byte);
+	bool serializeData(const char* data, int32_t dataLength);
+	bool serializeCheck(const char* string);
 
-	/** @return length in bytes */
-	size_t getLength() const;
+	void flush() { m_writer.flush(); }
+	void release() { m_buffer = nullptr; }
+
+
+	char*  getData() const { return m_buffer; }
+	inline int32_t getDataLength() const { return m_writer.getDataLength(); }
+	inline int32_t getBufferSize() const { return m_size; }
 
 private:
-	uint64_t  m_scratch;
-	int32_t   m_scratchBits;
-	int32_t   m_wordIndex;
-	uint32_t* m_buffer;
-	int32_t   m_bufferLength;
-	int32_t   m_numBitsWritten;
-	bool      m_isFull;
+	char* m_buffer;
+	BitWriter m_writer;
+	int32_t m_size;
 };
 
 class ReadStream
@@ -48,26 +99,26 @@ public:
 	static const bool isReading = true;
 	static const bool isWriting = false;
 
-	ReadStream(size_t size);
+	ReadStream(const char* sourceData, int32_t numBytes);
 	~ReadStream();
 
-	void flush(bool = false);
-	void serializeBits(uint32_t& value, uint32_t numBits);
-	void serializeBool(bool& dest);
-	void serializeInt(int32_t& dest, int32_t min, int32_t max);
-	void serializeByte(char& dest);
-	void serializeData(char* dest, int32_t length);
-	uint32_t* getBuffer() const;
+	bool serializeBits(uint32_t& value, int32_t numBits);
+	bool serializeBool(bool& dest);
+	bool serializeInt(int32_t& dest, int32_t min, int32_t max);
+	bool serializeInt(uint32_t& value, uint32_t min, uint32_t max);
+	bool serializeByte(char& dest);
+	bool serializeData(char* dest, int32_t length);
+	bool serializeCheck(const char* string);
+	void flush() {}
+
+	char*  getData() const { return m_reader.getData(); }
+	inline int32_t getDataLength() const { return m_reader.getDataLength(); }
+	inline int32_t getBufferSize() const { return m_size; }
 
 private:
-	uint64_t  m_scratch;
-	int32_t   m_scratchBits;
-	int32_t   m_wordIndex;
-	int32_t   m_bufferLength;
-	uint32_t* m_buffer;
-	int32_t   m_numBitsRead;
-	bool      m_corrupted;
-
+	char* m_buffer;
+	BitReader m_reader;
+	int32_t m_size;
 };
 
 /* Clamp value n to [lower, upper]
@@ -85,24 +136,37 @@ inline int32_t bitsRequired(uint32_t min, uint32_t max)
 	return int32_t((min == max) ? 0 : floor(log2(max - min) + 1));
 }
 
-/* Serialize a single bit, 0 or 1 */
-template<typename Stream>
-void serializeBit(Stream& stream, bool& value)
+/* Serialize (0, 32] number of bits */
+template<typename Stream, typename T>
+void serializeBits(Stream& stream, T& value, int32_t numBits)
 {
-	stream.serializeBool(value);
+	assert(numBits > 0);
+	assert(numBits <= 32);
+	uint32_t var32 = static_cast<uint32_t>(value);
+	stream.serializeBits(var32, numBits);
+	value = static_cast<T>(var32);
 }
 
-/* Serialize a bool as single bit, 0 or 1 */
+/* Serialize a bool or single bit, 0 or 1 */
 template<typename Stream>
 void serializeBool(Stream& stream, bool& value)
 {
 	stream.serializeBool(value);
 }
 
+/* Serialize a number of bytes */
+template<typename Stream>
+void serializeData(Stream& stream, char* data, int32_t length)
+{
+	assert(data != nullptr);
+	assert(length > 0);
+	stream.serializeData(data, length);
+}
+
 /* Serialize an unsigned integer value compressed between range [min, max] */
 template<typename Stream>
-void serializeInt(Stream& stream, uint32_t& value, uint32_t min = INT32_MIN,
-				  uint32_t max = INT32_MAX)
+void serializeInt(Stream& stream, uint32_t& value, uint32_t min = 0,
+				  uint32_t max = UINT32_MAX)
 {
 	assert(min < max);
 
@@ -234,7 +298,7 @@ bool serializeVector2(Stream& stream, Vector2& vector)
 /* Serialize a vector3 compressed within range [min, max] with an explicit
 precision */
 template<typename Stream>
-void serializeVector3(Stream& stream, Vector3& vector, float min, 
+bool serializeVector3(Stream& stream, Vector3& vector, float min, 
                       float max, float precision)
 {
 	float values[3];
@@ -245,14 +309,19 @@ void serializeVector3(Stream& stream, Vector3& vector, float min,
 		values[2] = vector[2];
 	}
 	
-	serializeFloat(stream, values[0], min, max, precision);
-	serializeFloat(stream, values[1], min, max, precision);
-	serializeFloat(stream, values[2], min, max, precision);
+	if (!serializeFloat(stream, values[0], min, max, precision))
+		return false;
+	if (!serializeFloat(stream, values[1], min, max, precision))
+		return false;
+	if (!serializeFloat(stream, values[2], min, max, precision))
+		return false;
 
 	if (Stream::isReading)
 	{
 		vector = Vector3(values[0], values[1], values[2]);
 	}
+
+	return true;
 }
 
 /* Serialize a vector3, uncompressed */
@@ -277,65 +346,9 @@ void serializeVector3(Stream& stream, Vector3& vector)
 	}
 }
 
-#if 1
-
-/** (Old) BitStream class
-*   for compact serialization
-*   @note Memory intensive and slow, needs to be replaced
-*/
-class BitStream
+template<typename Stream>
+bool serializeCheck(Stream& stream, const char* string)
 {
-public:
-	BitStream();
-	BitStream(const BitStream& bs);
-	~BitStream();
-	BitStream& BitStream::operator= (const BitStream&);
+	return stream.serializeCheck(string);
+}
 
-	/** Write data replacing the current buffer */
-	void writeBuffer(const char* data, size_t length);
-																		
-	/** Write data appending to the current buffer */
-	void writeData(const char* data, size_t length);
-				 											
-	void writeBit(bool value, size_t repeat = 1);
-	void writeByte(char value, size_t repeat = 1);
-	void writeFloat(float value);
-	void writeInt8(int8_t value);
-	void writeInt16(int16_t value);
-	void writeInt32(int32_t value);
-	void writeInt64(int64_t value);
-	void writeBool(bool value);
-	void writeFromStream(WriteStream& stream);
-
-	void    readBytes(char* output, size_t numBytes = 1);
-	void    readBit(bool* output);
-	float	readFloat();
-	int8_t  readInt8();
-	int16_t	readInt16();
-	int32_t	readInt32();
-	int64_t	readInt64();
-	bool	readBool();
-	void    readToStream(ReadStream& stream);
-
-	const size_t getLength() const;
-	const char*	 getBuffer() const;
-	int32_t getReadTotalBytes() const;
-	void resetReading();
-	void resetWriting();
-	void reset();
-	
-private:
-	static const uint32_t s_bufferSize = 65536;
-
-	std::unique_ptr<char[]> m_buffer;
-	int32_t     m_readTotalBytes;
-	int32_t	    m_readBit;
-	const char* m_readData;
-
-	int32_t     m_writeTotalBytes;
-	int32_t     m_writeLength;
-	int32_t     m_writeByte;
-	int32_t     m_writeBit;
-	char*       m_writeData;
-};
-#endif

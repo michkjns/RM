@@ -24,7 +24,7 @@ namespace network
 		void initialize(int32_t id, Connection* connection);
 		void clear();
 		void addPlayer(int16_t playerId);
-		void sendMessage(const Message& message);
+		void sendMessage(Message* message);
 
 		bool        isUsed()                     const;
 		bool        isAvailable()                const;

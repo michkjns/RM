@@ -8,27 +8,52 @@
 
 namespace network
 {
+	const int32_t s_defaultMessageBufferSize = 128;
+
 	struct Message
 	{
+		Message(MessageType inType, int32_t bufferSize = s_defaultMessageBufferSize) :
+			type(inType), data(bufferSize) {}
+
+		Sequence    id;
 		MessageType type;
-		BitStream   data;
+		WriteStream data;
 	};
 
-	struct OutgoingMessage : public Message
+	struct OutgoingMessageEntry
 	{
-		Sequence sequence;
+		OutgoingMessageEntry() : 
+			message(nullptr), timeLastSent(0.f) {}
+
+		OutgoingMessageEntry(Message* msg) : 
+			message(msg), timeLastSent(0.f) { assert(msg != nullptr); }
+
+		Message* message;
 		float    timeLastSent;
 	};
 
-	struct IncomingMessage : public Message
+	struct IncomingMessage
 	{
-		Sequence sequence;
-		Address  address;
+		IncomingMessage(MessageType messageType, Sequence messageId, const char* sourceData, int32_t sourceDataSize) : 
+			type(messageType), id(messageId), data(sourceData, sourceDataSize) {}
+
+		void markAsRead() {	type = MessageType::None; }
+
+		MessageType type;
+		ReadStream  data;
+		Sequence    id;
+		Address     address;
 	};
 
-	inline ChannelType getMessageChannel(const struct Message& message)
+	struct IncomingMessageEntry
 	{
-		return getMessageChannel(message.type);
+		IncomingMessageEntry() : message(nullptr) {}
+		IncomingMessage* message;
+	};
+
+	inline ChannelType getMessageChannel(struct Message* message)
+	{
+		return getMessageChannel(message->type);
 	}
 
 }; // namespace network

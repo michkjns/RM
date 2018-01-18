@@ -9,10 +9,10 @@ namespace network
 {
 	struct IncomingMessage;
 	struct Message;
-	class  Packet;
-	class  UnreliableChannel;
+	struct Packet;
 	class  ReliableOrderedChannel;
 	class  Socket;
+	class  UnreliableChannel;
 	
 	class Connection
 	{
@@ -33,7 +33,7 @@ namespace network
 
 		void update(const Time& time);
 
-		void sendMessage(const Message& message);
+		void sendMessage(Message* message);
 		void sendPendingMessages(const Time& time);
 		void receivePacket(Packet& packet);
 		void close();

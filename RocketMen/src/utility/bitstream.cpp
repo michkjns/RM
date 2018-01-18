@@ -7,151 +7,109 @@
 #include <bitset>
 #include <assert.h>
 
-WriteStream::WriteStream(size_t size) :
+extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
+
+BitReader::BitReader(const char* data, int32_t numBytes) :
 	m_scratch(0),
+	m_data((uint32_t*)(data)),
 	m_scratchBits(0),
+	m_numWords((numBytes + 3) / 4),
 	m_wordIndex(0),
-	m_isFull(false)
+	m_size(numBytes),
+	m_numBitsRead(0),
+	m_numBits(numBytes * 8)
 {
-	assert(size > 0);
-
-	m_bufferLength = static_cast<int32_t>(size);
-	m_buffer = new uint32_t[size];
-	memset(m_buffer, 0, size * sizeof(uint32_t));
+	assert(numBytes > 0);
+	assert(data != nullptr);
 }
 
-WriteStream::~WriteStream()
+BitReader::~BitReader()
 {
-	delete[] m_buffer;
 }
 
-/** Write scratch to buffer */
-void WriteStream::flush(bool increment)
-{
-	m_buffer[m_wordIndex] = static_cast<uint32_t>(m_scratch);
-	
-	if (increment) // Move along the buffer
-	{
-		m_wordIndex++;
-		m_scratchBits -= 32;
-		m_scratch >>= 32;
-
-		m_buffer[m_wordIndex] = static_cast<uint32_t>(m_scratch);
-		
-		if (m_wordIndex == m_bufferLength)
-			m_isFull = true;
-	}
-
-}
-
-/** Write up to 32 bits */
-void WriteStream::serializeBits(uint32_t value, uint32_t numBits)
+int32_t BitReader::readBits(int32_t numBits)
 {
 	assert(numBits > 0);
 	assert(numBits <= 32);
-	
-	value &= (uint64_t(1) << numBits) - 1; // Masks out all bits above numBits
-	m_scratch |= uint64_t(value) << m_scratchBits; // Writes the bits to scratch
+	assert(m_numBitsRead + numBits <= m_numBits);
+	assert(m_scratchBits >= 0 && m_scratchBits <= 64);
 
-	m_scratchBits += numBits;
-	
-	flush(m_scratchBits >= 32);
-
-#ifdef _DEBUG
-	m_numBitsWritten += numBits;
-#endif // _DEBUG
-}
-
-/* Write a bool as 0 or 1 bit */
-void WriteStream::serializeBool(bool& value)
-{
-	if (value)
+	if (m_scratchBits < numBits)
 	{
-		m_scratch |= (uint64_t(1) << m_scratchBits);
+		// Load next 32 bits to scratch
+		assert(m_wordIndex < m_numWords);
+		m_scratch |= uint64_t(m_data[m_wordIndex]) << m_scratchBits;
+		m_scratchBits += 32;
+		m_wordIndex++;
 	}
-	m_scratchBits++;
-	
-	flush(m_scratchBits >= 32);
 
-	m_numBitsWritten += 1;
+	const int32_t value = m_scratch & ((uint64_t(1) << numBits) - 1);
+	m_scratch >>= numBits;
+	m_scratchBits -= numBits;
+	m_numBitsRead += numBits;
+
+	return value;
 }
 
-/* Write and compress a 32-bit integer in in range [min, max] */
-void WriteStream::serializeInt(int32_t& value, int32_t min, int32_t max)
+void BitReader::readBytes(char* dest, int32_t numBytes)
 {
-	assert(min < max);	
-	assert(value >= min); 
-	assert(value <= max);
+	assert(dest != nullptr);
+	assert(numBytes > 0);
+	assert(m_numBitsRead + numBytes * 8 <= m_numBits);
+	align();
+	assert((m_numBitsRead % 8) == 0);
 
-	const int32_t bits = bitsRequired(min, max);
-	uint32_t uvalue = value - min;
-	serializeBits(uvalue, bits);
-}
-
-/* Write a full byte */
-void WriteStream::serializeByte(const char byte)
-{
-	serializeBits(uint32_t(byte), 8);
-}
-
-void WriteStream::serializeData(const char* data, int32_t dataLength)
-{
-	assert(data != nullptr);
-	assert(dataLength > 0);
-
-	if (m_bufferLength - m_wordIndex <= dataLength)
-		return; // Stream buffer too short
-
-	if ((m_scratchBits & 7) == 0) // Byte aligned
+	const int32_t numHeadBytes = std::max((4 - (m_numBitsRead % 32) / 8) % 4, numBytes);
+	for (int32_t i = 0; i < numHeadBytes; i++)
 	{
-		const int32_t bytesToWrite = std::min((32 - m_scratchBits) / 8, dataLength);
-		const int32_t bytesToCopy = dataLength - bytesToWrite;
-
-		// Fill scratch
-		for (int32_t i = 0; i < bytesToWrite; i++)
-			serializeBits(uint32_t(data[i]), 8);
-		
-		flush(true);
-
-		// Copy remaining
-		memcpy(m_buffer + m_wordIndex, data + bytesToWrite, dataLength - bytesToWrite);
-		m_wordIndex += bytesToCopy;
-
-#ifdef _DEBUG
-		m_numBitsWritten += (dataLength-bytesToWrite) * 8;
-#endif // _DEBUG
-
+		dest[i] = (char)readBits(8);
 	}
-	else
+	if (numHeadBytes == numBytes)
 	{
-		for (int32_t i = 0; i < dataLength; i++)
-		{
-			serializeBits(data[i], 8);
-		}
+		return;
+	}
+
+	const int32_t numWords = (numBytes - numHeadBytes) / 4;
+	if (numWords > 0)
+	{
+		assert((m_numBitsRead % 32) == 0);
+		memcpy(dest + numHeadBytes, &m_data[m_wordIndex], numWords * 4);
+		m_numBitsRead += numWords * 32;
+		m_wordIndex += numWords;
+		m_scratchBits = 0;
+	}
+
+	const int32_t tailStart = numHeadBytes + numWords * 4;
+	const int32_t numTailBytes = numBytes - tailStart;
+
+	assert(numHeadBytes + numWords * 4 + numTailBytes == numBytes);
+	assert(numTailBytes >= 0 && numTailBytes < 4);
+	for (int32_t i = 0; i < numTailBytes; ++i)
+	{
+		dest[tailStart + i] = (char)readBits(8);
 	}
 }
 
-size_t WriteStream::getLength() const
+void BitReader::align()
 {
-	return (m_wordIndex + 1) * (sizeof(uint32_t) / sizeof(char));
+	const int32_t remainderBits = m_numBitsRead & 7;
+	if (remainderBits != 0)
+	{
+		uint32_t padding = (char)readBits(8 - remainderBits);
+		assert(m_numBitsRead % 8 == 0);
+		assert(padding == 0);
+	}
 }
 
-uint32_t* WriteStream::getBuffer() const
+ReadStream::ReadStream(const char* buffer, int32_t numBytes) :
+	m_buffer(new char[numBytes]),
+	m_reader(m_buffer, numBytes)
 {
-	return m_buffer;
-}
+	assert(buffer != nullptr);
+	assert(numBytes > 0);
+	assert((numBytes % 4) == 0);
 
-ReadStream::ReadStream(size_t size) :
-	m_scratch(0),
-	m_scratchBits(0),
-	m_wordIndex(0),
-	m_corrupted(false),
-	m_numBitsRead(0)
-{
-	assert(size > 0);
-
-	m_bufferLength = static_cast<int32_t>(size);
-	m_buffer = new uint32_t[size];
+	memcpy(m_buffer, buffer, numBytes);
 }
 
 ReadStream::~ReadStream()
@@ -159,415 +117,265 @@ ReadStream::~ReadStream()
 	delete[] m_buffer;
 }
 
-/** Load next word to scratch */
-void ReadStream::flush(bool)
-{
-	// Load into lower half of scratch
-	if (m_scratchBits == 0)
-	{
-		assert(m_wordIndex < m_bufferLength);
-
-		m_scratch |= m_buffer[m_wordIndex++];
-		m_scratchBits += 32;
-	}
-	// Load into upper half of scratch
-	if (m_scratchBits <= 32)
-	{
-		assert(m_wordIndex < m_bufferLength);
-		m_scratch |= uint64_t(m_buffer[m_wordIndex++]) << m_scratchBits;
-		m_scratchBits += 32;
-	}
-}
-
 /** Read up to 32 bits */
-void ReadStream::serializeBits(uint32_t& value, uint32_t numBits)
+bool ReadStream::serializeBits(uint32_t& value, int32_t numBits)
 {
 	assert(numBits > 0);
 	assert(numBits <= 32);
-	flush();
+	const uint32_t readValue = m_reader.readBits(numBits);
+	value = readValue;
 
-	value = m_scratch & (uint64_t(1) << numBits) - 1;
-	m_scratch >>= numBits;
-	m_scratchBits-= numBits;
-	m_numBitsRead += numBits;	
+	return true;
 }
 
-void ReadStream::serializeBool(bool& dest)
+bool ReadStream::serializeBool(bool& dest)
 {
-	flush();
+	serializeBits(reinterpret_cast<uint32_t&>(dest), 1);
 
-	dest = (m_scratch & 1);
-	m_scratch >>= 1;
-	m_scratchBits--;
-	m_numBitsRead += 1;
+	return true;
 }
 
-void ReadStream::serializeInt(int32_t& value, int32_t min, int32_t max)
+bool ReadStream::serializeInt(int32_t& value, int32_t min, int32_t max)
 {
 	assert(min < max);
-
-	flush();
 
 	const uint32_t bits = bitsRequired(min, max);
 	uint32_t value32 = 0;
 	serializeBits(value32, bits);
 	value = value32 + min;
+
+	return true;
 }
 
-void ReadStream::serializeByte(char& dest)
+bool ReadStream::serializeInt(uint32_t& value, uint32_t min, uint32_t max)
 {
-	flush();
+	assert(min < max);
 
+	const uint32_t bits = bitsRequired(min, max);
+	uint32_t value32 = 0;
+	serializeBits(value32, bits);
+	value = value32 + min;
+
+	return true;
+}
+
+bool ReadStream::serializeByte(char& dest)
+{
 	uint32_t value32 = static_cast<uint32_t>(dest);
 	serializeBits(value32, 8);
 	dest = static_cast<uint8_t>(value32);
+
+	return true;
 }
 
-void ReadStream::serializeData(char* dest, int32_t length)
+bool ReadStream::serializeData(char* dest, int32_t length)
 {
-	flush();
-	if ((m_scratchBits & 7) == 0) // Byte aligned
-	{
-		if (m_scratchBits == 0)
-		{
-			memcpy(dest, m_buffer + m_wordIndex, length);
-		}
-		else
-		{
-			for (int32_t i = 0; i < length; i++)
-			{
-				serializeByte(dest[i]);
-			}
-		}
-	}
+	m_reader.readBytes(dest, length);
+
+	return true;
 }
 
-uint32_t* ReadStream::getBuffer() const
+bool ReadStream::serializeCheck(const char* string)
 {
-	return m_buffer;
-}
+#if RM_SERIALIZE_CHECK
+	uint32_t value = 0;
+	serializeBits(value, 32);
 
-
-
-//=============================================================================
-
-
-BitStream::BitStream() :
-	m_readTotalBytes(0),
-	m_readBit(0),
-	m_writeTotalBytes(0),
-	m_writeLength(0),
-	m_writeBit(0)
-{
-	m_buffer = std::unique_ptr<char[]>(new char[s_bufferSize]);
-	m_writeData = m_buffer.get();
-	m_readData  = m_buffer.get();
-}
-
-BitStream::BitStream(const BitStream& bs)
-{
-	m_buffer = std::unique_ptr<char[]>(new char[s_bufferSize]);
-	memcpy(m_buffer.get(), bs.m_buffer.get(), s_bufferSize);
-
-	m_readTotalBytes  = bs.m_readTotalBytes;
-	m_readBit         = bs.m_readBit;
-	m_readData        = m_buffer.get() + m_readTotalBytes;
-
-	m_writeTotalBytes = bs.m_writeTotalBytes;
-	m_writeLength     = bs.m_writeLength;
-	m_writeByte       = bs.m_writeByte;
-	m_writeBit        = bs.m_writeBit;
-	m_writeData       = m_buffer.get() + m_writeTotalBytes;
-}
-
-BitStream::~BitStream()
-{
-}
-
-BitStream& BitStream::operator=(const BitStream& other)
-{
-	if (&other == this)
-		return *this;
-
-	memcpy(m_buffer.get(), other.m_buffer.get(), s_bufferSize);
-
-	m_readTotalBytes  = other.m_readTotalBytes;
-	m_readBit         = other.m_readBit;
-	m_readData        = m_buffer.get() + m_readTotalBytes;
-
-	m_writeTotalBytes = other.m_writeTotalBytes;
-	m_writeLength     = other.m_writeLength;
-	m_writeByte       = other.m_writeByte;
-	m_writeBit        = other.m_writeBit;
-	m_writeData       = m_buffer.get() + m_writeTotalBytes;
-
-	return *this;
-}
-
-void BitStream::readBytes(char* output, size_t numBytes)
-{
-	if (m_writeTotalBytes <= 0 && m_writeBit <= 0) return;
-	if (getLength() - m_readTotalBytes < (int)numBytes) return;
-
-	if (m_readBit == 0)
-	{
-		for (int i = 0; i < (int)numBytes; i++)
-		{
-			output[i] = *m_readData;
-
-			m_readData++;
-			m_readTotalBytes++;
-		}
-	}
-	else
-	{
-		for (size_t byte = 0; byte < numBytes; byte++)
-		{
-			std::bitset<8> bitset;
-			for (int i = 0; i < 8; i++)
-			{
-				bool readValue;
-				readBit(&readValue);
-				bitset[i] = readValue;
-			}
-
-			*output = static_cast<char>( bitset.to_ulong());
-			output++;
-		}
-	}
-}
-
-void BitStream::readBit(bool* output)
-{
-	std::bitset<8> bits(*m_readData);
-	*output = bits[m_readBit++];
-	if (m_readBit == 8)
-	{
-		m_readData++;
-		m_readBit = 0;
-		m_readTotalBytes++;
-	}
-}
-
-float BitStream::readFloat()
-{
-	float out;
-	readBytes(reinterpret_cast<char*>(&out), sizeof(float));
-	return out;
-}
-
-int8_t BitStream::readInt8()
-{
-	int8_t out;
-	readBytes(reinterpret_cast<char*>(&out), sizeof(int8_t));
-	return out;
-}
-
-int16_t BitStream::readInt16()
-{
-	int16_t out;
-	readBytes(reinterpret_cast<char*>(&out), sizeof(int16_t));
-	return out;
-}
-
-int32_t BitStream::readInt32()
-{
-	int32_t out;
-	readBytes(reinterpret_cast<char*>(&out), sizeof(int32_t));
-	return out;
-}
-
-int64_t BitStream::readInt64()
-{
-	int64_t out;
-	readBytes(reinterpret_cast<char*>(&out), sizeof(int64_t));
-	return out;
-}
-
-bool BitStream::readBool()
-{
-	bool out;
-	readBit(&out);
-	return out;
-}
-
-void BitStream::readToStream(ReadStream& stream)
-{
-	readBytes((char*)stream.getBuffer(), getLength() - getReadTotalBytes());
-}
-
-void BitStream::writeBuffer(const char* data, size_t length)
-{
-	assert(length < s_bufferSize);
-	// Buffer overflow
-	if (length >= s_bufferSize) return;
-
-	memcpy(m_buffer.get(), data, length);
-	m_writeTotalBytes = static_cast<int>(length);
-}
-
-void BitStream::writeByte(char value, size_t repeat)
-{
-	for (int writeByte = 0; writeByte < (int)repeat; writeByte++)
-	{
-		if (m_writeBit == 0)
-		{
-			*m_writeData = value;
-			m_writeData++;
-			m_writeTotalBytes++;
-
-			//Don't overflow the buffer
-			if (m_writeTotalBytes == 65536) break;
-		}
-		else
-		{
-			std::bitset<8> bitValue(value);
-			for (int bit = 0; bit < 8; bit++)
-			{
-				writeInt8(bitValue[bit]);
-			}
-		}
-	}
-}
-
-void BitStream::writeBit(bool value, size_t amount /* = 1 */)
-{
-	//Don't overflow the buffer
-	assert(m_writeTotalBytes < s_bufferSize);
-	if (m_writeTotalBytes >= s_bufferSize) return /*false*/;
-
-	int32_t numBytes = (int32_t)floorf((float)amount / 8);
-	if (numBytes >= 1)
-	{
-		writeByte(value, numBytes);
-		amount -= 8 * numBytes;
-	}
-
-	std::bitset<8> bits(*m_writeData);
-
-	for (unsigned int i = 0; i < amount; i++)
-	{
-		if (m_writeBit == 8)
-		{
-			*m_writeData = static_cast<char>(bits.to_ulong());
-			m_writeData++;
-			bits = std::bitset<8>(*m_writeData);
-			m_writeBit = 0;
-			m_writeTotalBytes++;
-		}
-
-		bits[m_writeBit++] = value;
-	}
-
-	*m_writeData = static_cast<char>(bits.to_ulong());
-}
-
-void BitStream::writeData(const char* data, size_t length)
-{
-	assert(length + m_writeTotalBytes < s_bufferSize);
-	if (length + m_writeTotalBytes >= s_bufferSize) return;
-
-#if 0 //TODO Fix this
-	memcpy(m_writeData+1, data, length);
-	if (m_writeBit > 0)
-	{
-		for (int i = 0; i < length; i++)
-		{
-			m_writeData[i] = m_writeData[i] << m_writeBit;
-		}
-	}
-	m_writeData += length;
-	m_writeTotalBytes += length;
+	const uint32_t hash = crcFast(reinterpret_cast<const unsigned char*>(string),
+		static_cast<int32_t>(strlen(string)));
+	return value == hash;
 #else
-	if (m_writeBit == 0)
-	{
-		memcpy(m_writeData, data, length);
-		m_writeData += length;
-		m_writeTotalBytes += static_cast<int>(length);
-	}
-	else
-	{
-		for (size_t i = 0; i < length; i++)
-		{
-			writeInt8(data[i]);
-		}
-	}
+	return true;
 #endif
 }
 
-const size_t BitStream::getLength() const
+BitWriter::BitWriter(char* buffer, int32_t numBytes) :
+	m_scratch(0),
+	m_data(reinterpret_cast<uint32_t*>(buffer)),
+	m_scratchBits(0),
+	m_numWords((numBytes + 3) / 4),
+	m_wordIndex(0),
+	m_size(numBytes),
+	m_numBitsWritten(0),
+	m_numBits(static_cast<int32_t>(numBytes) * 8)
 {
-	size_t length = m_writeTotalBytes;
-	if (m_writeBit > 0)
+	assert(numBytes > 0);
+	assert((numBytes % 4) == 0);
+}
+
+BitWriter::~BitWriter()
+{
+}
+
+void BitWriter::writeBits(uint32_t value, int32_t numBits)
+{
+	assert(numBits > 0);
+	assert(numBits <= 32);
+	assert(m_numBitsWritten + numBits < m_numBits);
+
+	value &= (uint64_t(1) << numBits) - 1; // Masks out all bits above numBits
+	m_scratch |= uint64_t(value) << m_scratchBits; // Writes the bits to scratch
+	m_scratchBits += numBits;
+
+	if (m_scratchBits >= 32)
 	{
-		length++;
+		// Write 32 bits from scratch to buffer
+		assert(m_wordIndex < m_numWords);
+		m_data[m_wordIndex] = m_scratch & 0xFFFFFFFF;
+		m_scratch >>= 32;
+		m_scratchBits -= 32;
+		m_wordIndex++;
 	}
-	return length;
+
+	m_numBitsWritten += numBits;
 }
 
-const char* BitStream::getBuffer() const
+void BitWriter::writeBytes(const char* data, int32_t numBytes)
 {
-	return m_buffer.get();
+	assert(data != nullptr);
+	assert(numBytes > 0);
+	assert(m_numBitsWritten + numBytes * 8 <= m_numBits);
+
+	alignToByte();
+	assert((m_numBitsWritten % 8) == 0);
+
+	const int32_t numHeadBytes = std::max((4 - (m_numBitsWritten % 32) / 8) % 4, numBytes);
+	for (int32_t i = 0; i < numHeadBytes; ++i)
+	{
+		writeBits(data[i], 8);
+	}
+	if (numHeadBytes == numBytes)
+	{
+		return;
+	}
+
+	flush();
+
+	const int32_t numWords = (numBytes - numHeadBytes) / 4;
+	if (numWords > 0)
+	{
+		assert((m_numBitsWritten % 32) == 0);
+		memcpy(&m_data[m_wordIndex], data + numHeadBytes, numWords * 4);
+		m_numBitsWritten += numWords * 32;
+		m_wordIndex += numWords;
+		m_scratch = 0;
+	}
+
+	const int32_t tailStart = numHeadBytes + numWords * 4;
+	const int32_t numTailBytes = numBytes - tailStart;
+
+	assert(numHeadBytes + numWords * 4 + numTailBytes == numBytes);
+	assert(numTailBytes >= 0 && numTailBytes < 4);
+	for (int32_t i = 0; i < numTailBytes; ++i)
+	{
+		writeBits(m_data[tailStart + i], 8);
+	}
 }
 
-int32_t BitStream::getReadTotalBytes() const
+void BitWriter::flush()
 {
-	return m_readTotalBytes;
+	if (m_scratchBits != 0)
+	{
+		assert(m_wordIndex < m_numWords);
+		m_data[m_wordIndex] = m_scratch & 0xFFFFFFFF;
+		m_scratch >>= 32;
+		m_scratchBits -= 32;
+		m_wordIndex++;
+	}
+	assert(m_scratchBits <= 0);
 }
 
-void BitStream::writeFloat(float value)
+void BitWriter::alignToByte()
 {
-	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+	const int32_t remainderBits = m_numBitsWritten % 8;
+	if (remainderBits != 0)
+	{
+		uint32_t zeroPadding = 0;
+		writeBits(zeroPadding, 8 - remainderBits);
+		assert(m_numBitsWritten % 8 == 0);
+	}
 }
 
-void BitStream::writeInt8(int8_t value)
+
+WriteStream::WriteStream(int32_t numBytes) :
+	m_buffer(new char[numBytes]),
+	m_writer(m_buffer, numBytes),
+	m_size(numBytes)
 {
-	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+	assert(numBytes > 0);
+	assert((numBytes % 4) == 0);
 }
 
-void BitStream::writeInt16(int16_t value)
+WriteStream::~WriteStream()
 {
-	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+	delete[] m_buffer;
 }
 
-void BitStream::writeInt32(int32_t value)
+/** Write up to 32 bits */
+bool WriteStream::serializeBits(uint32_t value, int32_t numBits)
 {
-	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+	m_writer.writeBits(value, numBits);
+
+	return true;
 }
 
-void BitStream::writeInt64(int64_t value)
+/* Write a bool as 0 or 1 bit */
+bool WriteStream::serializeBool(bool& value)
 {
-	writeData(reinterpret_cast<char*>(&value), sizeof(value));
+	serializeBits(reinterpret_cast<uint32_t&>(value), 1);
+
+	return true;
 }
 
-void BitStream::writeBool(bool value)
+/* Write and compress a 32-bit integer in in range [min, max] */
+bool WriteStream::serializeInt(int32_t& value, int32_t min, int32_t max)
 {
-	writeBit(value, 1);
+	assert(min < max);
+	assert(value >= min);
+	assert(value <= max);
+
+	const int32_t bits = bitsRequired(min, max);
+	uint32_t uvalue = value - min;
+	serializeBits(uvalue, bits);
+
+	return true;
 }
 
-void BitStream::writeFromStream(WriteStream& stream)
+bool WriteStream::serializeInt(uint32_t& value, uint32_t min, uint32_t max)
 {
-	writeData(reinterpret_cast<char*>(stream.getBuffer()), stream.getLength());
+	assert(min < max);
+	assert(value >= min);
+	assert(value <= max);
+
+	const int32_t bits = bitsRequired(min, max);
+	uint32_t uvalue = value - min;
+	serializeBits(uvalue, bits);
+
+	return true;
 }
 
-void BitStream::resetReading()
+/* Write a full byte */
+bool WriteStream::serializeByte(const char byte)
 {
-	m_readTotalBytes = 0;
-	m_readBit        = 0;
-	m_readData       = m_buffer.get();
+	serializeBits(uint32_t(byte), 8);
+
+	return true;
 }
 
-void BitStream::resetWriting()
+bool WriteStream::serializeData(const char* data, int32_t length)
 {
-	m_writeTotalBytes = 0;
-	m_writeLength     = 0;
-	m_writeByte       = 0;
-	m_writeBit        = 0;
-	m_writeData       = m_buffer.get();
+	assert(data != nullptr);
+	assert(length >= 1);
+	m_writer.writeBytes(data, length);
+	return true;
 }
 
-void BitStream::reset()
+bool WriteStream::serializeCheck(const char* string)
 {
-	resetReading();
-	resetWriting();
+#if RM_SERIALIZE_CHECK
+	int32_t hash = crcFast(reinterpret_cast<const unsigned char*>(string),
+		static_cast<int32_t>(strlen(string)));
+	serializeBits(hash, 32);
+#endif
+	return true;
 }

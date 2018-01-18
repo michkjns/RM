@@ -18,7 +18,7 @@ namespace network
 		// Server to client
 		AcceptClient,
 		AcceptPlayer,
-		Gamestate,
+		Snapshot,
 		SpawnEntity,
 		AcceptEntity,
 		DestroyEntity,
@@ -29,6 +29,7 @@ namespace network
 		IntroducePlayer,
 		PlayerInput,
 		RequestEntity,
+		RequestEntitySpawn,
 
 		NUM_MESSAGE_TYPES
 	};
@@ -44,7 +45,7 @@ namespace network
 		switch (type)
 		{
 			case MessageType::ClockSync:
-			case MessageType::Gamestate:
+			case MessageType::Snapshot:
 			{
 				return ChannelType::Unreliable;
 			}
@@ -59,6 +60,7 @@ namespace network
 			case MessageType::PlayerInput:
 			case MessageType::RequestConnection:
 			case MessageType::RequestEntity:
+			case MessageType::RequestEntitySpawn:
 			case MessageType::SpawnEntity:
 			{
 				return ChannelType::ReliableOrdered;
@@ -88,7 +90,7 @@ namespace network
 			CASE_RETURN_STRING(MessageType::Disconnect);
 			CASE_RETURN_STRING(MessageType::AcceptClient);
 			CASE_RETURN_STRING(MessageType::AcceptPlayer);
-			CASE_RETURN_STRING(MessageType::Gamestate);
+			CASE_RETURN_STRING(MessageType::Snapshot);
 			CASE_RETURN_STRING(MessageType::SpawnEntity);
 			CASE_RETURN_STRING(MessageType::AcceptEntity);
 			CASE_RETURN_STRING(MessageType::DestroyEntity);
@@ -97,6 +99,7 @@ namespace network
 			CASE_RETURN_STRING(MessageType::IntroducePlayer);
 			CASE_RETURN_STRING(MessageType::PlayerInput);
 			CASE_RETURN_STRING(MessageType::RequestEntity);
+			CASE_RETURN_STRING(MessageType::RequestEntitySpawn);
 			CASE_RETURN_STRING(MessageType::NUM_MESSAGE_TYPES);
 		}
 

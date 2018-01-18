@@ -58,16 +58,16 @@ namespace network
 	public:
 		void setPort(uint16_t port);
 		void update(const Time& time);
+		void tick(Sequence frameId);
 
 		void requestServerTime(const Time& localTime);
 		void readInput();
-		void tick(Sequence frameId);
 		void connect(const Address& address, 
 			std::function<void(SessionResult)> callback);
 		void disconnect();
 
 		LocalPlayer& addLocalPlayer(int32_t controllerId, bool listenMouseKB = false);
-		bool requestEntity(Entity* entity);
+		bool requestEntitySpawn(Entity* entity);
 		void requestEntity(int32_t netId);
 
 		uint32_t getNumLocalPlayers() const;
@@ -84,11 +84,11 @@ namespace network
 		void onSpawnEntity(IncomingMessage& message);
 		void onAcceptEntity(IncomingMessage& message);
 		void onDestroyEntity(IncomingMessage& message);
-		void onGameState(IncomingMessage& message);
+		void onSnapshot(IncomingMessage& message);
 		void onReceiveServerTime(IncomingMessage& message, const Time& localTime);
 		void onDisconnected();
 
-		void sendMessage(Message& message);
+		void sendMessage(Message* message);
 		void sendPendingMessages(const Time& localTime);
 		void setState(State state);
 		void clearSession();
@@ -100,7 +100,7 @@ namespace network
 		Socket*         m_socket;
 		Game*           m_game;
 		Connection*     m_connection;
-		Sequence        m_lastReceivedState;
+		Sequence        m_lastReceivedSnapshotId;
 		Sequence        m_lastFrameSent;
 		Sequence        m_lastFrameSimulated;
 		uint32_t        m_lastOrderedMessaged;
@@ -112,9 +112,7 @@ namespace network
 		uint16_t        m_port;
 		PacketReceiver* m_packetReceiver;
 
-		CircularBuffer<int32_t, s_maxSpawnPredictedEntities>
-			m_requestedEntities;
-
+		CircularBuffer<int32_t> m_requestedEntities;
 		Buffer<LocalPlayer>	m_localPlayers;	
 
 		ClientHistory m_clientHistory;

@@ -6,7 +6,7 @@
 
 namespace network
 {
-	class Packet;
+	struct Packet;
 	class Socket;
 
 	class PacketReceiver
@@ -16,12 +16,14 @@ namespace network
 		~PacketReceiver();
 
 		void receivePackets(Socket* socket);
-		Buffer<Packet>& getPackets();
-		Buffer<Address>& getAddresses();
+		Buffer<Packet*>& getPackets();
 
 	private:
-		Buffer<Packet>  m_packets;
-		Buffer<Address> m_addresses;
+		Buffer<Packet*>  m_packets;
+
+#ifdef _DEBUG
+		int32_t m_numChecksumMismatches;
+#endif
 	};
 
 }; // namespace network

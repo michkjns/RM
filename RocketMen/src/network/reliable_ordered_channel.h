@@ -14,20 +14,20 @@ namespace network
 		ReliableOrderedChannel();
 		~ReliableOrderedChannel();
 
-		virtual void sendMessage(const Message& message) override;
+		virtual void sendMessage(Message* message) override;
 
 		virtual void sendPendingMessages(Socket* socket,
-			const Address& address, const Time& time)    override;
+			const Address& address, const Time& time) override;
 
-		virtual void receivePacket(Packet& packet)       override;
-		virtual IncomingMessage* getNextMessage()        override;
+		virtual void receivePacket(Packet& packet) override;
+		virtual IncomingMessage* getNextMessage()  override;
 
 		float getLastPacketSendTime() const;
 
 	private:
-		void writeAcksToPacket(Packet* packet);
-		void readAcksFromPacket(const PacketHeader& packetHeader);
-		void ack(const Sequence &ackSequence);
+		void writeAcksToPacket(Packet& packet);
+		void readAcksFromPacket(const Packet& packet);
+		void ack(Sequence ackSequence);
 		bool hasMessagesToSend(const Time& time) const;
 		bool canSendMessage() const;
 
@@ -38,9 +38,9 @@ namespace network
 		Sequence m_lastReceivedSequence;
 		float    m_lastPacketSendTime;
 
-		SequenceBuffer<OutgoingMessage> m_messageSendQueue;
-		SequenceBuffer<IncomingMessage> m_messageReceiveQueue;
-		SequenceBuffer<SentPacketData>  m_sentPackets;
-		SequenceBuffer<SentPacketData>  m_receivedPackets;
+		SequenceBuffer<OutgoingMessageEntry> m_messageSendQueue;
+		SequenceBuffer<IncomingMessageEntry> m_messageReceiveQueue;
+		SequenceBuffer<SentPacketEntry>      m_sentPackets;
+		SequenceBuffer<SentPacketEntry>      m_receivedPackets;
 	};
 }; // namespace network

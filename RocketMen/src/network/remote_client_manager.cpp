@@ -84,7 +84,7 @@ void RemoteClientManager::clear()
 	}
 }
 
-void RemoteClientManager::sendMessage(const struct Message& message, bool skipLocalClient)
+void RemoteClientManager::sendMessage(struct Message* message, bool skipLocalClient)
 {
 	for (RemoteClient* client = begin(); client != end(); client++)
 	{

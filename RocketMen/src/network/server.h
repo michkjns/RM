@@ -18,7 +18,7 @@ namespace network
 	//=========================================================================
 
 	struct IncomingMessage;
-	class  Packet;
+	struct Packet;
 	class  PacketReceiver;
 	class  Socket;
 
@@ -42,6 +42,7 @@ namespace network
 		void onPlayerIntroduction(IncomingMessage& inMessage);
 		void onPlayerInput(IncomingMessage& inMessage);
 		void onEntityRequest(IncomingMessage& inMessage);
+		void onEntitySpawnRequest(IncomingMessage& inMessage);
 		void onClientDisconnect(IncomingMessage& inMessage);
 		void onClientGameState(IncomingMessage& inMessage);
 		void onKeepAliveMessage(IncomingMessage& inMessage);
@@ -61,7 +62,7 @@ namespace network
 		void onConnectionCallback(ConnectionCallback type, 
 			Connection* connection);
 
-		void onConnectionRequest(const Address& address, Packet& packet);
+		Connection* addConnection(const Address& address);
 
 		Socket* m_socket;
 		Game*   m_game;

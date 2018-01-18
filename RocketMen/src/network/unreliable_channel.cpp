@@ -7,23 +7,26 @@
 using namespace network;
 
 static const uint32_t s_messageSendQueueSize = 64;
+static const uint32_t s_messageReceiveQueueSize = 64;
 
 UnreliableChannel::UnreliableChannel() : 
 	m_nextMessageId(0),
-	m_queuedSendMessages(0)
+	m_queuedSendMessages(0),
+	m_sendQueue(s_messageSendQueueSize),
+	m_receiveQueue(s_messageReceiveQueueSize)
 {
-	Message emptyMessage = {};
-
-	m_sendQueue.fill(emptyMessage);
+	Message emptyMessage(MessageType::None);
+	m_sendQueue.fill(nullptr);
 }
 
 UnreliableChannel::~UnreliableChannel()
 {
 }
 
-void UnreliableChannel::sendMessage(const Message& message)
+void UnreliableChannel::sendMessage(Message* message)
 {
 	assert(getMessageChannel(message) == ChannelType::Unreliable);
+	message->data.flush();
 	m_sendQueue.insert(message);
 	m_queuedSendMessages++;
 }
@@ -42,21 +45,36 @@ void UnreliableChannel::receivePacket(Packet& packet)
 {
 	for (int32_t i = 0; i < packet.header.numMessages; i++)
 	{
-		IncomingMessage* message = packet.readNextMessage();
-		m_receiveQueue.insert(*message);
-		delete message;
+		IncomingMessage* message = new IncomingMessage(packet.messages[i]->type, 
+			packet.messageIds[i],
+			packet.messages[i]->data.getData(),
+			packet.messages[i]->data.getBufferSize());
+
+		packet.messages[i]->data.release();
+		delete packet.messages[i];
+
+		m_receiveQueue.insert(message);
 	}
 }
 
 IncomingMessage* UnreliableChannel::getNextMessage()
 {
-	for (IncomingMessage& message : m_receiveQueue)
+	for (IncomingMessage*& message : m_receiveQueue)
 	{
-		if (message.type != MessageType::None)
+		if (message != nullptr)
 		{
-			return &message;
+			if (message->type != MessageType::None)
+			{
+				return message;
+			}
+			else
+			{
+				delete message;
+				message = nullptr;
+			}
 		}
 	}
+
 	return nullptr;
 }
 
@@ -67,26 +85,22 @@ bool UnreliableChannel::hasMessagesToSend() const
 
 Packet* UnreliableChannel::createPacket(const Time& /*time*/)
 {
-	Packet* packet = new Packet(ChannelType::Unreliable);
+	Packet* packet             = new Packet();
 	packet->header             = {};
-	packet->header.ackBits     = (uint32_t)-1;
-	packet->header.sequence    = (Sequence)-1;
-	packet->header.ackSequence = (Sequence)-1;
+	packet->header.ackBits     = (uint32_t)INDEX_NONE;
+	packet->header.sequence    = (Sequence)INDEX_NONE;
+	packet->header.ackSequence = (Sequence)INDEX_NONE;
 
 	for (uint32_t i = 0; i < s_messageSendQueueSize; i++)
 	{
-		Message& message = m_sendQueue[i];
-		if (message.type != MessageType::None)
+		Message* message = m_sendQueue[i];
+		if (message != nullptr)
 		{
 			assert(getMessageChannel(message) == ChannelType::Unreliable);
-			OutgoingMessage outMessage;
-			outMessage.type     = message.type;
-			outMessage.data     = message.data;
-			outMessage.sequence = m_nextMessageId++;
+			message->id = m_nextMessageId++;
+			packet->messages[packet->header.numMessages++] = message;
 
-			packet->writeMessage(outMessage);
-
-			message.type = MessageType::None;
+			m_sendQueue[i] = nullptr;
 			m_queuedSendMessages--;
 		}
 

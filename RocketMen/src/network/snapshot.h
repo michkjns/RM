@@ -2,6 +2,7 @@
 #pragma once
 
 #include <utility/bitstream.h>
+#include <network/network_message.h>
 
 #include <vector>
 
@@ -12,12 +13,6 @@ namespace network
 	class Snapshot
 	{
 	public:
-		Snapshot(std::vector<Entity*>& entities);
-
-		const char* getBuffer() const;
-		size_t getSize() const;
-
-	private:
-		WriteStream m_writeStream;
+		static Message* createMessage(std::vector<Entity*>& entities);
 	};
 };

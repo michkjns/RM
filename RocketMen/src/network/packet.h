@@ -9,73 +9,81 @@
 namespace network
 {
 	static const int32_t g_maxMessagesPerPacket = 64;
-	struct SentPacketData
+	struct SentPacketEntry
 	{
 		uint16_t numMessages;
 		Sequence messageIds[g_maxMessagesPerPacket];
 	};
 
-	struct PacketHeader
-	{
-		/** Number of messages in packet */
-		int32_t  numMessages;
-		uint32_t ackBits;
-		uint32_t hash;
-		Sequence sequence;
-		uint16_t ackSequence;
-		uint16_t dataLength;
-	};
-
 	static const int32_t g_protocolId = 1000;
 	static const int32_t g_maxBlockSize = 2048;
 	static const int32_t g_packetBufferSize = g_maxBlockSize + sizeof(g_protocolId);
-	static const int32_t g_packetHeaderSize = sizeof(PacketHeader);
-	static const int32_t g_maxPacketSize = (g_maxBlockSize + g_packetHeaderSize);
-	static const int32_t g_messageOverhead = sizeof(MessageType) + sizeof(Sequence) + sizeof(int32_t);
+	static const int32_t g_maxPacketSize = (g_maxBlockSize);
 // ============================================================================
 
-	class Packet
+	struct Packet
 	{
-	public:
 		Packet();
-		Packet(ChannelType channel);
 		~Packet() {}
-		PacketHeader header;
 
-		/** Writes a message to the buffer 
-		* @param const NetworkMessage& message   Message to write
-		*/
-		void writeMessage(const OutgoingMessage& message);
+		Address address;
 
-		/** Writes data to buffer
-		* @param void* data          Pointer to data to write
-		* @param const size_t length Length of the data
-		*/
-		void writeData(const void* data, const size_t length);
+		struct {
+			int32_t  numMessages;
+			uint32_t ackBits;
+			Sequence sequence;
+			Sequence ackSequence;
+		} header;
 
-		/** Reads NetworkMessage from the packet 
-		* @return NetworkMessage Message read
-		*/
-		IncomingMessage* readNextMessage();
+		Sequence messageIds[g_maxMessagesPerPacket];
+		Message* messages[g_maxMessagesPerPacket];
 
-		void resetReading();
+		template<typename Stream>
+		bool serialize(Stream& stream)
+		{
+			assert(serializeCheck(stream, "packet_start"));
 
-		/** Gets the packet data
-		* @return char* Pointer to data buffer 
-		*/
-		char* getData() const;
+			serializeData(stream, (char*)&header, sizeof(header));
 
-		bool isEmpty() const;
-		ChannelType getChannel() const;
+			for (int32_t i = 0; i < header.numMessages; i++)
+			{
+				serializeBits(stream, messageIds[i], 16);
+	
+				if (Stream::isWriting)
+				{
+					assert(messages[i]->type > MessageType::None);
+					assert(messages[i]->type < MessageType::NUM_MESSAGE_TYPES);
+					serializeBits(stream, messages[i]->type, 8);
+					assert(messages[i]->data.getDataLength() < g_maxPacketSize);
+					int32_t messageSize = messages[i]->data.getDataLength();
 
-		bool getError() const;
+					serializeInt(stream, messageSize);
+					serializeData(stream, messages[i]->data.getData(), messageSize);
+				}
+				else
+				{
+					MessageType messageType = MessageType::None;
+					serializeBits(stream, messageType, 8);
+					assert(messageType > MessageType::None);
+					assert(messageType < MessageType::NUM_MESSAGE_TYPES);
 
-	private:
-		unsigned char m_data[g_packetBufferSize];
-		Sequence      m_messageIDs[g_maxMessagesPerPacket];
-		int32_t       m_read;
-		ChannelType   m_channel;
-		bool          m_error;
+					int32_t messageSize = 0;
+					serializeInt(stream, messageSize);
+					assert(messageSize < g_maxPacketSize);
+
+					messages[i] = new Message(messageType, messageSize);
+					serializeData(stream, messages[i]->data.getData(), messageSize);
+				}
+			}
+
+			assert(serializeCheck(stream, "packet_end"));
+			if (Stream::isWriting)
+			{
+				stream.flush();
+			}
+			return true;
+		}
+
 	};
 
 }; // namespace network

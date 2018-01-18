@@ -59,8 +59,7 @@ void Core::initialize(Game* game, const CommandLineOptions& options)
 	{
 		LOG_INFO("Core: Creating window..");
 		m_window = Window::create();
-		std::string windowTitle(m_game->getName());
-		windowTitle.append(runDedicated ? " - Dedicated Server" : " - Client");
+		std::string windowTitle(m_game->getName() + runDedicated ? " - Dedicated Server" : " - Client");
 		m_window->initialize(windowTitle.c_str(), g_defaultWindowSize);
 		
 		LOG_INFO("Core: Creating renderer..");
@@ -210,5 +209,6 @@ void Core::destroy()
 
 	LOG_INFO("Core: Terminating window..");
 	m_window->terminate();
+
 	delete m_window;
 }

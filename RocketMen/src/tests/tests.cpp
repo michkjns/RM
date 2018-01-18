@@ -2,29 +2,23 @@
 #include <utility/bitstream.h>
 
 #include <game/character.h>
-#include <game/rocket.h>
-#include <physics/rigidbody.h>
 
 using namespace rm;
 
-struct SamplePacket
+struct TestStruct
 {
-	bool    value;
-	int32_t value2;
-//	Rocket* rocket;
-
-	template<typename Stream>
-	bool serialize(Stream& stream)
+	TestStruct() 
 	{
-		serializeBit(stream, value);
-		serializeInt(stream, value2, 100, 130);
-	//	rocket->serializeFull(stream);
-		return true;
+		value = 5;
+		fvalue = 0.14f;
+		vector = Vector3(1.03f, 2.04f, 3.05f);
+		vector2 = Vector3(0.0f, 0.14f, 1.66f);
+		fvalue2 = 800.0123f;
+		value2 = 1234567;
+		vector3 = Vector2(0.545f, -0.1f);
+		vector4 = Vector2(0.001f, -5.01f);
 	}
-};
 
-struct SamplePacket2
-{
 	int32_t value;
 	float   fvalue;
 	Vector3 vector;
@@ -37,108 +31,80 @@ struct SamplePacket2
 	template<typename Stream>
 	bool serialize(Stream& stream)
 	{
+		assert(serializeCheck(stream, "TestStruct_start"));
 		serializeInt(stream, value, 0, 10);
-		serializeFloat(stream, fvalue, 0.0f, 1.0f, 0.01f);
+		assert(serializeFloat(stream, fvalue, 0.0f, 1.0f, 0.01f));
 		serializeVector3(stream, vector);
 		serializeVector3(stream, vector2, 0.0f, 2.0f, 0.1f);
 		serializeInt(stream, value2);
-		serializeVector2(stream, vector3);
-		serializeFloat(stream, fvalue2);
-		serializeVector3(stream, vector2, 0.0f, 2.0f, 0.1f);
-		serializeInt(stream, value2);		
-		serializeVector3(stream, vector2, 0.0f, 2.0f, 0.1f);
+		assert(serializeVector2(stream, vector3));
+		assert(serializeFloat(stream, fvalue2));
+		assert(serializeVector2(stream, vector3));
 		serializeInt(stream, value2);
-		serializeVector2(stream, vector3);
-		serializeInt(stream, value2);
-		serializeFloat(stream, fvalue2);
-		serializeVector3(stream, vector2, 0.0f, 2.0f, 0.1f);
-		serializeInt(stream, value2);
-		serializeVector3(stream, vector2, 0.0f, 2.0f, 0.01f);
-		serializeVector2(stream, vector3);
-		serializeVector3(stream, vector2, 0.0f, 4.0f, 0.01f);
-		serializeVector2(stream, vector4);
+		assert(serializeVector2(stream, vector3));
+		assert(serializeVector2(stream, vector4));
+		assert(serializeCheck(stream, "TestStruct_end"));
 		return true;
 	}
 };
 
-bool streamTests()
+bool bitstreamTests()
 {
-	SamplePacket packet;
-	SamplePacket2 packet2;
+	TestStruct testStruct;
 	Character character;
 
-	packet.value = true;
-	packet.value2 = 123;
-
-	packet2.value   = 5;
-	packet2.fvalue  = 0.14f;
-	packet2.vector  = Vector3(1.03f, 2.04f, 3.05f);
-	packet2.vector2 = Vector3(0.0f, 0.14f, 1.66f);
-	packet2.fvalue2 = 800.0123f;
-	packet2.value2  = 1234567;
-	packet2.vector3 = Vector2(0.545f, -0.1f);
-	packet2.vector4 = Vector2(0.001f, -5.01f);
 	WriteStream writeStream(256);
-	ReadStream  readStream(256);
+
+	char readBuffer[256];
+	ReadStream readStream(readBuffer, 256);
 	
-	packet.serialize(writeStream);
-	packet2.serialize(writeStream);
-	memcpy(readStream.getBuffer(), writeStream.getBuffer(), writeStream.getLength());
+	testStruct.serialize(writeStream);
+	writeStream.flush();
+	memcpy(readStream.getData(), writeStream.getData(), writeStream.getDataLength());
 
-	SamplePacket  receivePacket;
-	SamplePacket2 receivePacket2;
+	TestStruct receivePacket;
 	receivePacket.serialize(readStream);
-	receivePacket2.serialize(readStream);
 
-	if (!assert(receivePacket.value == packet.value))
+	if(!assert(receivePacket.value2 == testStruct.value2))
 	{
 		return false;
 	}
-
-	if (!assert(receivePacket.value == packet.value))
-	{
-		return false;
-	}
-	if(!assert(receivePacket.value2 == packet.value2))
-	{
-		return false;
-	}
-	if(!assert(receivePacket2.value == packet2.value))
+	if(!assert(receivePacket.value == testStruct.value))
 	{
 		return false;
 	}
 
-	if(!assert(receivePacket2.fvalue == packet2.fvalue))
+	if(!assert(receivePacket.fvalue == testStruct.fvalue))
 	{
 		return false;
 	}
 
-	if(!assert(glm::distance(receivePacket2.vector, packet2.vector) < 0.01f))
+	if(!assert(glm::distance(receivePacket.vector, testStruct.vector) < 0.01f))
 	{
 		return false;
 	}
 
-	if(!assert(glm::distance(receivePacket2.vector2, packet2.vector2) < 0.1f))
+	if(!assert(glm::distance(receivePacket.vector2, testStruct.vector2) < 0.1f))
 	{
 		return false;
 	}
 
-	if(!assert(receivePacket2.fvalue2 == packet2.fvalue2))
+	if(!assert(receivePacket.fvalue2 == testStruct.fvalue2))
 	{
 		return false;
 	}
 
-	if(!assert(receivePacket2.value2 == packet2.value2))
+	if(!assert(receivePacket.value2 == testStruct.value2))
 	{
 		return false;
 	}
 
-	if (!assert(glm::distance(receivePacket2.vector3, packet2.vector3) < 0.01f))
+	if (!assert(glm::distance(receivePacket.vector3, testStruct.vector3) < 0.01f))
 	{
 		return false;
 	}
 
-	if (!assert(glm::distance(receivePacket2.vector4, packet2.vector4) < 0.01f))
+	if (!assert(glm::distance(receivePacket.vector4, testStruct.vector4) < 0.01f))
 	{
 		return false;
 	}

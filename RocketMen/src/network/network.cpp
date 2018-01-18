@@ -68,7 +68,7 @@ bool Network::isLocalPlayer(int16_t playerId)
 bool Network::requestEntity(Entity* entity)
 {
 	assert(s_client != nullptr);
-	return s_client->requestEntity(entity);
+	return s_client->requestEntitySpawn(entity);
 }
 
 void Network::destroyEntity(int32_t networkId)

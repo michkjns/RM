@@ -23,7 +23,7 @@ namespace network
 		int32_t count() const;
 		void clear();
 
-		void sendMessage(const struct Message& message, bool skipLocalClient = false);
+		void sendMessage(struct Message* message, bool skipLocalClient = false);
 		void updateConnections(const Time& time);
 		void sendPendingMessages(const Time& time);
 

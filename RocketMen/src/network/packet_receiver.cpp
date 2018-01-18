@@ -11,13 +11,15 @@ using namespace network;
 extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 PacketReceiver::PacketReceiver(int32_t bufferSize) :
-	m_packets(bufferSize),
-	m_addresses(bufferSize)
+	m_packets(bufferSize)
 {
 }
 
 PacketReceiver::~PacketReceiver()
 {
+#ifdef _DEBUG
+	LOG_DEBUG("~PacketReceiver: mismatched checksums: %d", m_numChecksumMismatches);
+#endif
 }
 
 void PacketReceiver::receivePackets(Socket* socket)
@@ -36,52 +38,38 @@ void PacketReceiver::receivePackets(Socket* socket)
 			continue;
 		}
 
-		// Reconstruct packet
-		BitStream stream;
-		stream.writeBuffer(buffer, length);
+		ReadStream stream(buffer, length);
+		
+		uint32_t receivedChecksum = 0;
+		serializeBits(stream, receivedChecksum, 32);
 
-		const uint32_t checksum = stream.readInt32();
+		// swap checksum with protocolId
+		(int32_t&)stream.getData()[0] = g_protocolId;
 
-		PacketHeader packetHeader;
-		stream.readBytes((char*)&packetHeader, sizeof(PacketHeader));
-
-		if (packetHeader.dataLength < g_maxBlockSize)
+		if (receivedChecksum != crcFast((unsigned char*)stream.getData(), length))
 		{
-			ChannelType channel = (packetHeader.sequence     == (Sequence)-1
-				                 && packetHeader.ackBits     == (uint32_t)-1
-				                 && packetHeader.ackSequence == (Sequence)-1) ?
-				ChannelType::Unreliable :
-				ChannelType::ReliableOrdered;
+#ifdef _DEBUG
+			m_numChecksumMismatches++;
+			LOG_DEBUG("PacketReceiver::receivePackets: Checksum mismatched, packet discarded.");
+#endif
+			continue;
+		}
 
-			Packet packet(channel);
-			packet.header = packetHeader;
-			stream.readBytes(packet.getData(), packet.header.dataLength);
-
-			// Write protocol ID after packet to include in the checksum
-			memcpy(packet.getData() + packet.header.dataLength, &g_protocolId, sizeof(g_protocolId));
-
-			if (checksum == crcFast((const unsigned char*)packet.getData(),
-				packet.header.dataLength + sizeof(uint32_t)))
-			{
-				Packet& packetEntry = m_packets.insert();
-				packetEntry = packet;
-				Address& addressEntry = m_addresses.insert();
-				addressEntry = address;
-			}
-			else
-			{
-				LOG_DEBUG("PacketReceiver::receivePackets: Checksum mismatched, packet discarded.");
-			}
+		Packet* packet = new Packet();
+		packet->address = address;
+		if (packet->serialize(stream))
+		{
+			auto& entry = m_packets.insert();
+			entry = packet;
+		}
+		else
+		{
+			delete packet;
 		}
 	}
 }
 
-Buffer<Packet>& PacketReceiver::getPackets()
+Buffer<Packet*>& PacketReceiver::getPackets()
 {
 	return m_packets;
-}
-
-Buffer<Address>& PacketReceiver::getAddresses()
-{
-	return m_addresses;
 }

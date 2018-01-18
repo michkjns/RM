@@ -10,20 +10,21 @@ using namespace network;
 
 void NetworkChannel::sendPacket(Socket* socket, const Address& address, Packet* packet)
 {
+	assert(socket != nullptr);
+	assert(packet != nullptr);
 	assert(socket->isInitialized());
-	assert(!packet->isEmpty());
+	
+	WriteStream packetStream(g_maxPacketSize);
 
-	assert(g_maxBlockSize - packet->header.dataLength >= sizeof(uint32_t));
+	int32_t protocolId = g_protocolId;
+	serializeBits(packetStream, protocolId, 32);
 
-	// Write protocol ID after packet to include in the checksum
-	memcpy(packet->getData() + packet->header.dataLength, &g_protocolId, sizeof(g_protocolId));
-	uint32_t checksum = crcFast((const unsigned char*)packet->getData(),
-		packet->header.dataLength + sizeof(uint32_t));
+	packet->serialize(packetStream);
 
-	BitStream stream;
-	stream.writeInt32(checksum);
-	stream.writeData(reinterpret_cast<char*>(&packet->header), sizeof(PacketHeader));
-	stream.writeData(packet->getData(), packet->header.dataLength);
+	const uint32_t checksum = crcFast((unsigned char*)packetStream.getData(), packetStream.getDataLength());
 
-	socket->send(address, stream.getBuffer(), stream.getLength());
+	// swap protocolId for checksum
+	(uint32_t&)packetStream.getData()[0] = checksum;
+
+	socket->send(address, packetStream.getData(), packetStream.getDataLength());
 }

@@ -81,6 +81,12 @@ Socket_win32::~Socket_win32()
 			}
 		}
 	}
+
+#ifdef _DEBUG
+	LOG_DEBUG("~Socket_win32: bytes received: %d, bytes sent: %d, packets received: %d, packets sent: %d",
+		m_bytesReceived, m_bytesSent, m_packetsReceived, m_packetsSent);
+#endif
+
 }
 
 bool Socket_win32::initialize(uint16_t port)

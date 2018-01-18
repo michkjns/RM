@@ -33,7 +33,7 @@ public:
 	const input::Action* end()   const;
 
 	void readFromMessage(network::IncomingMessage& message);
-	void writeToMessage(network::Message& message);
+	void writeToMessage(network::Message* message);
 
 private:
 	Buffer<input::Action> m_actions;
