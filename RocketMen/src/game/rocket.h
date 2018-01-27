@@ -44,10 +44,6 @@ namespace rm
 		/** Serialize commonly updated properties */
 		template<typename Stream>
 		bool serialize(Stream& stream);
-
-		/** Serialize client-owned variables */
-		template<typename Stream>
-		bool reverseSerialize(Stream& stream);
 	};
 
 };

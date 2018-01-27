@@ -35,9 +35,6 @@ namespace rm
 		template<typename Stream>
 		bool serialize(Stream& stream);
 
-		/** Serialize client-owned variables */
-		template<typename Stream>
-		bool reverseSerialize(Stream& stream);
 	};
 
 };// namespace rm

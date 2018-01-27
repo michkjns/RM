@@ -2,9 +2,11 @@
 #pragma once
 
 #include <core/game_time.h>
-#include <game/game_session.h>
 #include <network/connection_callback.h>
 #include <network/remote_client_manager.h>
+#include <network/server/message_factory_server.h>
+#include <network/client/message_factory_client.h>
+#include <network/session.h>
 #include <utility/id_manager.h>
 
 #include <array>
@@ -17,7 +19,6 @@ namespace network
 	static const uint32_t s_maxConnectedClients = 32;
 	//=========================================================================
 
-	struct IncomingMessage;
 	struct Packet;
 	class  PacketReceiver;
 	class  Socket;
@@ -38,24 +39,21 @@ namespace network
 		void registerLocalClientId(int32_t clientId);
 		void destroyEntity(int32_t networkId);
 
+		int32_t getNumClients() const;
+
 	private:
-		void onPlayerIntroduction(IncomingMessage& inMessage);
-		void onPlayerInput(IncomingMessage& inMessage);
-		void onEntityRequest(IncomingMessage& inMessage);
-		void onEntitySpawnRequest(IncomingMessage& inMessage);
-		void onClientDisconnect(IncomingMessage& inMessage);
-		void onClientGameState(IncomingMessage& inMessage);
-		void onKeepAliveMessage(IncomingMessage& inMessage);
+		void onIntroducePlayer(const message::IntroducePlayer& inMessage, RemoteClient& client);
+		void onPlayerInput(const message::PlayerInput& inMessage, RemoteClient& client);
+		void onRequestTime(const message::RequestTime& inMessage, RemoteClient& client, const Time& time);
+		void onRequestEntity(const message::RequestEntity& inMessagem, RemoteClient& client);
+		void onClientDisconnect(RemoteClient& client);
+		void onKeepAlive(RemoteClient& client);
 
-		void sendEntitySpawn(Entity* entity, RemoteClient* client);
+		void sendEntitySpawn(Entity* entity, RemoteClient& client);
 		void sendEntitySpawn(Entity* entity);
-		void acknowledgeEntitySpawn(IncomingMessage& inMessage, const int32_t tempId, RemoteClient* client);
 
-		void onClientPing(IncomingMessage& message, const Time& time);
-
-		void readMessage(IncomingMessage& message, const Time& time);
+		void readMessage(const Message& message, RemoteClient& client, const Time& time);
 		void createSnapshots(float deltaTime);
-		void writeSnapshot(RemoteClient& client);
 
 		void receivePackets();
 		void readMessages(const Time& time);
@@ -71,10 +69,13 @@ namespace network
 
 		/* Time since last snapshot */
 		float m_snapshotTime;
-		GameSessionType m_type;		
+
 		PacketReceiver* m_packetReceiver;
 		IdManager m_networkIdManager;
 		RemoteClientManager m_clients;
+
+		MessageFactoryServer m_messageFactory;
+		MessageFactoryClient m_clientMessageFactory;
 	};
 
 }; // namespace network

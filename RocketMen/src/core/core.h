@@ -32,6 +32,5 @@ private:
 	class Window*    m_window;
 	Time             m_gameTime;
 	class Physics*   m_physics;
-	uint64_t         m_timestep;
 	bool             m_enableDebugDraw;
 };

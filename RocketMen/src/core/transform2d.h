@@ -66,17 +66,22 @@ inline bool Transform2D::serialize(Stream& stream)
 {
 	Vector2 position = getLocalPosition();
 	if (!serializeVector2(stream, position))
-		return ensure(false);
-	if (Stream::isReading)
-		setLocalPosition(position);
-
-	bool hasRigidbody = m_rigidbody != nullptr;
-	serializeBool(stream, hasRigidbody);
-	if (hasRigidbody)
 	{
-		assert(m_rigidbody != nullptr);
-		ensure(m_rigidbody->serialize(stream));
+		return ensure(false);
 	}
+
+	if (Stream::isReading)
+	{
+		setLocalPosition(position);
+	}
+	
+	//bool hasRigidbody = m_rigidbody != nullptr;
+	//serializeBool(stream, hasRigidbody);
+	//if (hasRigidbody)
+	//{
+	//	assert(m_rigidbody != nullptr);
+	//	ensure(m_rigidbody->serialize(stream));
+	//}
 
 	return true;
 }

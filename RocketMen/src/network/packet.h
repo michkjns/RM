@@ -1,7 +1,8 @@
 
 #pragma once
 
-#include <network/network_message.h>
+#include <network/message.h>
+#include <network/message_factory.h>
 #include <utility/bitstream.h>
 
 #include <cstdint>
@@ -23,11 +24,19 @@ namespace network
 
 	struct Packet
 	{
-		Packet();
-		~Packet() {}
+		Packet::Packet()
+		{
+			header = {};
+		}
 
-		Address address;
-
+		Packet::~Packet()
+		{
+			for (int32_t i = 0; i < header.numMessages; i++)
+			{
+				messages[i]->releaseRef();
+			}
+		}
+		
 		struct {
 			int32_t  numMessages;
 			uint32_t ackBits;
@@ -35,45 +44,75 @@ namespace network
 			Sequence ackSequence;
 		} header;
 
-		Sequence messageIds[g_maxMessagesPerPacket];
-		Message* messages[g_maxMessagesPerPacket];
+		Address     address;
+		Sequence    messageIds[g_maxMessagesPerPacket];
+		MessageType messageTypes[g_maxMessagesPerPacket];
+		Message*    messages[g_maxMessagesPerPacket];
 
 		template<typename Stream>
-		bool serialize(Stream& stream)
+		bool serialize(Stream& stream, MessageFactory* messageFactory)
 		{
 			assert(serializeCheck(stream, "packet_start"));
 
+			/** Serialize Header */
+			if (Stream::isWriting)
+			{
+				assert(header.numMessages >= 0 && header.numMessages < g_maxMessagesPerPacket);
+			}
 			serializeData(stream, (char*)&header, sizeof(header));
+			if (Stream::isReading)
+			{
+//				int32_t asdc = 3;
+				if (header.numMessages <= 0 || header.numMessages >= g_maxMessagesPerPacket)
+				{
+					return ensure(false);
+				}
+			}
 
+			assert(serializeCheck(stream, "packet_test"));
+
+			/** Serialize Message Ids */
+			for (int32_t i = 0; i < header.numMessages; i++)
+				serializeBits(stream, messageIds[i], 16);
+			
+			// serializeData(stream, reinterpret_cast<char*>(messageIds), sizeof(messageIds[0]) * header.numMessages); // TODO - bug in serialization classes?
+	
+			/** Serialize Message Types */
+			for (int32_t i = 0; i < header.numMessages; i++)
+				serializeBits(stream, messageTypes[i], 8);
+
+			/** Serialize Message Data*/
 			for (int32_t i = 0; i < header.numMessages; i++)
 			{
-				serializeBits(stream, messageIds[i], 16);
-	
 				if (Stream::isWriting)
 				{
-					assert(messages[i]->type > MessageType::None);
-					assert(messages[i]->type < MessageType::NUM_MESSAGE_TYPES);
-					serializeBits(stream, messages[i]->type, 8);
-					assert(messages[i]->data.getDataLength() < g_maxPacketSize);
-					int32_t messageSize = messages[i]->data.getDataLength();
-
-					serializeInt(stream, messageSize);
-					serializeData(stream, messages[i]->data.getData(), messageSize);
+					assert(messageTypes[i] > MessageType::None);
+					assert(messageTypes[i] < MessageType::NUM_MESSAGE_TYPES);
 				}
-				else
+			
+				if (Stream::isReading)
 				{
-					MessageType messageType = MessageType::None;
-					serializeBits(stream, messageType, 8);
-					assert(messageType > MessageType::None);
-					assert(messageType < MessageType::NUM_MESSAGE_TYPES);
+					assert(messageFactory != nullptr);
+					if (messageTypes[i] <= MessageType::None || messageTypes[i] >= MessageType::NUM_MESSAGE_TYPES)
+					{
+						return ensure(false);
+					}
 
-					int32_t messageSize = 0;
-					serializeInt(stream, messageSize);
-					assert(messageSize < g_maxPacketSize);
+					messages[i] = messageFactory->createMessage(messageTypes[i]);
 
-					messages[i] = new Message(messageType, messageSize);
-					serializeData(stream, messages[i]->data.getData(), messageSize);
+					if (messages[i] == nullptr)
+					{
+						return ensure(false);
+					}
+					messages[i]->assignId(messageIds[i]);
 				}
+
+				assert(serializeCheck(stream, "begin_message"));
+				if (!messages[i]->serialize(stream))
+				{
+					return ensure(false);
+				}
+				assert(serializeCheck(stream, "end_message"));
 			}
 
 			assert(serializeCheck(stream, "packet_end"));
@@ -83,7 +122,6 @@ namespace network
 			}
 			return true;
 		}
-
 	};
 
 }; // namespace network

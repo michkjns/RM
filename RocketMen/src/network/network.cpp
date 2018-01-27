@@ -28,14 +28,6 @@ void Network::generateNetworkId(Entity* entity)
 	{
 		s_server->generateNetworkId(entity);
 	}
-	else if (isClient())
-	{
-		if(!requestEntity(entity))
-		{
-			LOG_ERROR("Couldn't Request Entity!");
-			entity->kill();
-		}		
-	}
 }
 
 void Network::addLocalPlayer(int32_t controllerId)
@@ -63,12 +55,6 @@ bool Network::isLocalPlayer(int16_t playerId)
 	}
 
 	return false;
-}
-
-bool Network::requestEntity(Entity* entity)
-{
-	assert(s_client != nullptr);
-	return s_client->requestEntitySpawn(entity);
 }
 
 void Network::destroyEntity(int32_t networkId)

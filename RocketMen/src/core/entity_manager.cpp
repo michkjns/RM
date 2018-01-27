@@ -84,8 +84,8 @@ Entity* EntityManager::instantiateEntity(ReadStream& stream, int32_t networkId)
 	{
 		entity->setNetworkId(networkId);
 	}
-	instantiateEntity(entity);
 
+	instantiateEntity(entity);
 	return entity;
 }
 
@@ -100,7 +100,9 @@ bool EntityManager::serializeFullEntity(Entity* entity, ReadStream& stream, bool
 		ensure(readType == intType);
 	}
 
-	return getFactory(entity->getType())->serializeFull(entity, stream);
+	const bool result = getFactory(entity->getType())->serializeFull(entity, stream);
+
+	return result;
 }
 
 bool EntityManager::serializeFullEntity(Entity* entity, WriteStream& stream, bool includeType)
@@ -112,32 +114,57 @@ bool EntityManager::serializeFullEntity(Entity* entity, WriteStream& stream, boo
 		stream.serializeInt(intType, 0, s_numEntityTypes);
 	}
 
-	return getFactory(entity->getType())->serializeFull(entity, stream);
+	const bool result = getFactory(entity->getType())->serializeFull(entity, stream);
+
+	return result;
+}
+
+bool EntityManager::serializeFullEntity(Entity* entity, MeasureStream& stream, bool includeType)
+{
+	assert(entity != nullptr);
+	if (includeType)
+	{
+		int32_t intType = static_cast<int32_t>(entity->getType());
+		stream.serializeInt(intType, 0, s_numEntityTypes);
+	}
+
+	const bool result = getFactory(entity->getType())->serializeFull(entity, stream);
+
+	return result;
 }
 
 bool EntityManager::serializeEntity(Entity* entity, WriteStream& stream)
 {
 	assert(entity != nullptr);
-	return getFactory(entity->getType())->serialize(entity, stream);
+	const bool result = getFactory(entity->getType())->serialize(entity, stream);
+	return result;
 }
 
 bool EntityManager::serializeEntity(Entity* entity, ReadStream& stream)
 {
 	assert(entity != nullptr);
-	return getFactory(entity->getType())->serialize(entity, stream);
+	const bool result = getFactory(entity->getType())->serialize(entity, stream);
+	return result;
 }
 
-bool EntityManager::serializeClientVars(Entity* entity, WriteStream& stream)
+bool EntityManager::serializeEntity(Entity* entity, MeasureStream& stream)
 {
 	assert(entity != nullptr);
-	return getFactory(entity->getType())->serializeClientVars(entity, stream);
+	const bool result = getFactory(entity->getType())->serialize(entity, stream);
+	return result;
 }
 
-bool EntityManager::serializeClientVars(Entity* entity, ReadStream& stream)
-{
-	assert(entity != nullptr);
-	return getFactory(entity->getType())->serializeClientVars(entity, stream);
-}
+//bool EntityManager::serializeClientVars(Entity* entity, WriteStream& stream)
+//{
+//	assert(entity != nullptr);
+//	return getFactory(entity->getType())->serializeClientVars(entity, stream);
+//}
+//
+//bool EntityManager::serializeClientVars(Entity* entity, ReadStream& stream)
+//{
+//	assert(entity != nullptr);
+//	return getFactory(entity->getType())->serializeClientVars(entity, stream);
+//}
 
 void EntityManager::flushEntities()
 {
@@ -170,6 +197,27 @@ void EntityManager::killEntities()
 	}
 
 	s_entityIds.clear();
+}
+
+Entity* EntityManager::findNetworkedEntity(int32_t networkId)
+{
+	for (Entity* entity : s_newEntities)
+	{
+		if (entity->getNetworkId() == networkId)
+		{
+			return entity;
+		}
+	}
+
+	for (Entity* entity : s_entities)
+	{
+		if (entity->getNetworkId() == networkId)
+		{
+			return entity;
+		}
+	}
+
+	return nullptr;
 }
 
 void EntityManager::freeEntityId(int32_t id)

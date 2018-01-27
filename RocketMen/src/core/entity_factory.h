@@ -18,12 +18,14 @@ public:
 
 	virtual bool serializeFull(Entity* entity, WriteStream& stream) = 0;
 	virtual bool serializeFull(Entity* entity, ReadStream& stream) = 0;
+	virtual bool serializeFull(Entity* entity, MeasureStream& stream) = 0;
 
 	virtual bool serialize(Entity* entity, WriteStream& stream) = 0;
 	virtual bool serialize(Entity* entity, ReadStream& stream) = 0;
+	virtual bool serialize(Entity* entity, MeasureStream& stream) = 0;
 
-	virtual bool serializeClientVars(Entity* entity, WriteStream& stream) = 0;
-	virtual bool serializeClientVars(Entity* entity, ReadStream& stream) = 0;
+//	virtual bool serializeClientVars(Entity* entity, WriteStream& stream) = 0;
+//	virtual bool serializeClientVars(Entity* entity, ReadStream& stream) = 0;
 };
 
 template<typename T>
@@ -65,6 +67,12 @@ public:
 		return dynamic_cast<T*>(entity)->serializeFull(stream);
 	}
 
+	bool serializeFull(Entity* entity, MeasureStream& stream) override
+	{
+		assert(entity != nullptr);
+		return dynamic_cast<T*>(entity)->serializeFull(stream);
+	}
+
 	bool serialize(Entity* entity, WriteStream& stream) override
 	{
 		assert(entity != nullptr);
@@ -77,20 +85,26 @@ public:
 		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 
-	bool serializeClientVars(Entity* entity, WriteStream& stream) override
+	bool serialize(Entity* entity, MeasureStream& stream) override
 	{
 		assert(entity != nullptr);
-		return dynamic_cast<T*>(entity)->reverseSerialize(stream);
+		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 
-	bool serializeClientVars(Entity* entity, ReadStream& stream) override
-	{
-		assert(entity != nullptr);
-		return dynamic_cast<T*>(entity)->reverseSerialize(stream);
-	}
+	//bool serializeClientVars(Entity* entity, WriteStream& stream) override
+	//{
+	//	assert(entity != nullptr);
+	//	return dynamic_cast<T*>(entity)->reverseSerialize(stream);
+	//}
+
+	//bool serializeClientVars(Entity* entity, ReadStream& stream) override
+	//{
+	//	assert(entity != nullptr);
+	//	return dynamic_cast<T*>(entity)->reverseSerialize(stream);
+	//}
 
 	static EntityFactory<T> s_factory;
 
-#define DECLARE_ENTITY_IMPL(EntityClass) \
+#define DEFINE_ENTITY_FACTORY(EntityClass) \
 	EntityFactory<EntityClass> EntityFactory<EntityClass>::s_factory
 };

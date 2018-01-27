@@ -25,7 +25,6 @@ public:
 	static uint32_t getNumLocalPlayers();
 	static bool isLocalPlayer(int16_t playerId);
 
-	static bool requestEntity(class Entity* entity);
 	static void destroyEntity(int32_t networkId);
 
 protected:

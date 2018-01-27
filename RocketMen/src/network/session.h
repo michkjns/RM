@@ -3,12 +3,13 @@
 
 enum class GameSessionType
 {
-	Online,
-	LAN,
-	Offline
+	None,
+	Offline,
+	Listen,
+	Online
 };
 
-enum class SessionResult
+enum class JoinSessionResult
 {
 	Joined,
 	Failed,

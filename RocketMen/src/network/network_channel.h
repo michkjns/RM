@@ -6,8 +6,8 @@ class Time;
 namespace network 
 {
 	class  Address;
-	struct IncomingMessage;
 	struct Message;
+	class  MessageFactory;
 	struct Packet;
 	class  Socket;
 	
@@ -17,15 +17,15 @@ namespace network
 		virtual void sendMessage(Message* message) = 0;
 
 		virtual void sendPendingMessages(Socket* socket, 
-			const Address& address, const Time& time) = 0;
+			const Address& address, const Time& time, MessageFactory* messageFactory) = 0;
 
 		virtual void receivePacket(Packet& packet) = 0;
 
-		virtual IncomingMessage* getNextMessage() = 0;
+		virtual Message* getNextMessage() = 0;
 
 	protected:
-		void sendPacket(Socket* socket, const Address& address, Packet* packet);
-		IncomingMessage* readMessage(Packet& packet);
+		void sendPacket(Socket* socket, const Address& address, Packet* packet, MessageFactory* messageFactory);
+		Message* readMessage(Packet& packet);
 	};
 
 }; // namespace network

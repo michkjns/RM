@@ -7,9 +7,9 @@ class Time;
 
 namespace network
 {
-	struct IncomingMessage;
 	struct Message;
 	struct Packet;
+	class  MessageFactory;
 	class  ReliableOrderedChannel;
 	class  Socket;
 	class  UnreliableChannel;
@@ -27,7 +27,8 @@ namespace network
 
 	public:
 		Connection(Socket* socket, const Address& address,
-			ConnectionCallbackMethod callback);
+			ConnectionCallbackMethod callback, 
+			MessageFactory& messageFactory);
 
 		~Connection();
 
@@ -38,7 +39,7 @@ namespace network
 		void receivePacket(Packet& packet);
 		void close();
 
-		IncomingMessage* getNextMessage();
+		Message* getNextMessage();
 		
 		const Address& getAddress() const;
 		State getState() const;
@@ -59,6 +60,7 @@ namespace network
 		ReliableOrderedChannel* m_reliableOrderedChannel;
 
 		ConnectionCallbackMethod m_connectionCallback;
+		MessageFactory& m_messageFactory;
 	};
 
 }; // namespace network

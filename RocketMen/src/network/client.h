@@ -3,19 +3,22 @@
 
 #include <core/entity.h>
 #include <core/keys.h>
-#include <game/game_session.h>
 #include <core/entity_manager.h>
+#include <network/client_history.h>
 #include <network/common_network.h>
 #include <network/connection.h>
 #include <network/connection_callback.h>
-#include <network/network_message.h>
-#include <network/client_history.h>
+#include <network/message.h>
+#include <network/client/message_factory_client.h>
+#include <network/server/message_factory_server.h>
+#include <network/session.h>
 #include <utility/buffer.h>
 #include <utility/circular_buffer.h>
 #include <utility/id_manager.h>
 
 #include <array>
 #include <cstdint>
+#include <functional>
 
 class Game;
 class Time;
@@ -63,11 +66,10 @@ namespace network
 		void requestServerTime(const Time& localTime);
 		void readInput();
 		void connect(const Address& address, 
-			std::function<void(SessionResult)> callback);
+			std::function<void(Game*, JoinSessionResult)> callback);
 		void disconnect();
 
 		LocalPlayer& addLocalPlayer(int32_t controllerId, bool listenMouseKB = false);
-		bool requestEntitySpawn(Entity* entity);
 		void requestEntity(int32_t netId);
 
 		uint32_t getNumLocalPlayers() const;
@@ -77,15 +79,13 @@ namespace network
 
 	private:
 		void sendPlayerActions();
-		void syncOwnedEntities(int16_t playerId);
-		void readMessage(IncomingMessage& message, const Time& localTime);
-		void onConnectionEstablished(IncomingMessage& message);
-		void onAcceptPlayer(IncomingMessage& message);
-		void onSpawnEntity(IncomingMessage& message);
-		void onAcceptEntity(IncomingMessage& message);
-		void onDestroyEntity(IncomingMessage& message);
-		void onSnapshot(IncomingMessage& message);
-		void onReceiveServerTime(IncomingMessage& message, const Time& localTime);
+		void readMessage(const Message& message, const Time& localTime);
+		void onConnectionAccepted(const message::AcceptConnection& inMessage);
+		void onAcceptPlayer(const message::AcceptPlayer& inMessage);
+		void onSpawnEntity(const message::SpawnEntity& inMessage);
+		void onDestroyEntity(const message::DestroyEntity& inMessage);
+		void onSnapshot(const message::Snapshot& inMessage);
+		void onServerTime(const message::ServerTime& inMessage, const Time& localTime);
 		void onDisconnected();
 
 		void sendMessage(Message* message);
@@ -96,6 +96,7 @@ namespace network
 		void receivePackets();
 		void readMessages(const Time& localTime);
 		void onConnectionCallback(ConnectionCallback type, Connection* connection);
+		bool shouldSendInput() const;
 
 		Socket*         m_socket;
 		Game*           m_game;
@@ -116,7 +117,10 @@ namespace network
 		Buffer<LocalPlayer>	m_localPlayers;	
 
 		ClientHistory m_clientHistory;
-		std::function<void(SessionResult)> m_sessionCallback;
+		std::function<void(Game*, JoinSessionResult)> m_sessionCallback;
+
+		MessageFactoryClient m_messageFactory;
+		MessageFactoryServer m_receiveMessageFactory;
 
 		IdManager m_tempNetworkIdManager;
 	};

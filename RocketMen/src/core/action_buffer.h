@@ -12,7 +12,6 @@ static const uint32_t s_maxActions = 16;
 
 namespace network
 {
-	struct IncomingMessage;
 	struct Message;
 };
 
@@ -32,8 +31,8 @@ public:
 	const input::Action* begin() const;
 	const input::Action* end()   const;
 
-	void readFromMessage(network::IncomingMessage& message);
-	void writeToMessage(network::Message* message);
+	bool serialize(class ReadStream& message);
+	bool serialize(class WriteStream& message);
 
 private:
 	Buffer<input::Action> m_actions;

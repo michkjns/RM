@@ -56,10 +56,10 @@ void BitReader::readBytes(char* dest, int32_t numBytes)
 	assert(dest != nullptr);
 	assert(numBytes > 0);
 	assert(m_numBitsRead + numBytes * 8 <= m_numBits);
-	align();
+	alignToByte();
 	assert((m_numBitsRead % 8) == 0);
 
-	const int32_t numHeadBytes = std::max((4 - (m_numBitsRead % 32) / 8) % 4, numBytes);
+	const int32_t numHeadBytes = std::min((4 - (m_numBitsRead % 32) / 8) % 4, numBytes);
 	for (int32_t i = 0; i < numHeadBytes; i++)
 	{
 		dest[i] = (char)readBits(8);
@@ -90,26 +90,32 @@ void BitReader::readBytes(char* dest, int32_t numBytes)
 	}
 }
 
-void BitReader::align()
+bool BitReader::alignToByte()
 {
-	const int32_t remainderBits = m_numBitsRead & 7;
+	const int32_t remainderBits = m_numBitsRead % 8;
 	if (remainderBits != 0)
 	{
 		uint32_t padding = (char)readBits(8 - remainderBits);
 		assert(m_numBitsRead % 8 == 0);
-		assert(padding == 0);
+		if (padding != 0)
+		{
+			return false;
+		}
 	}
+
+	return true;
 }
 
-ReadStream::ReadStream(const char* buffer, int32_t numBytes) :
+ReadStream::ReadStream(const char* source, int32_t numBytes) :
 	m_buffer(new char[numBytes]),
-	m_reader(m_buffer, numBytes)
+	m_reader(m_buffer, numBytes),
+	m_size(numBytes)
 {
-	assert(buffer != nullptr);
+	assert(source != nullptr);
 	assert(numBytes > 0);
 	assert((numBytes % 4) == 0);
 
-	memcpy(m_buffer, buffer, numBytes);
+	memcpy(m_buffer, source, numBytes);
 }
 
 ReadStream::~ReadStream()
@@ -130,7 +136,9 @@ bool ReadStream::serializeBits(uint32_t& value, int32_t numBits)
 
 bool ReadStream::serializeBool(bool& dest)
 {
-	serializeBits(reinterpret_cast<uint32_t&>(dest), 1);
+	uint32_t bool32 = 0;
+	serializeBits(bool32, 1);
+	dest = bool32 ? true : false;
 
 	return true;
 }
@@ -170,6 +178,8 @@ bool ReadStream::serializeByte(char& dest)
 
 bool ReadStream::serializeData(char* dest, int32_t length)
 {
+	assert(dest != nullptr);
+	assert(length > 0);
 	m_reader.readBytes(dest, length);
 
 	return true;
@@ -239,7 +249,7 @@ void BitWriter::writeBytes(const char* data, int32_t numBytes)
 	alignToByte();
 	assert((m_numBitsWritten % 8) == 0);
 
-	const int32_t numHeadBytes = std::max((4 - (m_numBitsWritten % 32) / 8) % 4, numBytes);
+	const int32_t numHeadBytes = std::min((4 - (m_numBitsWritten % 32) / 8) % 4, numBytes);
 	for (int32_t i = 0; i < numHeadBytes; ++i)
 	{
 		writeBits(data[i], 8);
@@ -285,7 +295,7 @@ void BitWriter::flush()
 	assert(m_scratchBits <= 0);
 }
 
-void BitWriter::alignToByte()
+bool BitWriter::alignToByte()
 {
 	const int32_t remainderBits = m_numBitsWritten % 8;
 	if (remainderBits != 0)
@@ -294,6 +304,8 @@ void BitWriter::alignToByte()
 		writeBits(zeroPadding, 8 - remainderBits);
 		assert(m_numBitsWritten % 8 == 0);
 	}
+
+	return true;
 }
 
 
@@ -322,7 +334,8 @@ bool WriteStream::serializeBits(uint32_t value, int32_t numBits)
 /* Write a bool as 0 or 1 bit */
 bool WriteStream::serializeBool(bool& value)
 {
-	serializeBits(reinterpret_cast<uint32_t&>(value), 1);
+	uint32_t bool32 = value ? 1 : 0;
+	serializeBits(reinterpret_cast<uint32_t&>(bool32), 1);
 
 	return true;
 }
@@ -377,5 +390,76 @@ bool WriteStream::serializeCheck(const char* string)
 		static_cast<int32_t>(strlen(string)));
 	serializeBits(hash, 32);
 #endif
+	return true;
+}
+
+////////
+
+
+/** Write up to 32 bits */
+bool MeasureStream::serializeBits(uint32_t /*value*/, int32_t numBits)
+{
+	assert(numBits > 0);
+	assert(numBits <= 32);
+	m_numBitsMeasured += numBits;
+	return true;
+}
+
+/* Write a bool as 0 or 1 bit */
+bool MeasureStream::serializeBool(bool /*value*/)
+{
+	m_numBitsMeasured += 1;
+	return true;
+}
+
+/* Write and compress a 32-bit integer in in range [min, max] */
+bool MeasureStream::serializeInt(int32_t /*value*/, int32_t min, int32_t max)
+{
+	assert(min < max);
+	const int32_t numBits = bitsRequired(min, max);
+	m_numBitsMeasured += numBits;
+
+	return true;
+}
+
+bool MeasureStream::serializeInt(uint32_t /*value*/, uint32_t min, uint32_t max)
+{
+	assert(min < max);
+	const int32_t bits = bitsRequired(min, max);
+	m_numBitsMeasured += bits;
+
+	return true;
+}
+
+bool MeasureStream::serializeByte(const char /*byte*/)
+{
+	serializeBits(0, 8);
+	return true;
+}
+
+bool MeasureStream::serializeData(const char* /*data*/, int32_t length)
+{
+	alignToByte();
+	m_numBitsMeasured += length * 8;
+	return true;
+}
+
+bool MeasureStream::serializeCheck(const char* /*string*/)
+{
+#if RM_SERIALIZE_CHECK
+	m_numBitsMeasured += 32;
+#endif
+	return true;
+}
+
+bool MeasureStream::alignToByte()
+{
+	const int32_t remainderBits = m_numBitsMeasured % 8;
+	if (remainderBits != 0)
+	{
+		serializeBits(0, 8 - remainderBits);
+		assert(m_numBitsMeasured % 8 == 0);
+	}
+
 	return true;
 }

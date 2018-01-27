@@ -4,6 +4,7 @@
 #include <core/debug.h>
 #include <network/connection.h>
 #include <network/remote_client.h>
+#include <network/message.h>
 
 using namespace network;
 
@@ -92,10 +93,12 @@ void RemoteClientManager::sendMessage(struct Message* message, bool skipLocalCli
 		{
 			if (!(skipLocalClient && client->getId() == m_localClientId))
 			{
-				client->sendMessage(message);
+				client->sendMessage(message->addRef());
 			}
 		}
 	}
+
+	message->releaseRef();
 }
 
 void RemoteClientManager::updateConnections(const Time& time)
@@ -109,7 +112,7 @@ void RemoteClientManager::updateConnections(const Time& time)
 	}
 }
 
-void RemoteClientManager::sendPendingMessages(const Time & time)
+void RemoteClientManager::sendPendingMessages(const Time& time)
 {
 	for (RemoteClient* client = begin(); client != end(); client++)
 	{

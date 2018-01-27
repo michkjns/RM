@@ -112,6 +112,7 @@
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -159,6 +160,7 @@
     <ClCompile Include="src\core\state_machine.cpp" />
     <ClCompile Include="src\game\gameplay_state.cpp" />
     <ClCompile Include="src\game\moving_cube.cpp" />
+    <ClCompile Include="src\game\rocketmen_game.cpp" />
     <ClCompile Include="src\utility\id_manager.cpp" />
     <ClCompile Include="src\network\remote_client_manager.cpp" />
     <ClCompile Include="src\utility\buffer.cpp" />
@@ -170,7 +172,6 @@
     <ClCompile Include="src\game\character.cpp" />
     <ClCompile Include="src\core\action.cpp" />
     <ClCompile Include="src\core\action_buffer.cpp" />
-    <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\core\input.cpp" />
     <ClCompile Include="src\core\entity.cpp" />
     <ClCompile Include="src\game\menu_state.cpp" />
@@ -189,16 +190,15 @@
     <ClCompile Include="src\crc\crc.c" />
     <ClCompile Include="src\network\connection.cpp" />
     <ClCompile Include="src\network\network_channel.cpp" />
-    <ClCompile Include="src\network\network_message.cpp" />
+    <ClCompile Include="src\network\message.cpp" />
     <ClCompile Include="src\network\packet.cpp" />
     <ClCompile Include="src\network\packet_receiver.cpp" />
     <ClCompile Include="src\network\reliable_ordered_channel.cpp" />
     <ClCompile Include="src\network\remote_client.cpp" />
     <ClCompile Include="src\graphics\renderer.cpp" />
     <ClCompile Include="src\core\resource_manager.cpp" />
-    <ClCompile Include="src\game\rocketmen.cpp" />
+    <ClCompile Include="src\core\game.cpp" />
     <ClCompile Include="src\network\sequence_buffer.cpp" />
-    <ClCompile Include="src\network\snapshot.cpp" />
     <ClCompile Include="src\network\client_history.cpp" />
     <ClCompile Include="src\network\unreliable_channel.cpp" />
     <ClCompile Include="src\physics\physics.cpp" />
@@ -216,13 +216,32 @@
     <ClCompile Include="src\utility\commandline_options.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\game.h" />
     <ClInclude Include="src\core\game_state_factory.h" />
     <ClInclude Include="src\core\state_machine.h" />
     <ClInclude Include="src\game\gameplay_state.h" />
-    <ClInclude Include="src\game\game_session.h" />
+    <ClInclude Include="src\game\rocketmen_game.h" />
+    <ClInclude Include="src\network\client\message_factory_client.h" />
     <ClInclude Include="src\game\game_state_ids.h" />
     <ClInclude Include="src\game\moving_cube.h" />
     <ClInclude Include="src\game\rocketmen_state_factory.h" />
+    <ClInclude Include="src\network\message\accept_connection.h" />
+    <ClInclude Include="src\network\message\accept_player.h" />
+    <ClInclude Include="src\network\message\destroy_entity.h" />
+    <ClInclude Include="src\network\message\disconnect.h" />
+    <ClInclude Include="src\network\message\game_state.h" />
+    <ClInclude Include="src\network\message\introduce_player.h" />
+    <ClInclude Include="src\network\message\keep_alive.h" />
+    <ClInclude Include="src\network\message\player_input.h" />
+    <ClInclude Include="src\network\message\request_connection.h" />
+    <ClInclude Include="src\network\message\request_entity.h" />
+    <ClInclude Include="src\network\message\request_time.h" />
+    <ClInclude Include="src\network\message\server_time.h" />
+    <ClInclude Include="src\network\message\snapshot.h" />
+    <ClInclude Include="src\network\message\spawn_entity.h" />
+    <ClInclude Include="src\network\message_factory.h" />
+    <ClInclude Include="src\network\server\message_factory_server.h" />
+    <ClInclude Include="src\network\session.h" />
     <ClInclude Include="src\utility\id_manager.h" />
     <ClInclude Include="src\network\remote_client_manager.h" />
     <ClInclude Include="src\utility\buffer.h" />
@@ -249,7 +268,7 @@
     <ClInclude Include="src\network\network.h" />
     <ClInclude Include="src\core\core.h" />
     <ClInclude Include="src\core\debug.h" />
-    <ClInclude Include="src\core\game.h" />
+    <ClInclude Include="src\core\session.h" />
     <ClInclude Include="src\common.h" />
     <ClInclude Include="src\network\address.h" />
     <ClInclude Include="src\crc\crc.h" />
@@ -260,16 +279,15 @@
     <ClInclude Include="src\network\message_type.h" />
     <ClInclude Include="src\network\message_buffer.h" />
     <ClInclude Include="src\network\network_channel.h" />
-    <ClInclude Include="src\network\network_message.h" />
+    <ClInclude Include="src\network\message.h" />
     <ClInclude Include="src\network\packet.h" />
     <ClInclude Include="src\network\packet_receiver.h" />
     <ClInclude Include="src\network\reliable_ordered_channel.h" />
     <ClInclude Include="src\network\remote_client.h" />
     <ClInclude Include="src\graphics\renderer.h" />
     <ClInclude Include="src\core\resource_manager.h" />
-    <ClInclude Include="src\game\rocketmen.h" />
+    <ClInclude Include="src\game\game.h" />
     <ClInclude Include="src\network\sequence_buffer.h" />
-    <ClInclude Include="src\network\snapshot.h" />
     <ClInclude Include="src\network\unreliable_channel.h" />
     <ClInclude Include="src\physics\physics.h" />
     <ClInclude Include="src\physics\rigidbody.h" />

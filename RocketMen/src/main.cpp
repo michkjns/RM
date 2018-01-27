@@ -1,10 +1,10 @@
 																																			
-#define UNIT_TESTING 1
+#define RM_RUN_TESTS 1
 
 #include <utility/bitstream.h>
 #include <core/core.h>
 #include <core/debug.h>
-#include <game/rocketmen.h>
+#include <game/rocketmen_game.h>
 #include <network/address.h>
 #include <utility/utility.h>
 #include <utility/commandline_options.h>
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 	Debug::setVerbosity(Debug::Verbosity::Info);
 #endif
 
-#if UNIT_TESTING
+#if RM_RUN_TESTS
 	if (!bitstreamTests())
 	{
 		LOG_ERROR("Bitstream tests: FAIL");

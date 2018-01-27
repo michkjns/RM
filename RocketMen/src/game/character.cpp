@@ -13,7 +13,7 @@
 
 using namespace rm;
 
-DECLARE_ENTITY_IMPL(Character);
+DEFINE_ENTITY_FACTORY(Character);
 
 Character::Character() :
 	m_rigidbody(nullptr),
@@ -60,13 +60,15 @@ bool Character::Fire()
 {
 	const float power = 20.f;
 
-	Rocket* rocket = new Rocket();
-	const Vector2 pos = m_transform.getWorldPosition() + m_aimDirection * 0.20f;
-	rocket->getTransform().setLocalPosition(pos);
-	rocket->initialize(this, m_aimDirection, power);
-	Entity::instantiate(rocket);
-
-	const bool consumeAction = true;
+	if (Network::isServer())
+	{
+		Rocket* rocket = new Rocket();
+		const Vector2 pos = m_transform.getWorldPosition() + m_aimDirection * 0.20f;
+		rocket->getTransform().setLocalPosition(pos);
+		rocket->initialize(this, m_aimDirection, power);
+		Entity::instantiate(rocket);
+	}
+	const bool consumeAction = false;
 	return consumeAction;
 }
 
@@ -97,6 +99,8 @@ void Character::posessbyPlayer(int16_t playerId)
 template<typename Stream>
 bool Character::serializeFull(Stream& stream)
 {
+	serializeCheck(stream, "begin_character_full");
+
 	Entity::serializeFull(stream);
 
 	int32_t playerId = INDEX_NONE;
@@ -114,22 +118,26 @@ bool Character::serializeFull(Stream& stream)
 		}
 	}
 
-	return ensure(serialize(stream));
+	if (!serialize(stream))
+	{
+		return ensure(false);
+	}
+	
+	serializeCheck(stream, "end_character_full");
+
+	return true;
 }
 
 template<typename Stream>
 bool Character::serialize(Stream& stream)
 {
-	return ensure(m_transform.serialize(stream));
-}
+	serializeCheck(stream, "begin_character");
 
-template<typename Stream>
-bool Character::reverseSerialize(Stream& stream)
-{
-	if (!serializeVector2(stream, m_aimDirection))
+	if (!m_transform.serialize(stream))
+	{
 		return ensure(false);
+	}
 
-//	LOG_DEBUG("serialized aimDirection %f,%f", m_aimDirection.x, m_aimDirection.y);
-
+	serializeCheck(stream, "end_character");
 	return true;
 }

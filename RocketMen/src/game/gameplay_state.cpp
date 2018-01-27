@@ -9,7 +9,7 @@
 #include <game/character.h>
 #include <game/moving_cube.h>
 #include <game/rocket.h>
-#include <game/rocketmen.h>
+#include <game/rocketmen_game.h>
 #include <graphics/camera.h>
 #include <network/network.h>
 #include <physics/physics.h>

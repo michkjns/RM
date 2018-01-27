@@ -26,7 +26,6 @@ Core::Core() :
 	m_renderer(nullptr),
 	m_window(nullptr),
 	m_physics(nullptr),		
-	m_timestep(33333ULL / 2),
 	m_enableDebugDraw(true)
 {
 }
@@ -116,9 +115,9 @@ void Core::run()
 {
 	float currTime = m_gameTime.getSeconds();
 	float accumulator = 0.0f;
-	const float fixedDeltaTime = m_timestep / 1000000.0f;
+	const float fixedDeltaTime = m_game->getTimestep() / 1000000.0f;
 	float t = 0.0f;
-	Sequence frameId = 0;
+	Sequence frameCounter = 0;
 
 	LOG_DEBUG("Core: Entering main loop..");
 	bool exit = false;
@@ -132,6 +131,7 @@ void Core::run()
 		const float deltaTime = m_gameTime.getDeltaSeconds();
 		
 		m_game->update(m_gameTime);
+
 		for (auto& it : EntityManager::getEntities())
 		{
 			it->update(deltaTime);
@@ -148,13 +148,16 @@ void Core::run()
 
 		/****************/
 		/** Simulation Loop */
-		while (accumulator >= fixedDeltaTime)
-		{	
-			m_game->tick(fixedDeltaTime, frameId, m_physics);
+		if (m_game->isSessionActive())
+		{
+			while (accumulator >= fixedDeltaTime)
+			{
+				m_game->tick(fixedDeltaTime, frameCounter, m_physics);
 
-			t += fixedDeltaTime;
-			accumulator -= fixedDeltaTime;
-			frameId++;
+				t += fixedDeltaTime;
+				accumulator -= fixedDeltaTime;
+				frameCounter++;
+			}
 		}
 
 		if (input::getKeyDown(input::Key::NUM_1))

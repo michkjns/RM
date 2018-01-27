@@ -10,6 +10,7 @@ public:
 	~Buffer();
 
 	T& insert();
+	T& insert(T value);
 	void remove(T& element);
 	uint32_t getCount() const;
 	void clear();
@@ -48,6 +49,15 @@ inline T& Buffer<T>::insert()
 {
 	assert(m_count < m_capacity);
 	new (m_buffer + m_count) T();
+	return m_buffer[m_count++];
+}
+
+template<typename T>
+inline T& Buffer<T>::insert(T value)
+{
+	assert(m_count < m_capacity);
+	new (m_buffer + m_count) T();
+	m_buffer[m_count] = value;
 	return m_buffer[m_count++];
 }
 

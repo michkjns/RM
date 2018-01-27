@@ -1,5 +1,5 @@
 
-#include <game/rocketmen.h>
+#include <game/rocketmen_game.h>
 #include <common.h>
 
 #include <core/debug.h>
@@ -18,7 +18,7 @@ void RocketMenGame::initialize(const CommandLineOptions& options)
 {
 	MenuState* menu = dynamic_cast<MenuState*>(Game::initialize(new RocketMenStateFactory(), GameStateID::Menu));
 	assert(menu != nullptr);
-	menu->parseCommandLineOptions(options);
+	menu->parseCommandLineOptions(this, options);
 
 	const int32_t pixelsPerMeter = 16;
 

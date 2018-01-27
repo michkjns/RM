@@ -5,13 +5,15 @@
 #include <core/debug.h>
 #include <network/packet.h>
 #include <network/socket.h>
+#include <utility/utility.h>
 
 using namespace network;
 
 extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 PacketReceiver::PacketReceiver(int32_t bufferSize) :
-	m_packets(bufferSize)
+	m_packets(bufferSize),
+	m_restriction(ReceiveRestriction::LAN)
 {
 }
 
@@ -20,9 +22,14 @@ PacketReceiver::~PacketReceiver()
 #ifdef _DEBUG
 	LOG_DEBUG("~PacketReceiver: mismatched checksums: %d", m_numChecksumMismatches);
 #endif
+
+	for (Packet* packet : m_packets)
+	{
+		delete packet;
+	}
 }
 
-void PacketReceiver::receivePackets(Socket* socket)
+void PacketReceiver::receivePackets(Socket* socket, MessageFactory* messageFactory)
 {
 	assert(socket != nullptr);
 	assert(socket->isInitialized());
@@ -33,12 +40,13 @@ void PacketReceiver::receivePackets(Socket* socket)
 
 	while (socket->receive(address, buffer, length))
 	{
-		if (length > g_maxPacketSize)
+		if (length > g_maxPacketSize 
+			|| (!address.isFromLAN() && m_restriction == ReceiveRestriction::LAN))
 		{
 			continue;
 		}
 
-		ReadStream stream(buffer, length);
+		ReadStream stream(buffer, roundTo(length, 4));
 		
 		uint32_t receivedChecksum = 0;
 		serializeBits(stream, receivedChecksum, 32);
@@ -57,13 +65,13 @@ void PacketReceiver::receivePackets(Socket* socket)
 
 		Packet* packet = new Packet();
 		packet->address = address;
-		if (packet->serialize(stream))
+		if (packet->serialize(stream, messageFactory))
 		{
-			auto& entry = m_packets.insert();
-			entry = packet;
+			m_packets.insert(packet);
 		}
 		else
 		{
+			LOG_WARNING("PacketReceiver: packet serialization error");
 			delete packet;
 		}
 	}
@@ -72,4 +80,14 @@ void PacketReceiver::receivePackets(Socket* socket)
 Buffer<Packet*>& PacketReceiver::getPackets()
 {
 	return m_packets;
+}
+
+void PacketReceiver::clearPackets()
+{
+	for (Packet* packet : m_packets)
+	{
+		delete packet;
+	}
+
+	m_packets.clear();
 }

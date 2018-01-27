@@ -10,7 +10,7 @@
 
 using namespace rm;
 
-DECLARE_ENTITY_IMPL(Rocket);
+DEFINE_ENTITY_FACTORY(Rocket);
 
 static float s_maxRocketLifetime = 5.0f;
 
@@ -147,11 +147,5 @@ bool Rocket::serialize(Stream& stream)
 	if (!m_transform.serialize(stream))
 		return ensure(false);
 
-	return true;
-}
-
-template<typename Stream>
-bool Rocket::reverseSerialize(Stream& /*stream*/)
-{
 	return true;
 }

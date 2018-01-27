@@ -41,8 +41,7 @@ void RemoteClient::clear()
 void RemoteClient::addPlayer(int16_t playerId)
 {
 	assert(playerId >= 0);
-	int16_t& playerIdEntry = m_playerIds.insert();
-	playerIdEntry = playerId;
+	m_playerIds.insert(playerId);
 }
 
 void RemoteClient::sendMessage(Message* message)

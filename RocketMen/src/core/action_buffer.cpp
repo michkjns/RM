@@ -2,7 +2,7 @@
 #include <core/action_buffer.h>
 
 #include <common.h>
-#include <network/network_message.h>
+#include <network/message.h>
 
 using namespace input;
 
@@ -14,8 +14,7 @@ ActionBuffer::ActionBuffer() :
 void ActionBuffer::insert(const Action& action)
 {
 	assert(m_actions.getCount() < s_maxActions);
-	Action& entry = m_actions.insert();
-	entry = action;
+	m_actions.insert(action);
 }
 
 void ActionBuffer::insert(const ActionBuffer& otherBuffer)
@@ -56,33 +55,37 @@ const input::Action* ActionBuffer::end() const
 	return m_actions.end();
 }
 
-void ActionBuffer::readFromMessage(network::IncomingMessage& message)
+bool ActionBuffer::serialize(ReadStream& stream)
 {
-	assert(message.type == network::MessageType::PlayerInput);
-
 	uint32_t numActions = 0;
-	serializeInt(message.data, numActions);
+	serializeInt(stream, numActions);
 	if (numActions > s_maxActions)
 	{
-		assert(false);
-		return;
+		return false;
 	}
 
 	if (numActions > 0)
 	{
-		message.data.serializeData(reinterpret_cast<char*>(m_actions.begin()),
-			numActions * sizeof(Action));
+		if (!stream.serializeData(reinterpret_cast<char*>(m_actions.begin()),
+			numActions * sizeof(Action)))
+		{
+			return false;
+		}
 	}
+
+	return true;
 }
 
-void ActionBuffer::writeToMessage(network::Message* message)
+bool ActionBuffer::serialize(WriteStream& stream)
 {
 	uint32_t numActions = m_actions.getCount();
 
-	serializeInt(message->data, numActions);
+	serializeInt(stream, numActions);
 	if (numActions > 0)
 	{
-		message->data.serializeData(reinterpret_cast<const char*>(begin()),
+		stream.serializeData(reinterpret_cast<const char*>(begin()),
 			numActions * sizeof(input::Action));
 	}
+
+	return true;
 }

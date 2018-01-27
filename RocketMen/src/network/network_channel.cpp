@@ -8,7 +8,7 @@ extern "C" unsigned long crcFast(unsigned char const message[], int nBytes);
 
 using namespace network;
 
-void NetworkChannel::sendPacket(Socket* socket, const Address& address, Packet* packet)
+void NetworkChannel::sendPacket(Socket* socket, const Address& address, Packet* packet, MessageFactory* messageFactory)
 {
 	assert(socket != nullptr);
 	assert(packet != nullptr);
@@ -19,7 +19,7 @@ void NetworkChannel::sendPacket(Socket* socket, const Address& address, Packet* 
 	int32_t protocolId = g_protocolId;
 	serializeBits(packetStream, protocolId, 32);
 
-	packet->serialize(packetStream);
+	packet->serialize(packetStream, messageFactory);
 
 	const uint32_t checksum = crcFast((unsigned char*)packetStream.getData(), packetStream.getDataLength());
 

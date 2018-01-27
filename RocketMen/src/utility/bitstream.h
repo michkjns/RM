@@ -23,9 +23,9 @@ public:
 	char*  getData() const { return reinterpret_cast<char*>(m_data); }
 	int32_t getDataLength() const { return m_size; }
 
+	bool alignToByte();
 
 private:
-	void align();
 	uint64_t  m_scratch;
 	uint32_t* m_data;
 	int32_t   m_scratchBits;
@@ -46,12 +46,11 @@ public:
 	void writeBytes(const char* data, int32_t numBytes);
 	void flush();
 
-	char*  getData() const { return reinterpret_cast<char*>(m_data); }
-	int32_t getDataLength() const {  return (m_wordIndex + 1) * (sizeof(uint32_t) / sizeof(char)); }
-	
-private:
-	void alignToByte();
+	char*   getData() const { return reinterpret_cast<char*>(m_data); }
+	int32_t getDataLength() const { return (m_numBitsWritten + 7) / 8; }
 
+	bool alignToByte();
+private:
 	uint64_t  m_scratch;
 	uint32_t* m_data;
 	int32_t   m_scratchBits;
@@ -79,9 +78,10 @@ public:
 	bool serializeData(const char* data, int32_t dataLength);
 	bool serializeCheck(const char* string);
 
+	void alignToByte() { m_writer.alignToByte(); }
 	void flush() { m_writer.flush(); }
 	void release() { m_buffer = nullptr; }
-
+	void skipBits(int32_t /*numBits*/) { assert(false); }
 
 	char*  getData() const { return m_buffer; }
 	inline int32_t getDataLength() const { return m_writer.getDataLength(); }
@@ -99,6 +99,7 @@ public:
 	static const bool isReading = true;
 	static const bool isWriting = false;
 
+	/** numBytes must be rounded to 32 bits */
 	ReadStream(const char* sourceData, int32_t numBytes);
 	~ReadStream();
 
@@ -110,15 +111,46 @@ public:
 	bool serializeData(char* dest, int32_t length);
 	bool serializeCheck(const char* string);
 	void flush() {}
+	bool alignToByte() { return m_reader.alignToByte(); }
+	void skipBits(int32_t numBits) {
+		for (int32_t i = 0; i < numBits; i++)
+		{
+			m_reader.readBits(1);
+		}
+	}
 
 	char*  getData() const { return m_reader.getData(); }
-	inline int32_t getDataLength() const { return m_reader.getDataLength(); }
-	inline int32_t getBufferSize() const { return m_size; }
+	inline int32_t getDataLength() const { return m_size; }
 
 private:
 	char* m_buffer;
 	BitReader m_reader;
 	int32_t m_size;
+};
+
+class MeasureStream
+{
+public:
+	static const bool isReading = false;
+	static const bool isWriting = true;
+
+	MeasureStream() { m_numBitsMeasured = 0; }
+	~MeasureStream() {}
+
+	bool serializeBits(uint32_t value, int32_t numBits);
+	bool serializeBool(bool dest);
+	bool serializeInt(int32_t dest, int32_t min, int32_t max);
+	bool serializeInt(uint32_t value, uint32_t min, uint32_t max);
+	bool serializeByte(char dest);
+	bool serializeData(const char* dest, int32_t length);
+	bool serializeCheck(const char* string);
+	bool alignToByte();
+
+	inline int32_t getMeasuredBytes() const { return (m_numBitsMeasured + 7) / 8; }
+	inline int32_t getMeasuredBits() const { return m_numBitsMeasured; }
+
+private:
+	int32_t m_numBitsMeasured;
 };
 
 /* Clamp value n to [lower, upper]
@@ -165,8 +197,7 @@ void serializeData(Stream& stream, char* data, int32_t length)
 
 /* Serialize an unsigned integer value compressed between range [min, max] */
 template<typename Stream>
-void serializeInt(Stream& stream, uint32_t& value, uint32_t min = 0,
-				  uint32_t max = UINT32_MAX)
+void serializeInt(Stream& stream, uint32_t& value, uint32_t min, uint32_t max)
 {
 	assert(min < max);
 
@@ -185,10 +216,23 @@ void serializeInt(Stream& stream, uint32_t& value, uint32_t min = 0,
 	}
 }
 
+/* Serialize a 32-bit signed integer value  */
+template<typename Stream>
+void serializeInt(Stream& stream, int32_t& value)
+{
+	stream.serializeBits((uint32_t&)value, 32);
+}
+
+/* Serialize a 32-bit unsigned integer value  */
+template<typename Stream>
+void serializeInt(Stream& stream, uint32_t& value)
+{
+	stream.serializeBits(value, 32);
+}
+
 /* Serialize a signed integer value compressed between range [min, max] */
 template<typename Stream>
-void serializeInt(Stream& stream, int32_t& value, int32_t min = INT32_MIN, 
-                  int32_t max = INT32_MAX)
+void serializeInt(Stream& stream, int32_t& value, int32_t min, int32_t max)
 {
 	assert(min < max);
 
@@ -349,6 +393,5 @@ void serializeVector3(Stream& stream, Vector3& vector)
 template<typename Stream>
 bool serializeCheck(Stream& stream, const char* string)
 {
-	return stream.serializeCheck(string);
+	return assert(stream.serializeCheck(string));
 }
-

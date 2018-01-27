@@ -1,5 +1,7 @@
 {
-  "DataCollection": [
+  "FileVersion": 2,
+  "Id": "05e73988-f30d-4a16-9a29-5e511e4ff610",
+  "Items": [
     {
       "Id": "2447c0b8-22d4-42ea-bee6-31707d9a5b20",
       "Command": "-d -o rm_d.log"

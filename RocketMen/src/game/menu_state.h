@@ -1,10 +1,14 @@
 
 #pragma once
 
-#include <game/game_session.h> 
+#include <network/session.h> 
 #include <core/game_state.h>
 
 class CommandLineOptions;
+
+namespace network {
+	class Address;
+}; // namespace network
 
 namespace rm
 {
@@ -21,15 +25,15 @@ namespace rm
 		virtual void tick(Game* game, float fixedDeltaTime) override;
 		virtual void render(Game* game)                     override;
 
-		void parseCommandLineOptions(const CommandLineOptions& options);
+		void parseCommandLineOptions(Game* game, const CommandLineOptions& options);
 		void hostAndJoin(Game* game);
-		void hostDedicated(Game* game);
-		void join(Game* game);
+		void host(Game* game);
+		void join(Game* game, const network::Address& address);
 
 	private:
-		void onResult(SessionResult result);
+		void onSessionJoinCallback(Game* game, JoinSessionResult result);
 
-		Game* m_game;
+		//Game* m_game;
 		bool  m_locked;
 	};
 }; //namespace rm

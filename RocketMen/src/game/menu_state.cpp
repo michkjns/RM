@@ -2,19 +2,20 @@
 #include "menu_state.h"
 
 #include <common.h>
+#include <core/debug.h>
 #include <core/input.h>
 #include <game/game_state_ids.h>
-#include <game/rocketmen.h>
+#include <game/rocketmen_game.h>
 #include <network/network.h>
 #include <utility/commandline_options.h>
 
 using namespace rm;
+using namespace std::placeholders;
 
 static const network::Address localhost("127.0.0.1", s_defaultServerPort);
 //=============================================================================
 
 MenuState::MenuState() :
-	m_game(nullptr),
 	m_locked(false)
 {
 }
@@ -25,8 +26,8 @@ MenuState::~MenuState()
 
 void MenuState::initialize(Game* game)
 {
+	assert(game != nullptr);
 	m_locked = false;
-	m_game = game;
 }
 
 void MenuState::enter(Game* /*game*/)
@@ -40,23 +41,24 @@ void MenuState::destroy(Game* /*game*/)
 
 void MenuState::update(Game* game, const Time& /*time*/)
 {
-	assert(game == m_game);
-	if (m_locked)
-	{
-		return;
-	}
+	assert(game != nullptr);
 
-	if (input::getKey(input::Key::NUM_1))
+	if (!m_locked)
 	{
-		hostAndJoin(game);
-	}
-	else if (input::getKey(input::Key::NUM_2))
-	{
-		hostDedicated(game);
-	}
-	else if (input::getKey(input::Key::NUM_3))
-	{
-		join(game);
+		if (input::getKey(input::Key::NUM_1))
+		{
+			host(game);
+			join(game, localhost);
+		}
+		else if (input::getKey(input::Key::NUM_2))
+		{
+			host(game);
+		}
+		else if (input::getKey(input::Key::NUM_3))
+		{
+			join(game, localhost);
+		}
+
 	}
 }
 
@@ -68,32 +70,26 @@ void MenuState::render(Game* /*game*/)
 {
 }
 
-void MenuState::parseCommandLineOptions(const CommandLineOptions& options)
+void MenuState::parseCommandLineOptions(Game* game, const CommandLineOptions& options)
 {
+	assert(game != nullptr);
+
 	if (options.isSet("--listen"))
 	{
-		hostAndJoin(m_game);
+		m_locked = true;
+		if (game->createSession(GameSessionType::Listen))
+		{
+			game->joinSession(localhost, std::bind(&MenuState::onSessionJoinCallback, this, _1, _2));
+		}
 	}
 	else if (options.isSet("--dedicated"))
 	{
-		hostDedicated(m_game);
+		host(game);
 	}
 }
 
-void MenuState::hostAndJoin(Game* game)
+void MenuState::host(Game* game)
 {
-	assert(game == m_game);
-
-	m_locked = true;
-	if (game->createSession(GameSessionType::Online))
-	{
-		game->joinSession(localhost, std::bind(&MenuState::onResult, this, std::placeholders::_1));
-	}
-}
-
-void MenuState::hostDedicated(Game* game)
-{
-	assert(game == m_game);
 	m_locked = true;
 	if (game->createSession(GameSessionType::Online))
 	{
@@ -101,17 +97,26 @@ void MenuState::hostDedicated(Game* game)
 	}
 }
 
-void MenuState::join(Game* game)
+void MenuState::join(Game* game, const network::Address& address)
 {
+	assert(game != nullptr);
+
 	m_locked = true;
-	game->joinSession(localhost, std::bind(&MenuState::onResult, this, std::placeholders::_1));
+	game->joinSession(address, std::bind(&MenuState::onSessionJoinCallback, this, _1, _2));
 }
 
-void MenuState::onResult(SessionResult result)
+void MenuState::onSessionJoinCallback(Game* game, JoinSessionResult result)
 {
-	if (result == SessionResult::Joined)
+	assert(game != nullptr);
+
+	if (result == JoinSessionResult::Joined)
 	{
-		m_game->pushState(GameStateID::Gameplay);
+		game->pushState(GameStateID::Gameplay);
 	}
+	else if (result == JoinSessionResult::Failed)
+	{
+		LOG_INFO("MenuState: Failed to join session");
+	}
+
 	m_locked = false;
 }

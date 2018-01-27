@@ -19,7 +19,8 @@ Game::Game() :
 	m_timestep(0),
 	m_stateFactory(nullptr),
 	m_client(nullptr),
-	m_server(nullptr)
+	m_server(nullptr),
+	m_sessionType(GameSessionType::None)
 {
 }
 
@@ -49,12 +50,13 @@ void Game::update(const Time& time)
 	}
 }
 
-void Game::tick(float fixedDeltaTime, Sequence frameId, Physics* physics)
+void Game::tick(float fixedDeltaTime, Sequence frameCounter, Physics* physics)
 {
 	if (m_client)
 	{
-		m_client->tick(frameId);
+		m_client->tick(frameCounter);
 	}
+
 	if (m_server)
 	{
 		if (GameState* state = m_stateMachine.getState())
@@ -147,11 +149,12 @@ bool Game::createSession(GameSessionType type)
 	m_server = new network::Server(this);
 	Network::setServer(m_server);
 
+	m_sessionType = type;
 	return m_server->host(s_defaultServerPort, type);
 }
 
 void Game::joinSession(const network::Address& address, 
-	std::function<void(SessionResult)> callback)
+	std::function<void(Game*, JoinSessionResult)> callback)
 {
 	assert(m_client == nullptr);
 
@@ -179,4 +182,21 @@ void Game::leaveSession()
 		m_client = nullptr;
 		Network::setClient(nullptr);
 	}
+
+	m_sessionType = GameSessionType::None;
+}
+
+bool Game::isSessionActive() const
+{
+	if (m_server)
+	{
+		return m_server->getNumClients() > 0;
+	}
+
+	if (m_client)
+	{
+		return m_client->getState() == network::Client::State::Connected;
+	}
+
+	return false;
 }

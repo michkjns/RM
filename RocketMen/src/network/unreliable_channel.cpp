@@ -15,28 +15,41 @@ UnreliableChannel::UnreliableChannel() :
 	m_sendQueue(s_messageSendQueueSize),
 	m_receiveQueue(s_messageReceiveQueueSize)
 {
-	Message emptyMessage(MessageType::None);
 	m_sendQueue.fill(nullptr);
 }
 
 UnreliableChannel::~UnreliableChannel()
 {
+	for (Message*& message : m_sendQueue)
+	{
+		if (message)
+		{
+			assert(message->releaseRef());
+		}
+	}
+
+	for (Message*& message : m_receiveQueue)
+	{
+		if (message)
+		{
+			assert(message->releaseRef());
+		}
+	}
 }
 
 void UnreliableChannel::sendMessage(Message* message)
 {
-	assert(getMessageChannel(message) == ChannelType::Unreliable);
-	message->data.flush();
+	assert(message->getChannel() == ChannelType::UnreliableUnordered);
 	m_sendQueue.insert(message);
 	m_queuedSendMessages++;
 }
 
-void UnreliableChannel::sendPendingMessages(Socket* socket, const Address& address, const Time& time)
+void UnreliableChannel::sendPendingMessages(Socket* socket, const Address& address, const Time& time, MessageFactory* messageFactory)
 {
 	if (hasMessagesToSend())
 	{
 		Packet* packet = createPacket(time);
-		sendPacket(socket, address, packet);
+		sendPacket(socket, address, packet, messageFactory);
 		delete packet;
 	}
 }
@@ -45,33 +58,24 @@ void UnreliableChannel::receivePacket(Packet& packet)
 {
 	for (int32_t i = 0; i < packet.header.numMessages; i++)
 	{
-		IncomingMessage* message = new IncomingMessage(packet.messages[i]->type, 
-			packet.messageIds[i],
-			packet.messages[i]->data.getData(),
-			packet.messages[i]->data.getBufferSize());
 
-		packet.messages[i]->data.release();
-		delete packet.messages[i];
-
-		m_receiveQueue.insert(message);
+		m_receiveQueue.insert(packet.messages[i]->addRef());
 	}
 }
 
-IncomingMessage* UnreliableChannel::getNextMessage()
+Message* UnreliableChannel::getNextMessage()
 {
-	for (IncomingMessage*& message : m_receiveQueue)
+	for (Message*& messageEntry : m_receiveQueue)
 	{
-		if (message != nullptr)
+		if (messageEntry != nullptr)
 		{
-			if (message->type != MessageType::None)
-			{
-				return message;
-			}
-			else
-			{
-				delete message;
-				message = nullptr;
-			}
+			Message* message = messageEntry;
+			assert(message != nullptr);
+			assert(message->getType() != MessageType::None);
+			assert(message->getChannel() == ChannelType::UnreliableUnordered);
+
+			messageEntry = nullptr;
+			return message;
 		}
 	}
 
@@ -96,11 +100,16 @@ Packet* UnreliableChannel::createPacket(const Time& /*time*/)
 		Message* message = m_sendQueue[i];
 		if (message != nullptr)
 		{
-			assert(getMessageChannel(message) == ChannelType::Unreliable);
-			message->id = m_nextMessageId++;
-			packet->messages[packet->header.numMessages++] = message;
+			assert(message->getChannel() == ChannelType::UnreliableUnordered);
+
+			message->assignId(m_nextMessageId++);
+
+			packet->messages[packet->header.numMessages] = message->addRef();
+			packet->messageIds[packet->header.numMessages] = message->getId();
+			packet->messageTypes[packet->header.numMessages] = message->getType();
 
 			m_sendQueue[i] = nullptr;
+			packet->header.numMessages++;
 			m_queuedSendMessages--;
 		}
 

@@ -55,6 +55,11 @@ inline iColor toiColor(uint32_t abgr)
 	return iColor(r, g, b, a);
 }
 
+inline int32_t roundTo(int32_t value,  int32_t to)
+{
+	return (value + to - 1) & ~ (to - 1);
+}
+
 template<typename T>
 std::string to_binary_string(T value)
 {

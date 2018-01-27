@@ -16,10 +16,10 @@ namespace network
 		virtual void sendMessage(Message* message) override;
 
 		virtual void sendPendingMessages(Socket* socket, 
-			const Address& address, const Time& time) override;
+			const Address& address, const Time& time, MessageFactory* messageFactory) override;
 
 		virtual void receivePacket(Packet& packet) override;
-		virtual IncomingMessage* getNextMessage() override;
+		virtual Message* getNextMessage() override;
 
 	private:
 		bool hasMessagesToSend() const;
@@ -28,6 +28,6 @@ namespace network
 		Sequence m_nextMessageId;
 		uint32_t m_queuedSendMessages;
 		CircularBuffer<Message*> m_sendQueue;
-		CircularBuffer<IncomingMessage*> m_receiveQueue;
+		CircularBuffer<Message*> m_receiveQueue;
 	};
 }; // namespace network

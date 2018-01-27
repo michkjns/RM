@@ -4,7 +4,8 @@
 #include <common.h>
 #include <core/debug.h>
 #include <core/game_time.h>
-#include <network/network_message.h>
+#include <network/message.h>
+#include <network/message_factory.h>
 #include <network/sequence_buffer.h>
 
 using namespace network;
@@ -18,14 +19,19 @@ static const float    s_messageResendTime       = 0.1f;
 static const float    s_keepAliveTime           = 1.f;
 
 ReliableOrderedChannel::ReliableOrderedChannel() :
-	m_sendMessageId(0),
-	m_receiveMessageId(0),
+	m_nextSendMessageId(0),
+	m_nextReceiveMessageId(0),
 	m_lastReceivedSequence(0),
 	m_lastPacketSendTime(.0f),
 	m_messageSendQueue(s_messageSendQueueSize),
 	m_messageReceiveQueue(s_messageReceiveQueueSize),
 	m_sentPackets(s_packetWindowSize),
-	m_receivedPackets(s_packetReceiveQueueSize)
+	m_receivedPackets(s_packetReceiveQueueSize),
+	m_numReceivedPackets(0),
+	m_numReceivedMessages(0),
+	m_numSentPackets(0),
+	m_numSentMessages(0),
+	m_numAcksReceived(0)
 {
 }
 
@@ -36,14 +42,13 @@ ReliableOrderedChannel::~ReliableOrderedChannel()
 void ReliableOrderedChannel::sendMessage(Message* message)
 {
 	assert(canSendMessage());
-	if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.insert(m_sendMessageId))
+	if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.insert(m_nextSendMessageId))
 	{
-		message->data.flush();
-
-		message->id = m_sendMessageId;
+		message->assignId(m_nextSendMessageId);
 		messageEntry->message = message;
 		messageEntry->timeLastSent = -1.f;
-		m_sendMessageId++;
+		m_nextSendMessageId++;
+		m_numSentMessages++;
 	}
 	else
 	{
@@ -52,21 +57,22 @@ void ReliableOrderedChannel::sendMessage(Message* message)
 	}
 }
 
-void ReliableOrderedChannel::sendPendingMessages(Socket* socket, const Address& address, const Time& time)
+void ReliableOrderedChannel::sendPendingMessages(Socket* socket, const Address& address, const Time& time, MessageFactory* messageFactory)
 {
 	if (hasMessagesToSend(time))
 	{
 		Packet* packet = createPacket(time);
 
 		writeAcksToPacket(*packet);
-		sendPacket(socket, address, packet);
+		sendPacket(socket, address, packet, messageFactory);
+		m_numSentPackets++;
 		m_lastPacketSendTime = time.getSeconds();
 
 		delete packet;
 	}
 	else if (time.getSeconds() - m_lastPacketSendTime > s_keepAliveTime)
 	{
-		sendMessage(new Message(MessageType::KeepAlive));
+		sendMessage(messageFactory->createMessage(MessageType::KeepAlive));
 	}
 
 	m_receivedPackets.removeOldEntries();
@@ -78,43 +84,31 @@ void ReliableOrderedChannel::receivePacket(Packet& packet)
 
 	for (int32_t i = 0; i < packet.header.numMessages; i++)
 	{
-		IncomingMessage* message = new IncomingMessage(packet.messages[i]->type,
-			packet.messageIds[i],
-			packet.messages[i]->data.getData(), 
-			packet.messages[i]->data.getBufferSize());
-
-		packet.messages[i]->data.release();
-		delete packet.messages[i];
-
-		if (IncomingMessageEntry* messageEntry = m_messageReceiveQueue.insert(message->id))
+		if (IncomingMessageEntry* messageEntry = m_messageReceiveQueue.insert(packet.messageIds[i]))
 		{
-			messageEntry->message = message;
+			messageEntry->message = packet.messages[i]->addRef();
 		}
 	}
 
 	m_receivedPackets.insert(packet.header.sequence);
+	m_numReceivedPackets++;
+	m_numReceivedMessages += packet.header.numMessages;
 }
 
-IncomingMessage* ReliableOrderedChannel::getNextMessage()
+Message* ReliableOrderedChannel::getNextMessage()
 {
-	if (IncomingMessageEntry* messageEntry = m_messageReceiveQueue.getEntry(m_receiveMessageId))
+	if (IncomingMessageEntry* messageEntry = m_messageReceiveQueue.getEntry(m_nextReceiveMessageId))
 	{
-		if (IncomingMessage* message = messageEntry->message)
-		{
-			if (message->type != MessageType::None)
-			{
-				assert(message->id == m_receiveMessageId);
-				assert(getMessageChannel(message->type) == ChannelType::ReliableOrdered);
-				m_receiveMessageId++;
-				return message;
-			}
-			else
-			{
-				m_messageReceiveQueue.remove(message->id);
-				messageEntry->message = nullptr;
-				delete message;
-			}
-		}
+		Message* message = messageEntry->message;
+		assert(message != nullptr);
+		assert(message->getType() != MessageType::None);
+		assert(message->getId() == m_nextReceiveMessageId);
+		assert(message->getChannel() == ChannelType::ReliableOrdered);
+		
+		m_messageReceiveQueue.remove(m_nextReceiveMessageId);
+
+		m_nextReceiveMessageId++;
+		return message;
 	}
 
 	return nullptr;
@@ -169,12 +163,14 @@ void ReliableOrderedChannel::ack(Sequence ackSequence)
 	{
 		for (int16_t j = 0; j < packetData->numMessages; j++)
 		{
-			if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.getEntry(packetData->messageIds[j]))
+			const Sequence messageId = packetData->messageIds[j];
+			if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.getEntry(messageId))
 			{
-				delete messageEntry->message;
+				messageEntry->message->releaseRef();
 				messageEntry->message = nullptr;
+				m_messageSendQueue.remove(messageId);
+				m_numAcksReceived++;
 			}
-			m_messageSendQueue.remove(packetData->messageIds[j]);
 		}
 		m_sentPackets.remove(ackSequence);
 	}
@@ -186,8 +182,8 @@ bool ReliableOrderedChannel::hasMessagesToSend(const Time& time) const
 	{
 		if (m_messageSendQueue.exists(i))
 		{
-			OutgoingMessageEntry* message = m_messageSendQueue.getAtIndex(i);
-			if (time.getSeconds() - message->timeLastSent >= s_messageResendTime)
+			OutgoingMessageEntry* messageEntry = m_messageSendQueue.getAtIndex(i);
+			if (time.getSeconds() - messageEntry->timeLastSent >= s_messageResendTime)
 			{
 				return true;
 			}
@@ -198,7 +194,7 @@ bool ReliableOrderedChannel::hasMessagesToSend(const Time& time) const
 
 bool ReliableOrderedChannel::canSendMessage() const
 {
-	return m_messageSendQueue.isAvailable(m_sendMessageId);
+	return m_messageSendQueue.isAvailable(m_nextSendMessageId);
 }
 
 Packet* ReliableOrderedChannel::createPacket(const Time& time)
@@ -216,16 +212,21 @@ Packet* ReliableOrderedChannel::createPacket(const Time& time)
 	{
 		if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.getAtIndex(i))
 		{
-			assert(messageEntry->message->type != MessageType::None);
-			assert(getMessageChannel(messageEntry->message->type) == ChannelType::ReliableOrdered);
+			Message* message = messageEntry->message;
+			assert(message->getType() != MessageType::None);
+			assert(message->getChannel() == ChannelType::ReliableOrdered);
+
 			if (time.getSeconds() - messageEntry->timeLastSent >= s_messageResendTime)
 			{
-				packet->messageIds[packet->header.numMessages] = messageEntry->message->id;
-				packet->messages[packet->header.numMessages] = messageEntry->message;
-				packet->header.numMessages++;
+				const int32_t currentIndex = packet->header.numMessages;
+				packet->messages[currentIndex] = message->addRef();
+				packet->messageIds[currentIndex] = message->getId();
+				packet->messageTypes[currentIndex] = message->getType();
 
-				packetEntry->messageIds[packetEntry->numMessages++] = messageEntry->message->id;
+				packetEntry->messageIds[currentIndex] = message->getId();
 			
+				packet->header.numMessages++;
+				packetEntry->numMessages = (int16_t)packet->header.numMessages;
 				messageEntry->timeLastSent = time.getSeconds();
 			}
 		}

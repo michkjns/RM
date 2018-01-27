@@ -8,7 +8,7 @@
 
 using namespace rm;
 
-DECLARE_ENTITY_IMPL(MovingCube);
+DEFINE_ENTITY_FACTORY(MovingCube);
 
 MovingCube::MovingCube() :
 	m_speed(2.0f),
@@ -62,18 +62,26 @@ void MovingCube::endContact(Entity* /*other*/)
 template<typename Stream>
 inline bool MovingCube::serializeFull(Stream& stream)
 {
+	serializeCheck(stream, "begin_moving_cube_full");
 	ensure(Entity::serializeFull(stream));
-	return ensure(serialize(stream));
+	if (!serialize(stream))
+	{
+		return ensure(false);
+	}
+	serializeCheck(stream, "end_moving_cube_full");
+	return true;
 }
 
 template<typename Stream>
 inline bool MovingCube::serialize(Stream& stream)
 {
-	return ensure(m_transform.serialize(stream));
-}
+	serializeCheck(stream, "begin_moving_cube");
+	if (!m_transform.serialize(stream))
+	{
+		return ensure(false);
+	}
 
-template<typename Stream>
-inline bool MovingCube::reverseSerialize(Stream& /*stream*/)
-{
+	serializeCheck(stream, "end_moving_cube");
+
 	return true;
 }
