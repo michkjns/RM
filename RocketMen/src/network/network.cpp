@@ -3,12 +3,12 @@
 
 #include <core/debug.h>
 #include <core/game.h>
-#include <network/client.h>
+#include <network/local_client.h>
 #include <network/server.h>
 
 using namespace network;
 
-static Client* s_client;
+static LocalClient* s_client;
 static Server* s_server;
 
 bool Network::isClient()
@@ -65,7 +65,7 @@ void Network::destroyEntity(int32_t networkId)
 	}
 }
 
-void Network::setClient(Client* client)
+void Network::setClient(LocalClient* client)
 {
 	s_client = client;
 }

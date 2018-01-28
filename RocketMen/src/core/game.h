@@ -13,7 +13,7 @@ virtual const char* const getVersion() const override { return GAME_VERSION; }
 
 namespace network {
 	class Address;
-	class Client;
+	class LocalClient;
 	class Server;
 };
 
@@ -61,6 +61,6 @@ protected:
 	GameSessionType m_sessionType;
 
 private:
-	network::Client* m_client;
+	network::LocalClient* m_client;
 	network::Server* m_server;
 };

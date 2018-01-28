@@ -183,7 +183,7 @@
     <ClCompile Include="src\utility\bitstream.cpp" />
     <ClCompile Include="src\graphics\camera.cpp" />
     <ClCompile Include="src\graphics\check_gl_error.cpp" />
-    <ClCompile Include="src\network\client.cpp" />
+    <ClCompile Include="src\network\local_client.cpp" />
     <ClCompile Include="src\core\core.cpp" />
     <ClCompile Include="src\core\debug.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -260,7 +260,7 @@
     <ClInclude Include="src\game\rocket.h" />
     <ClInclude Include="src\graphics\camera.h" />
     <ClInclude Include="src\graphics\check_gl_error.h" />
-    <ClInclude Include="src\network\client.h" />
+    <ClInclude Include="src\network\local_client.h" />
     <ClInclude Include="src\core\input.h" />
     <ClInclude Include="src\core\keys.h" />
     <ClInclude Include="src\graphics\tile_map.h" />

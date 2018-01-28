@@ -1,5 +1,5 @@
 
-#include <network/client.h>
+#include <network/local_client.h>
 
 #include <core/action_buffer.h>
 #include <core/entity.h>
@@ -22,7 +22,7 @@ static ActionBuffer s_playerActions[s_maxPlayersPerClient];
 
 //=============================================================================
 
-Client::Client(Game* game) :
+LocalClient::LocalClient(Game* game) :
 	m_game(game),
 	m_connection(nullptr),
 	m_lastReceivedSnapshotId((Sequence)INDEX_NONE),
@@ -44,18 +44,18 @@ Client::Client(Game* game) :
 	assert(m_socket != nullptr);
 }
 
-Client::~Client()
+LocalClient::~LocalClient()
 {
 	delete m_socket;
 	delete m_packetReceiver;
 }
 
-void Client::setPort(uint16_t port)
+void LocalClient::setPort(uint16_t port)
 {
 	m_port = port;
 }
 
-void Client::update(const Time& time)
+void LocalClient::update(const Time& time)
 {
 	const float deltaTime = time.getDeltaSeconds();
 	
@@ -109,7 +109,7 @@ void Client::update(const Time& time)
 	}
 }
 
-void Client::tick(Sequence frameCounter)
+void LocalClient::tick(Sequence frameCounter)
 {
 	Frame* currentFrame = m_clientHistory.insertFrame(frameCounter);
 	assert(currentFrame != nullptr);
@@ -128,7 +128,7 @@ void Client::tick(Sequence frameCounter)
 	m_lastFrameSimulated = frameCounter;
 }
 
-void Client::sendPlayerActions()
+void LocalClient::sendPlayerActions()
 {
 	const int32_t numFramesToSend = sequenceDifference(m_lastFrameSimulated, m_lastFrameSent);
 	if (numFramesToSend > 0)
@@ -167,14 +167,14 @@ void Client::sendPlayerActions()
 	}
 }
 
-void Client::requestServerTime(const Time& localTime)
+void LocalClient::requestServerTime(const Time& localTime)
 {
 	message::RequestTime* message = dynamic_cast<message::RequestTime*>(m_messageFactory.createMessage(MessageType::RequestTime));
 	message->clientTimestamp = localTime.getMilliSeconds();
 	sendMessage(message);
 }
 
-void Client::readInput()
+void LocalClient::readInput()
 {
 	for (const LocalPlayer& player : m_localPlayers)
 	{
@@ -183,11 +183,11 @@ void Client::readInput()
 	}
 }
 
-void Client::connect(const Address& address, std::function<void(Game*, JoinSessionResult)> callback)
+void LocalClient::connect(const Address& address, std::function<void(Game*, JoinSessionResult)> callback)
 {
 	using namespace std::placeholders;
 
-	if (!ensure(m_state == Client::State::Disconnected))
+	if (!ensure(m_state == LocalClient::State::Disconnected))
 	{
 		LOG_ERROR("Client::connect: Already connected");
 		return;
@@ -200,10 +200,10 @@ void Client::connect(const Address& address, std::function<void(Game*, JoinSessi
 	{
 		m_sessionCallback = callback;
 		m_connection = new Connection(m_socket, address, 
-			std::bind(&Client::onConnectionCallback, this, _1, _2), m_messageFactory);
+			std::bind(&LocalClient::onConnectionCallback, this, _1, _2), m_messageFactory);
 
 		m_connection->tryConnect();
-		m_state = Client::State::Connecting;
+		m_state = LocalClient::State::Connecting;
 	}
 	else
 	{
@@ -211,7 +211,7 @@ void Client::connect(const Address& address, std::function<void(Game*, JoinSessi
 	}
 }
 
-void Client::disconnect()
+void LocalClient::disconnect()
 {
 	if (m_state != State::Connected && m_state != State::Connecting)
 	{
@@ -224,7 +224,7 @@ void Client::disconnect()
 	m_connection->close();
 }
 
-LocalPlayer& Client::addLocalPlayer(int32_t controllerId, bool enableMouseKB)
+LocalPlayer& LocalClient::addLocalPlayer(int32_t controllerId, bool enableMouseKB)
 {
 	assert(m_localPlayers.getCount() < s_maxPlayersPerClient);
 
@@ -234,7 +234,7 @@ LocalPlayer& Client::addLocalPlayer(int32_t controllerId, bool enableMouseKB)
 	return player;
 }
 
-void Client::requestEntity(int32_t netId)
+void LocalClient::requestEntity(int32_t netId)
 {
 	assert(netId > INDEX_NONE && netId < s_maxNetworkedEntities);
 	if (!m_requestedEntities.contains(netId))
@@ -248,17 +248,17 @@ void Client::requestEntity(int32_t netId)
 	}
 }
 
-uint32_t Client::getNumLocalPlayers() const
+uint32_t LocalClient::getNumLocalPlayers() const
 {
 	return m_localPlayers.getCount();
 }
 
-bool Client::isLocalPlayer(int16_t playerId) const
+bool LocalClient::isLocalPlayer(int16_t playerId) const
 {
 	return getLocalPlayer(playerId) != nullptr;
 }
 
-LocalPlayer* Client::getLocalPlayer(int16_t playerId) const
+LocalPlayer* LocalClient::getLocalPlayer(int16_t playerId) const
 {
 	for (auto& localPlayer : m_localPlayers)
 	{
@@ -271,12 +271,12 @@ LocalPlayer* Client::getLocalPlayer(int16_t playerId) const
 	return nullptr;
 }
 
-Client::State Client::getState() const
+LocalClient::State LocalClient::getState() const
 {
 	return m_state;
 }
 
-void Client::readMessage(const Message& message, const Time& localTime)
+void LocalClient::readMessage(const Message& message, const Time& localTime)
 {
 	switch (message.getType())
 	{
@@ -342,7 +342,7 @@ void Client::readMessage(const Message& message, const Time& localTime)
 	}
 }
 
-void Client::onConnectionAccepted(const message::AcceptConnection& inMessage)
+void LocalClient::onConnectionAccepted(const message::AcceptConnection& inMessage)
 {
 	assert(m_state == State::Connecting);
 
@@ -363,7 +363,7 @@ void Client::onConnectionAccepted(const message::AcceptConnection& inMessage)
 	sendMessage(outMessage);
 }
 
-void Client::onAcceptPlayer(const message::AcceptPlayer& inMessage)
+void LocalClient::onAcceptPlayer(const message::AcceptPlayer& inMessage)
 {
 	const int32_t numPlayers = (int32_t)m_localPlayers.getCount();
 	if (m_localPlayers[0].playerId != INDEX_NONE)
@@ -383,7 +383,7 @@ void Client::onAcceptPlayer(const message::AcceptPlayer& inMessage)
 	}
 }
 
-void Client::onSpawnEntity(const message::SpawnEntity& inMessage)
+void LocalClient::onSpawnEntity(const message::SpawnEntity& inMessage)
 {
 	assert(inMessage.entity != nullptr);
 
@@ -400,7 +400,7 @@ void Client::onSpawnEntity(const message::SpawnEntity& inMessage)
 	//LOG_DEBUG("Client::onSpawnEntity ID: %d netID: %d", entity->getId(), entity->getNetworkId());
 }
 
-void Client::onDestroyEntity(const message::DestroyEntity& inMessage)
+void LocalClient::onDestroyEntity(const message::DestroyEntity& inMessage)
 {
 	const int32_t networkId = inMessage.entityNetworkId;
 	if (networkId < -s_maxSpawnPredictedEntities
@@ -417,7 +417,7 @@ void Client::onDestroyEntity(const message::DestroyEntity& inMessage)
 	}
 } 
 
-void Client::onSnapshot(const message::Snapshot& inMessage)
+void LocalClient::onSnapshot(const message::Snapshot& inMessage)
 {
 	if(inMessage.numMissingEntities > 0)
 	{
@@ -429,7 +429,7 @@ void Client::onSnapshot(const message::Snapshot& inMessage)
 	}
 }
 
-void Client::onServerTime(const message::ServerTime& inMessage, const Time& localTime)
+void LocalClient::onServerTime(const message::ServerTime& inMessage, const Time& localTime)
 {
 	const uint64_t originalTime = inMessage.clientTimestamp;
 	const uint64_t serverTime = inMessage.serverTimestamp;
@@ -439,31 +439,31 @@ void Client::onServerTime(const message::ServerTime& inMessage, const Time& loca
 	// http://www.mine-control.com/zack/timesync/timesync.html
 }
 
-void Client::onDisconnected()
+void LocalClient::onDisconnected()
 {
 	assert(m_connection != nullptr);
-	setState(Client::State::Disconnected);
+	setState(LocalClient::State::Disconnected);
 }
 
-void Client::sendMessage(Message* message)
+void LocalClient::sendMessage(Message* message)
 {
 	assert(m_connection != nullptr);
 	m_connection->sendMessage(message);
 }
 
-void Client::sendPendingMessages(const Time& localTime)
+void LocalClient::sendPendingMessages(const Time& localTime)
 {
 	assert(m_connection != nullptr);
 
 	m_connection->sendPendingMessages(localTime);
 }
 
-void Client::setState(State state)
+void LocalClient::setState(State state)
 {
 	m_state = state;
 }
 
-void Client::clearSession()
+void LocalClient::clearSession()
 {
 	m_localPlayers.clear();
 	m_requestedEntities.fill(INDEX_NONE);
@@ -474,7 +474,7 @@ void Client::clearSession()
 	EntityManager::killEntities();
 }
 
-void Client::receivePackets()
+void LocalClient::receivePackets()
 {
 	m_packetReceiver->receivePackets(m_socket, &m_receiveMessageFactory);
 
@@ -493,7 +493,7 @@ void Client::receivePackets()
 	m_packetReceiver->clearPackets();
 }
 
-void Client::readMessages(const Time& localTime)
+void LocalClient::readMessages(const Time& localTime)
 {
 	while (Message* message = m_connection->getNextMessage())
 	{
@@ -502,7 +502,7 @@ void Client::readMessages(const Time& localTime)
 	}
 }
 
-void Client::onConnectionCallback(ConnectionCallback type, Connection* connection)
+void LocalClient::onConnectionCallback(ConnectionCallback type, Connection* connection)
 {
 	assert(connection != nullptr);
 	assert(connection == m_connection);
@@ -536,7 +536,7 @@ void Client::onConnectionCallback(ConnectionCallback type, Connection* connectio
 	}
 }
 
-bool network::Client::shouldSendInput() const
+bool network::LocalClient::shouldSendInput() const
 {
 	return sequenceLessThan(m_lastFrameSimulated, m_lastFrameSent)
 		&& m_game->getSessionType() != GameSessionType::Offline

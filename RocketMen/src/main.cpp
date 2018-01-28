@@ -14,7 +14,7 @@
 #include <iostream>
 #include <utility>
 
-extern bool testSerializationStreams();
+extern bool testSerialization();
 
 static void initializeVerbosityLevel(const CommandLineOptions& options);
 static void initializeLog(const CommandLineOptions& options);
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
 	initializeVerbosityLevel(options);
 
 #if RM_RUN_TESTS
-	if (!testSerializationStreams())
+	if (!testSerialization())
 	{
 		LOG_ERROR("SerializationStream tests: FAIL");
 	}

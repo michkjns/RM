@@ -11,7 +11,7 @@
 #include <graphics/renderer.h>
 #include <network/network.h>
 #include <network/address.h>
-#include <network/client.h>
+#include <network/local_client.h>
 #include <network/server.h>
 #include <physics/physics.h>
 #include <time.h>

@@ -9,7 +9,7 @@ static const uint16_t s_defaultServerPort = 4320;
 static const uint16_t s_defaultClientPort = 0;
 
 namespace network {
-	class Client;
+	class LocalClient;
 	class Server;
 }; // namespace network
 
@@ -28,7 +28,7 @@ public:
 	static void destroyEntity(int32_t networkId);
 
 protected:
-	static void setClient(network::Client* client);
+	static void setClient(network::LocalClient* client);
 	static void setServer(network::Server* server);
 
 	static class network::Server* getLocalServer();
@@ -36,6 +36,6 @@ protected:
 public:
 	//friend class Core;
 	friend class Game;
-	friend class network::Client;
+	friend class network::LocalClient;
 	friend class network::Server;
 };

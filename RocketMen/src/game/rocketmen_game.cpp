@@ -60,5 +60,5 @@ void RocketMenGame::onPlayerLeave(int16_t playerId)
 			entity->kill();
 		}
 	}
-	LOG_INFO("RM: Player %d has left", playerId);
+	LOG_INFO("RM: Player %d has left the game", playerId);
 }

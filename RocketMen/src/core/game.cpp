@@ -8,7 +8,7 @@
 #include <core/game_state_factory.h>
 #include <core/state_machine.h>
 #include <network/address.h>
-#include <network/client.h>
+#include <network/local_client.h>
 #include <network/network.h>
 #include <network/server.h>
 #include <physics/physics.h>
@@ -159,7 +159,7 @@ void Game::joinSession(const network::Address& address,
 	assert(m_client == nullptr);
 
 	LOG_INFO("Game: connecting to %s...", address.toString().c_str());
-	m_client = new network::Client(this);
+	m_client = new network::LocalClient(this);
 	Network::setClient(m_client);
 
 	m_client->connect(address, callback);
@@ -195,7 +195,7 @@ bool Game::isSessionActive() const
 
 	if (m_client)
 	{
-		return m_client->getState() == network::Client::State::Connected;
+		return m_client->getState() == network::LocalClient::State::Connected;
 	}
 
 	return false;

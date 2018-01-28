@@ -1,9 +1,6 @@
 
 #include <utility/bitstream.h>
-
-#include <game/character.h>
-
-using namespace rm;
+#include <utility/utility.h>
 
 struct SerializationTestStruct
 {
@@ -86,7 +83,7 @@ bool testMeasureStream()
 	return true;
 }
 
-bool testSerializationStreams()
+bool testSerialization()
 {
 	if (!testMeasureStream())
 	{
@@ -94,14 +91,12 @@ bool testSerializationStreams()
 	}
 
 	SerializationTestStruct testStruct;
-	Character character;
-
 	WriteStream writeStream(256);
 
 	char readBuffer[256];
 	ReadStream readStream(readBuffer, roundTo(250, 4));
 	MeasureStream measureStream;
-	
+
 	testStruct.serialize(measureStream);
 	testStruct.serialize(writeStream);
 	writeStream.flush();
@@ -115,16 +110,16 @@ bool testSerializationStreams()
 	SerializationTestStruct receiveStruct;
 	receiveStruct.serialize(readStream);
 
-	if(!assert(receiveStruct.ivalue2 == testStruct.ivalue2))
+	if (!assert(receiveStruct.ivalue2 == testStruct.ivalue2))
 	{
 		return false;
 	}
-	if(!assert(receiveStruct.ivalue == testStruct.ivalue))
+	if (!assert(receiveStruct.ivalue == testStruct.ivalue))
 	{
 		return false;
 	}
 
-	if(!assert(receiveStruct.fvalue == testStruct.fvalue))
+	if (!assert(receiveStruct.fvalue == testStruct.fvalue))
 	{
 		return false;
 	}
@@ -134,7 +129,7 @@ bool testSerializationStreams()
 		return false;
 	}
 
-	if(!assert(glm::distance(receiveStruct.vector, testStruct.vector) < 0.01f))
+	if (!assert(glm::distance(receiveStruct.vector, testStruct.vector) < 0.01f))
 	{
 		return false;
 	}

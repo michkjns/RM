@@ -40,15 +40,15 @@ namespace network
 		bool listenMouseKB;
 	};
 
-	class Client
+	class LocalClient
 	{
 	private:
 		static const uint32_t s_sequenceMemorySize    = 256;
 		static const uint32_t s_recentlyDestroyedSize = 32;
 
 	public:
-		Client(Game* game);
-		~Client();
+		LocalClient(Game* game);
+		~LocalClient();
 
 		enum class State
 		{
