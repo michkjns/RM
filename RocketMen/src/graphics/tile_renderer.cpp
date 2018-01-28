@@ -23,14 +23,14 @@ TileRenderer::~TileRenderer()
 bool TileRenderer::initialize()
 {
 	const GLfloat vertices[] = {
-		// Pos      // Tex
-		-1.0f, 1.0f, 0.0f, 1.0f,
-		1.0f, -1.0f, 1.0f, 0.0f,
+		// Pos        // Tex
+		-1.0f,  1.0f, 0.0f, 1.0f,
+		 1.0f, -1.0f, 1.0f, 0.0f,
 		-1.0f, -1.0f, 0.0f, 0.0f,
 
-		-1.0f, 1.0f, 0.0f, 1.0f,
-		1.0f, 1.0f, 1.0f, 1.0f,
-		1.0f, -1.0f, 1.0f, 0.0f
+		-1.0f,  1.0f, 0.0f, 1.0f,
+		 1.0f,  1.0f, 1.0f, 1.0f,
+		 1.0f, -1.0f, 1.0f, 0.0f
 	};
 
 	glGenVertexArrays(1, &m_VAO);
@@ -49,19 +49,19 @@ bool TileRenderer::initialize()
 	return true;
 }
 
-void TileRenderer::render(TileMap* tileMap, const glm::mat4& projectionViewMatrix)
+void TileRenderer::render(const TileMap& tileMap, const glm::mat4& projectionViewMatrix)
 {
 	assert(m_tileShader != nullptr);
-	assert(tileMap != nullptr);
-	if (!tileMap->isInitalized())
+
+	if (!tileMap.isInitalized())
 		return;
 
 	if (m_tileShader != nullptr)
 	{
 		checkGL();
 		glm::mat4 modelMatrix = glm::mat4();
-		glm::vec2 size(tileMap->getMapWidth() / 2.f,
-					   tileMap->getMapHeight()/ 2.f );
+		glm::vec2 size(tileMap.getMapWidth() / 2.f,
+			tileMap.getMapHeight() / 2.f);
 		
 		modelMatrix = glm::scale(modelMatrix, glm::vec3(size, -1.0f));
 
@@ -69,17 +69,17 @@ void TileRenderer::render(TileMap* tileMap, const glm::mat4& projectionViewMatri
 		m_tileShader->setMatrix4("model", modelMatrix);
 		m_tileShader->setMatrix4("projection", projectionViewMatrix);
 
-		m_tileShader->setVec4f("map_info", glm::vec4(tileMap->getTileSize(),
-													 tileMap->getMapWidth(),
-													 tileMap->getMapHeight(),
+		m_tileShader->setVec4f("map_info", glm::vec4(tileMap.getTileSize(),
+													 tileMap.getMapWidth(),
+													 tileMap.getMapHeight(),
 													 0));
 
 		glActiveTexture(GL_TEXTURE0);
-		ResourceManager::getTexture(tileMap->getName()).bind();
+		ResourceManager::getTexture(tileMap.getName()).bind();
 		m_tileShader->setInt("tile_map", 0);
 
 		glActiveTexture(GL_TEXTURE1);
-		ResourceManager::getTexture(tileMap->getTileSheetName()).bind();
+		ResourceManager::getTexture(tileMap.getTileSheetName()).bind();
 		m_tileShader->setInt("tile_image", 1);
 		checkGL();
 

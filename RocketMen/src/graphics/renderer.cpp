@@ -135,7 +135,7 @@ void Renderer_glfw::renderSprites()
 
 void Renderer_glfw::renderTiles()
 {
-	m_tileRenderer.render(&ResourceManager::getTileMap("testmap"), 
+	m_tileRenderer.render(ResourceManager::getTileMap("testmap"), 
                           Camera::mainCamera->getProjectionMatrix()
                           * Camera::mainCamera->getViewMatrix());
 }

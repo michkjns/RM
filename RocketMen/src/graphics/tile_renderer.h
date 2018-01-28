@@ -12,8 +12,7 @@ public:
 
 	bool initialize();
 
-	void render(TileMap* tileMap,
-			const glm::mat4& projectionMatrix);
+	void render(const TileMap& tileMap, const glm::mat4& projectionMatrix);
 
 private:
 	GLuint  m_VAO;
