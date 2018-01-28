@@ -25,6 +25,7 @@ public:
 	~Renderer_glfw();
 
 	bool initialize(Window* window) override;
+	void initializeGLBuffers();
 	void destroy() override;
 
 	void render() override;
@@ -40,8 +41,6 @@ public:
 
 private:
 	void renderSprites();
-	void renderTiles();
-	void renderUI();
 
 	SpriteRenderer m_spriteRenderer;
 	TileRenderer   m_tileRenderer;
@@ -77,10 +76,18 @@ bool Renderer_glfw::initialize(Window* window)
 		return false;
 	}
 
+
+	initializeGLBuffers();
+
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	float lineVerts[] = {
+	return true;
+}
+
+void Renderer_glfw::initializeGLBuffers()
+{
+	const float lineVerts[] = {
 		1.f, 1.f,
 		0.f, 0.f
 	};
@@ -96,8 +103,6 @@ bool Renderer_glfw::initialize(Window* window)
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-
-	return true;
 }
 
 void Renderer_glfw::destroy()
@@ -113,7 +118,10 @@ void Renderer_glfw::render()
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		renderTiles();
+		m_tileRenderer.render(ResourceManager::getTileMap("testmap"),
+			Camera::mainCamera->getProjectionMatrix()
+			* Camera::mainCamera->getViewMatrix());
+
 		renderSprites();
 	}
 }
@@ -131,18 +139,6 @@ void Renderer_glfw::renderSprites()
 				it->getSpriteName());
 		}
 	}
-}
-
-void Renderer_glfw::renderTiles()
-{
-	m_tileRenderer.render(ResourceManager::getTileMap("testmap"), 
-                          Camera::mainCamera->getProjectionMatrix()
-                          * Camera::mainCamera->getViewMatrix());
-}
-
-void Renderer_glfw::renderUI()
-{
-	// TODO implement renderUI
 }
 
 void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, 
