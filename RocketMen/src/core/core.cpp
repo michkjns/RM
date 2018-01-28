@@ -37,37 +37,25 @@ Core::~Core()
 void Core::initialize(Game* game, const CommandLineOptions& options)
 {
 	assert(game != nullptr);
+	m_game = game;
 
 	crcInit();
 
-	bool runDedicated = options.isSet("--dedicated");
+	const bool isDedicatedSerer = options.isSet("--dedicated");
+	const bool isHeadless = isDedicatedSerer && Debug::getVerbosity() != Debug::Verbosity::Debug;
 	
-	if (options.isSet("--verbosity"))
-	{
-		auto args = options.getArgs("--verbosity");
-		assert(args.size() == 1);
-
-		int32_t verbosity = atoi(args[0].c_str());
-		verbosity = std::max(0, std::min((int)Debug::Verbosity::Debug, verbosity));
-		Debug::setVerbosity(static_cast<Debug::Verbosity>(verbosity));
-	}
-
-	m_game = game;
-
-	if(!runDedicated || Debug::getVerbosity() == Debug::Verbosity::Debug)
+	if(!isHeadless)
 	{
 		LOG_INFO("Core: Creating window..");
 		m_window = Window::create();
-		std::string windowTitle(m_game->getName() + runDedicated ? " - Dedicated Server" : " - Client");
+
+		std::string windowTitle(m_game->getName() + isDedicatedSerer ? " - Dedicated Server" : " - Client");
 		m_window->initialize(windowTitle.c_str(), g_defaultWindowSize);
 		
 		LOG_INFO("Core: Creating renderer..");
 		m_renderer = Renderer::create();
 		m_renderer->initialize(m_window);
-	}
 
-	if(!runDedicated)
-	{	
 		LOG_INFO("Core: Initializing input..");
 		input::initialize(m_window);
 	}
@@ -113,7 +101,9 @@ void Core::drawDebug()
 
 void Core::run()
 {
-	float currTime = m_gameTime.getSeconds();
+	assert(m_game != nullptr);
+
+	float currentTime = m_gameTime.getSeconds();
 	float accumulator = 0.0f;
 	const float fixedDeltaTime = m_game->getTimestep() / 1000000.0f;
 	float t = 0.0f;
@@ -128,8 +118,8 @@ void Core::run()
 			exit = m_window->pollEvents();
 		}
 		m_gameTime.update();
+
 		const float deltaTime = m_gameTime.getDeltaSeconds();
-		
 		m_game->update(m_gameTime);
 
 		for (auto& it : EntityManager::getEntities())
@@ -138,12 +128,12 @@ void Core::run()
 		}
 
 		const float newTime = m_gameTime.getSeconds();
-		float frameTime = newTime - currTime;
+		float frameTime = newTime - currentTime;
 		if (frameTime > 0.25f)
 		{
 			frameTime = 0.25f;
 		}
-		currTime = newTime;
+		currentTime = newTime;
 		accumulator += frameTime;
 
 		/****************/
@@ -182,7 +172,7 @@ void Core::run()
 		}
 	}
 
-	LOG_DEBUG("Core: main loop ended..");
+	LOG_DEBUG("Core: main loop ended");
 }
 
 void Core::destroy()

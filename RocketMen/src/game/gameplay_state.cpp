@@ -51,34 +51,37 @@ void GameplayState::update(Game* game, const Time& time)
 {
 	const float deltaTime = time.getDeltaSeconds();
 
-	const float axis = input::getAxis(ControllerId(0), 0);
-	const float cameraSpeed = 2.20f * deltaTime;
-	Camera::mainCamera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
-
-	if (input::getKey(Key::LEFT))
+	if (Network::isClient())
 	{
-		Camera::mainCamera->translate(Vector3(-1.0f, 0.0f, 0.0f) * cameraSpeed);
-	}
+		const float axis = input::getAxis(ControllerId(0), 0);
+		const float cameraSpeed = 2.20f * deltaTime;
+		Camera::mainCamera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
 
-	if (input::getKey(Key::RIGHT))
-	{
-		Camera::mainCamera->translate(Vector3(1.0f, 0.0f, 0.0f) * cameraSpeed);
-	}
+		if (input::getKey(Key::LEFT))
+		{
+			Camera::mainCamera->translate(Vector3(-1.0f, 0.0f, 0.0f) * cameraSpeed);
+		}
 
-	if (input::getKey(Key::UP))
-	{
-		Camera::mainCamera->translate(Vector3(0.0f, 1.0f, 0.0f) * cameraSpeed);
-	}
+		if (input::getKey(Key::RIGHT))
+		{
+			Camera::mainCamera->translate(Vector3(1.0f, 0.0f, 0.0f) * cameraSpeed);
+		}
 
-	if (input::getKey(Key::DOWN))
-	{
-		Camera::mainCamera->translate(Vector3(0.0f, -1.0f, 0.0f) * cameraSpeed);
-	}
+		if (input::getKey(Key::UP))
+		{
+			Camera::mainCamera->translate(Vector3(0.0f, 1.0f, 0.0f) * cameraSpeed);
+		}
 
-	if (input::getKey(Key::ESCAPE))
-	{
-		game->leaveSession();
-		game->popState();
+		if (input::getKey(Key::DOWN))
+		{
+			Camera::mainCamera->translate(Vector3(0.0f, -1.0f, 0.0f) * cameraSpeed);
+		}
+
+		if (input::getKey(Key::ESCAPE))
+		{
+			game->leaveSession();
+			game->popState();
+		}
 	}
 }
 

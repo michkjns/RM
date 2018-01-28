@@ -26,12 +26,14 @@ ReliableOrderedChannel::ReliableOrderedChannel() :
 	m_messageSendQueue(s_messageSendQueueSize),
 	m_messageReceiveQueue(s_messageReceiveQueueSize),
 	m_sentPackets(s_packetWindowSize),
-	m_receivedPackets(s_packetReceiveQueueSize),
-	m_numReceivedPackets(0),
+	m_receivedPackets(s_packetReceiveQueueSize)
+#ifdef _DEBUG 
+	, m_numReceivedPackets(0),
 	m_numReceivedMessages(0),
 	m_numSentPackets(0),
 	m_numSentMessages(0),
 	m_numAcksReceived(0)
+#endif
 {
 }
 
@@ -48,7 +50,9 @@ void ReliableOrderedChannel::sendMessage(Message* message)
 		messageEntry->message = message;
 		messageEntry->timeLastSent = -1.f;
 		m_nextSendMessageId++;
+#ifdef _DEBUG
 		m_numSentMessages++;
+#endif
 	}
 	else
 	{
@@ -65,10 +69,12 @@ void ReliableOrderedChannel::sendPendingMessages(Socket* socket, const Address& 
 
 		writeAcksToPacket(*packet);
 		sendPacket(socket, address, packet, messageFactory);
-		m_numSentPackets++;
 		m_lastPacketSendTime = time.getSeconds();
-
 		delete packet;
+
+#ifdef _DEBUG
+		m_numSentPackets++;
+#endif
 	}
 	else if (time.getSeconds() - m_lastPacketSendTime > s_keepAliveTime)
 	{
@@ -91,8 +97,11 @@ void ReliableOrderedChannel::receivePacket(Packet& packet)
 	}
 
 	m_receivedPackets.insert(packet.header.sequence);
+
+#ifdef _DEBUG
 	m_numReceivedPackets++;
 	m_numReceivedMessages += packet.header.numMessages;
+#endif
 }
 
 Message* ReliableOrderedChannel::getNextMessage()
@@ -169,7 +178,9 @@ void ReliableOrderedChannel::ack(Sequence ackSequence)
 				messageEntry->message->releaseRef();
 				messageEntry->message = nullptr;
 				m_messageSendQueue.remove(messageId);
+#ifdef _DEBUG
 				m_numAcksReceived++;
+#endif
 			}
 		}
 		m_sentPackets.remove(ackSequence);

@@ -31,9 +31,6 @@ using Sequence = uint16_t;
 #undef assert
 #endif
 
-#define _assert(expression) (!!(expression)) || \
-    (_wassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0)
-
 #if defined __GNUC__
 #define LIKELY(EXPR)  __builtin_expect(!!(EXPR), 1)
 #else
@@ -41,6 +38,9 @@ using Sequence = uint16_t;
 #endif
 
 #define ensure(X) (LIKELY(!!(X)) || (__debugbreak(), !!(X)))
+
+#define _assert(expression) (!!(expression)) || \
+    (_wassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0)
 #define assert(X) ((bool)(X) ? true : (_assert(false), false))
 
 inline bool sequenceGreaterThan(Sequence s1, Sequence s2)

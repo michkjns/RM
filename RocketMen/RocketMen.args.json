@@ -9,6 +9,10 @@
     {
       "Id": "8792d0ac-bf0c-47d5-ac95-0f39e320bd9a",
       "Command": "-l -o rm_l.log"
+    },
+    {
+      "Id": "942758b9-f56b-4e81-ae68-90a5f9646c38",
+      "Command": "-l -o rm_l.lg -v 3"
     }
   ]
 }

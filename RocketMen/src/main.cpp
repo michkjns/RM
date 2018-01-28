@@ -14,36 +14,33 @@
 #include <iostream>
 #include <utility>
 
-extern bool bitstreamTests();
+extern bool testSerializationStreams();
 
-static std::string getOutputFile(int argc, char* argv[]);
+static void initializeVerbosityLevel(const CommandLineOptions& options);
+static void initializeLog(const CommandLineOptions& options);
 
 int main(int argc, char *argv[])
 {
-	Debug::openLog(getOutputFile(argc, argv).c_str());
-	
-#ifdef _DEBUG
-	Debug::setVerbosity(Debug::Verbosity::Debug);
-#else
-	Debug::setVerbosity(Debug::Verbosity::Info);
-#endif
-
-#if RM_RUN_TESTS
-	if (!bitstreamTests())
-	{
-		LOG_ERROR("Bitstream tests: FAIL");
-	}
-	else
-	{
-		LOG_INFO("Bitstream tests: SUCCES");
-	}
-#endif
-
 	CommandLineOptions options;
 	options.registerOption("-d", "--dedicated");
 	options.registerOption("-l", "--listen");
 	options.registerOption("-v", "--verbosity");
+	options.registerOption("-o", "--output");
 	options.parse(argc, argv);
+
+	initializeLog(options);
+	initializeVerbosityLevel(options);
+
+#if RM_RUN_TESTS
+	if (!testSerializationStreams())
+	{
+		LOG_ERROR("SerializationStream tests: FAIL");
+	}
+	else
+	{
+		LOG_INFO("SerializationStream tests: SUCCES");
+	}
+#endif
 
 	Core core;
 	Game* game = new rm::RocketMenGame();
@@ -60,19 +57,42 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-std::string getOutputFile(int argc, char* argv[])
+void initializeLog(const CommandLineOptions& options)
 {
-	for (int32_t i = 0; i < argc; i++)
+	std::string fileName = "rm.log";
+	if (options.isSet("--output"))
 	{
-		if (i >= argc - 1)
-			break;
-
-		const char* arg = argv[i];
-		if (strcmp(arg, "-o") == 0 || strcmp(arg, "--output") == 0)
+		auto args = options.getArgs("--output");
+		if(args.size() == 1)
 		{
-			return std::string(argv[i + 1]);
+			fileName = args.at(0);
+		}
+		else
+		{
+			LOG_ERROR("--output requires and accepts only 1 argument");
 		}
 	}
 
-	return std::string("rm.log");
+	Debug::openLog(fileName.c_str());
+}
+
+#ifdef _DEBUG
+void initializeVerbosityLevel(const CommandLineOptions& /*options*/)
+#else
+void initializeVerbosityLevel(const CommandLineOptions& options)
+#endif
+{
+#ifdef _DEBUG
+	Debug::setVerbosity(Debug::Verbosity::Debug);
+#else
+	if (options.isSet("--verbosity"))
+	{
+		auto args = options.getArgs("--verbosity");
+		assert(args.size() == 1);
+
+		int32_t verbosity = atoi(args[0].c_str());
+		verbosity = std::max(0, std::min((int)Debug::Verbosity::Debug, verbosity));
+		Debug::setVerbosity(static_cast<Debug::Verbosity>(verbosity));
+	}
+#endif
 }

@@ -44,12 +44,14 @@ namespace network
 		SequenceBuffer<SentPacketEntry>      m_sentPackets;
 		SequenceBuffer<SentPacketEntry>      m_receivedPackets;
 
+#ifdef _DEBUG
 		int32_t m_numReceivedPackets;
 		int32_t m_numReceivedMessages;
 
 		int32_t m_numSentPackets;
 		int32_t m_numSentMessages;
 		int32_t m_numAcksReceived;
+#endif
 	};
 
 }; // namespace network

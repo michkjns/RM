@@ -5,9 +5,9 @@
 
 using namespace rm;
 
-struct TestStruct
+struct SerializationTestStruct
 {
-	TestStruct() 
+	SerializationTestStruct() 
 	{
 		ivalue = 5;
 		fvalue = 0.14f;
@@ -33,7 +33,7 @@ struct TestStruct
 	template<typename Stream>
 	bool serialize(Stream& stream)
 	{
-		assert(serializeCheck(stream, "TestStruct_start"));
+		assert(serializeCheck(stream, "begin_SerializationTestStruct"));
 		serializeInt(stream, ivalue, 0, 10);
 		assert(serializeFloat(stream, fvalue, 0.0f, 1.0f, 0.01f));
 		serializeInt(stream, rand_ivalue);
@@ -46,31 +46,54 @@ struct TestStruct
 		serializeInt(stream, ivalue2);
 		assert(serializeVector2(stream, vector3));
 		assert(serializeVector2(stream, vector4));
-		assert(serializeCheck(stream, "TestStruct_end"));
+		assert(serializeCheck(stream, "end_SerializationTestStruct"));
 		return true;
 	}
 };
 
-void measureTest()
+bool testMeasureStream()
 {
 	WriteStream writeStream(32);
-	int32_t integer = 10;
-	serializeInt(writeStream, integer);
-
 	MeasureStream measureStream;
-	serializeInt(measureStream, integer);
 
+	const int32_t numInts = rand() % 4 + 1;
+	for (int32_t i = 0; i < numInts; i++)
+	{
+		int32_t integer = rand();
+		serializeInt(writeStream, integer);
+		serializeInt(measureStream, integer);
+	}
+	
+	const int32_t numBytes = rand() % 10 + 1;
+	char* data = new char[numBytes];
+	serializeData(writeStream, data, numBytes);
+	serializeData(measureStream, data, numBytes);
+	delete[] data;
+
+	const int32_t numBits = rand() % 32 + 1;
+	int32_t randomBits = rand();
+	serializeBits(writeStream, randomBits, numBits);
+	serializeBits(measureStream, randomBits, numBits);
+	
 	const int32_t measuredSize = measureStream.getMeasuredBytes();
 	const int32_t writeSize = writeStream.getDataLength();
 	assert(measuredSize == writeSize);
+	if (measuredSize != writeSize)
+	{
+		return false;
+	}
 
+	return true;
 }
 
-bool bitstreamTests()
+bool testSerializationStreams()
 {
-	measureTest();
+	if (!testMeasureStream())
+	{
+		return false;
+	}
 
-	TestStruct testStruct;
+	SerializationTestStruct testStruct;
 	Character character;
 
 	WriteStream writeStream(256);
@@ -89,7 +112,7 @@ bool bitstreamTests()
 
 	memcpy(readStream.getData(), writeStream.getData(), writeStream.getDataLength());
 
-	TestStruct receiveStruct;
+	SerializationTestStruct receiveStruct;
 	receiveStruct.serialize(readStream);
 
 	if(!assert(receiveStruct.ivalue2 == testStruct.ivalue2))
