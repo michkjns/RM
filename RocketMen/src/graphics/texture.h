@@ -6,13 +6,6 @@
 class Texture
 {
 public:
-	enum class BlendMode
-	{
-		MODE_OPAQUE,
-		MODE_ALPHA
-	};
-
-public:
 	Texture();
 	~Texture();
 

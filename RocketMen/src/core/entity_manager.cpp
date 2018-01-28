@@ -15,6 +15,7 @@ static IEntityFactory* s_factories[static_cast<int32_t>(EntityType::NUM_ENTITY_T
 static std::vector<Entity*> s_entities;
 static std::vector<Entity*> s_newEntities;
 static IdManager s_entityIds(s_maxEntities);
+static Game* s_gameInstance;
 
 inline bool isReplicated(Entity* entity)
 {
@@ -223,6 +224,16 @@ Entity* EntityManager::findNetworkedEntity(int32_t networkId)
 void EntityManager::freeEntityId(int32_t id)
 {
 	s_entityIds.remove(id);
+}
+
+void EntityManager::setGameInstance(Game* game)
+{
+	s_gameInstance = game;
+}
+
+Game* EntityManager::getGame()
+{
+	return s_gameInstance;
 }
 
 std::vector<Entity*>& EntityManager::getEntities()

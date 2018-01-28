@@ -13,7 +13,7 @@ public:
 	//	GEOMETRY_SHADER = GL_GEOMETRY_SHADER
 	};
 
-	static void unbindShader();
+	static void unbindCurrentShader();
 
 public:
 	Shader();

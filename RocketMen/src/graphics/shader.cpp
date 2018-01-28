@@ -11,7 +11,7 @@
 
 Shader* Shader::s_currentShader = nullptr;
 
-void Shader::unbindShader()
+void Shader::unbindCurrentShader()
 {
 	s_currentShader = nullptr;
 	glUseProgram(0);

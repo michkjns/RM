@@ -23,9 +23,6 @@ public:
 	virtual bool serialize(Entity* entity, WriteStream& stream) = 0;
 	virtual bool serialize(Entity* entity, ReadStream& stream) = 0;
 	virtual bool serialize(Entity* entity, MeasureStream& stream) = 0;
-
-//	virtual bool serializeClientVars(Entity* entity, WriteStream& stream) = 0;
-//	virtual bool serializeClientVars(Entity* entity, ReadStream& stream) = 0;
 };
 
 template<typename T>

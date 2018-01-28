@@ -7,6 +7,7 @@
 #include <core/game_state.h>
 #include <core/game_state_factory.h>
 #include <core/state_machine.h>
+#include <graphics/camera.h>
 #include <network/address.h>
 #include <network/local_client.h>
 #include <network/network.h>
@@ -18,9 +19,11 @@
 Game::Game() :
 	m_timestep(0),
 	m_stateFactory(nullptr),
+	m_sessionType(GameSessionType::None),
+	m_isInitialized(false),
+	m_mainCamera(nullptr),
 	m_client(nullptr),
-	m_server(nullptr),
-	m_sessionType(GameSessionType::None)
+	m_server(nullptr)
 {
 }
 
@@ -69,6 +72,7 @@ void Game::tick(float fixedDeltaTime, Sequence frameCounter, Physics* physics)
 
 void Game::terminate()
 {
+	delete m_mainCamera;
 	delete m_stateFactory;
 }
 
@@ -80,6 +84,9 @@ GameState* Game::initialize(GameStateFactory* stateFactory, uint32_t stateId)
 	m_stateFactory = stateFactory;
 
 	setTimestep(33333ULL / 2);
+	EntityManager::setGameInstance(this);
+	m_isInitialized = true;
+
 	return pushState(stateId);
 }
 

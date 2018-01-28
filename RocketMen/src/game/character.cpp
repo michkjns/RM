@@ -4,6 +4,7 @@
 #include <utility/bitstream.h>
 #include <core/debug.h>
 #include <core/entity_manager.h>
+#include <core/game.h>
 #include <core/input.h>
 #include <core/transform2d.h>
 #include <game/rocket.h>
@@ -34,8 +35,14 @@ void Character::update(float /*deltaTime*/)
 {
 	if (Network::isClient())
 	{
+		Game* game = getGame();
+		assert(game != nullptr);
+		
+		Camera* camera = game->getMainCamera();
+		assert(camera != nullptr);
+
 		const Vector2 screenMousePosition = input::getMousePosition();
-		const Vector2 worldMousePosition = Camera::mainCamera->screenToWorld(screenMousePosition);
+		const Vector2 worldMousePosition = camera->screenToWorld(screenMousePosition);
 		m_aimDirection = glm::normalize(worldMousePosition - m_transform.getWorldPosition());
 	}
 }
@@ -48,11 +55,16 @@ void Character::debugDraw()
 {
 	if (Network::isLocalPlayer(getOwnerPlayerId()))
 	{
-		Vector2 mp = Camera::mainCamera->screenToWorld(input::getMousePosition());
-		Vector2 pos = m_transform.getWorldPosition();
+		Game* game = getGame();
+		assert(game != nullptr);
+		
+		Camera* camera = game->getMainCamera();
+		assert(camera != nullptr);
 
-	//	Renderer::get()->drawLineSegment(pos, mp, Color(1.f, 0.f, 0.f, 1.f));
-		Renderer::get()->drawLineSegment(pos, pos + m_aimDirection * 10.f, Color(1.f, 0.f, 0.f, 1.f));
+		const Vector2 position = m_transform.getWorldPosition();
+		const float aimLineLength = 10.f;
+		const LineSegment aimLine = { position, position + m_aimDirection * aimLineLength, RenderSpace::WorldSpace};
+		Renderer::get()->drawLineSegment(aimLine, Color(1.f, 0.f, 0.f, 1.f));
 	}
 }
 

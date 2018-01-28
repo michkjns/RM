@@ -19,18 +19,22 @@ class Core
 public:
 	Core();
 	~Core();
+
 	void initialize(Game* game, const CommandLineOptions& options);
 	void run();
 	void destroy();
 
 private:
-	bool loadResources();
-	void drawDebug();
+	void initializeWindow(const char* name);
+	void initializeInput();
+	void initializeGraphics();
 
-	class Game*		 m_game;
-	class Renderer*	 m_renderer;
-	class Window*    m_window;
-	Time             m_gameTime;
-	class Physics*   m_physics;
-	bool             m_enableDebugDraw;
+	bool loadResources();
+
+	Game*     m_game;
+	Renderer* m_renderer;
+	Window*   m_window;
+	Time      m_gameTime;
+	Physics*  m_physics;
+	bool      m_enableDebugDraw;
 };

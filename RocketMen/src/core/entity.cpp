@@ -15,6 +15,11 @@ void Entity::instantiate(Entity* entity)
 	EntityManager::instantiateEntity(entity);
 }
 
+Game* Entity::getGame()
+{
+	return EntityManager::getGame();
+}
+
 //=============================================================================
 
 Entity::Entity() :
@@ -45,7 +50,7 @@ bool Entity::isAlive() const
 
 std::string Entity::getSpriteName() const
 {
-	return m_sprite;
+	return m_spriteName;
 }
 
 void Entity::setNetworkId(int32_t networkId)
@@ -89,7 +94,7 @@ void Entity::endContact(Entity* /*other*/)
 
 void Entity::setSprite(const std::string& name)
 {
-	m_sprite = name;
+	m_spriteName = name;
 }
 
 Transform2D& Entity::getTransform()

@@ -22,6 +22,7 @@ public:
 	static EntityType getTypeStatic() { return s_type; };
 
 	static void instantiate(Entity* entity);
+	static class Game* getGame();
 
 public:
 	Entity();
@@ -62,7 +63,7 @@ public:
 
 protected:
 	Transform2D m_transform;
-	std::string m_sprite;
+	std::string m_spriteName;
 	int32_t     m_networkId;
 	int16_t     m_ownerPlayerId;
 
@@ -75,25 +76,29 @@ public:
 	template<typename Stream>
 	bool serializeFull(Stream& stream)
 	{
-		int32_t sprLength = 0;
+		int32_t spriteNameLength = 0;
 
 		if (Stream::isWriting)
 		{
-			sprLength = int32_t(m_sprite.length());
+			spriteNameLength = int32_t(m_spriteName.length());
 		}
 
 		serializeInt(stream, m_networkId, -s_maxSpawnPredictedEntities - 1, s_maxNetworkedEntities);
-		serializeInt(stream, sprLength, 0, 32);
+		serializeInt(stream, spriteNameLength, 0, 32);
 
 		if (Stream::isReading)
-			m_sprite.resize(sprLength);
-
-		for (int32_t i = 0; i < sprLength; i++)
 		{
-			int32_t character = int32_t(m_sprite[i]);
+			m_spriteName.resize(spriteNameLength);
+		}
+
+		for (int32_t i = 0; i < spriteNameLength; i++)
+		{
+			int32_t character = int32_t(m_spriteName[i]);
 			serializeInt(stream, character, CHAR_MIN, CHAR_MAX);
 			if (Stream::isReading)
-				m_sprite[i] = char(character);
+			{
+				m_spriteName[i] = char(character);
+			}
 		}
 
 		return true;

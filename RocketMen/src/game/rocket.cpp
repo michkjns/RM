@@ -24,7 +24,7 @@ Rocket::Rocket() :
 	fixture.isSensor = true;
 	m_rigidbody = Physics::createBoxRigidbody(Vector2(0.50f, 0.50f), fixture, this);
 	m_transform.setRigidbody(m_rigidbody);
-	m_sprite = "demoTexture";
+	m_spriteName = "demoTexture";
 	m_transform.setScale(Vector2(0.5f));
 }
 

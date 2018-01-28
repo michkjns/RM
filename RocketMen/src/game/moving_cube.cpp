@@ -14,7 +14,7 @@ MovingCube::MovingCube() :
 	m_speed(2.0f),
 	m_direction(1.f)
 {
-	m_sprite = "demoTexture";
+	m_spriteName = "demoTexture";
 	m_transform.setLocalPosition(Vector2(0.f, 3.f));
 
 }
@@ -47,16 +47,6 @@ void MovingCube::fixedUpdate(float deltaTime)
 
 void MovingCube::debugDraw()
 {
-}
-
-void MovingCube::startContact(Entity* /*other*/)
-{
-
-}
-
-void MovingCube::endContact(Entity* /*other*/)
-{
-
 }
 
 template<typename Stream>

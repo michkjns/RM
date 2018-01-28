@@ -12,6 +12,7 @@ public:
 	~Staticbody();
 
 	StaticbodyData* getImpl() const;
+
 private:
 	StaticbodyData* m_impl;
 };

@@ -7,6 +7,7 @@
 #include <core/window.h>
 #include <core/entity.h>
 #include <core/entity_manager.h>
+#include <graphics/camera.h>
 #include <graphics/check_gl_error.h>
 #include <graphics/renderer.h>
 #include <network/network.h>
@@ -41,23 +42,17 @@ void Core::initialize(Game* game, const CommandLineOptions& options)
 
 	crcInit();
 
-	const bool isDedicatedSerer = options.isSet("--dedicated");
-	const bool isHeadless = isDedicatedSerer && Debug::getVerbosity() != Debug::Verbosity::Debug;
+	const bool isDedicatedServer = options.isSet("--dedicated");
+	const bool isHeadless = isDedicatedServer && Debug::getVerbosity() != Debug::Verbosity::Debug;
 	
 	if(!isHeadless)
 	{
-		LOG_INFO("Core: Creating window..");
-		m_window = Window::create();
+		std::string windowTitle(m_game->getName());
+		windowTitle += (isDedicatedServer ? " - Dedicated Server" : " - Client");
 
-		std::string windowTitle(m_game->getName() + isDedicatedSerer ? " - Dedicated Server" : " - Client");
-		m_window->initialize(windowTitle.c_str(), g_defaultWindowSize);
-		
-		LOG_INFO("Core: Creating renderer..");
-		m_renderer = Renderer::create();
-		m_renderer->initialize(m_window);
-
-		LOG_INFO("Core: Initializing input..");
-		input::initialize(m_window);
+		initializeWindow(windowTitle.c_str());
+		initializeInput();
+		initializeGraphics();
 	}
 
 	if (!loadResources())
@@ -70,7 +65,28 @@ void Core::initialize(Game* game, const CommandLineOptions& options)
 	m_physics->initialize();
 
 	LOG_INFO("Core: Initializing game..");
-	m_game->initialize(options);
+	const GameContext context = { options, m_window };
+	m_game->initialize(context);
+}
+
+void Core::initializeWindow(const char* name)
+{
+	LOG_INFO("Core: Creating window..");
+	m_window = Window::create();
+	m_window->initialize(name, g_defaultWindowSize);
+}
+
+void Core::initializeGraphics()
+{
+	LOG_INFO("Core: Creating renderer..");
+	m_renderer = Renderer::create();
+	m_renderer->initialize();
+}
+
+void Core::initializeInput()
+{
+	LOG_INFO("Core: Initializing input..");
+	input::initialize(m_window);
 }
 
 bool Core::loadResources()
@@ -87,16 +103,6 @@ bool Core::loadResources()
 								"data/shaders/line_shader.frag",
 								"line_shader");
 	return true;
-}
-
-void Core::drawDebug()
-{
-	for (auto& it : EntityManager::getEntities())
-	{
-		it->debugDraw();
-	}
-
-	m_physics->drawDebug();
 }
 
 void Core::run()
@@ -163,11 +169,8 @@ void Core::run()
 		/** Render */
 		if (m_renderer)
 		{
-			m_renderer->render();
-			if (m_enableDebugDraw)
-			{
-				drawDebug();
-			}
+			const RenderContext renderContext = { m_physics, *m_game };
+			m_renderer->render(renderContext, m_enableDebugDraw);
 			m_window->swapBuffers();
 		}
 	}

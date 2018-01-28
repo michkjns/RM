@@ -37,9 +37,6 @@ public:
 	static bool serializeEntity(Entity* entity, class ReadStream& stream);
 	static bool serializeEntity(Entity* entity, class MeasureStream& stream);
 
-	static bool serializeClientVars(Entity* entity, class WriteStream& stream);
-	static bool serializeClientVars(Entity* entity, class ReadStream& stream);
-
 	static void flushEntities();
 	static void killEntities();
 
@@ -49,7 +46,10 @@ public:
 
 private:
 	static void freeEntityId(int32_t id);
+	static void setGameInstance(class Game* game);
+	static class Game* getGame();
 
 public:
 	friend class Entity;
+	friend class Game;
 };

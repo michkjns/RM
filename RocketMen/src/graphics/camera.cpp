@@ -2,48 +2,35 @@
 #include <graphics/camera.h>
 #include <graphics/renderer.h>
 
-using namespace graphics;
-
-Camera* Camera::mainCamera;
-
-Camera::Camera(ProjectionMode projection, float width, float height, int32_t pixelsPerMeter) :
+Camera::Camera(Vector2 viewportSize, int32_t pixelsPerMeter) :
 	m_position(0),
 	m_scale(1.f),
 	m_rotation(),
-	m_viewMatrix(1),
+	m_viewMatrix(),
+	m_viewportSize(viewportSize),
 	m_isDirty(false),
-	m_pixelsPerMeter(pixelsPerMeter),
-	m_projSize(width / pixelsPerMeter, height / pixelsPerMeter)
+	m_pixelsPerMeter(pixelsPerMeter)
 {
-	switch (projection)
-	{
-		case ProjectionMode::Orthographic:
-		{
-			width /= pixelsPerMeter;
-			height /= pixelsPerMeter;
-			m_projectionMatrix = glm::ortho(-width  / 2.0f, 
-											width   / 2.0f, 
-											-height / 2.0f, 
-											height  / 2.0f, 
-											-1.0f, 1.0f);
-			break;
-		}
-		case ProjectionMode::Perspective:
-		{
-			// TODO(Support perspective projection?)
-			assert(false);
-			break;
-		}
-	}
+	assert(pixelsPerMeter != 0);
+
+	m_projectionSize = Vector2(viewportSize.x / pixelsPerMeter, viewportSize.y / pixelsPerMeter);
+
+	viewportSize.x /= pixelsPerMeter;
+	viewportSize.y /= pixelsPerMeter;
+
+	m_projectionMatrix = glm::ortho(-viewportSize.x / 2.0f, 
+		                            viewportSize.x  / 2.0f, 
+		                           -viewportSize.y  / 2.0f, 
+		                            viewportSize.y  / 2.0f, 
+		                            -1.0f, 1.0f);
 }
 
 Camera::~Camera()
 {
 }
 
-glm::mat4 Camera::getViewMatrix()
+glm::mat4 Camera::getViewMatrix() const
 {
-	updateViewMatrix();
 	return m_viewMatrix;
 }
 
@@ -133,16 +120,12 @@ Vector3 Camera::getEulerAngles() const
 	return glm::degrees(glm::eulerAngles(m_rotation));
 }
 
+#include <core/debug.h>
+
 Vector2 Camera::screenToWorld(const Vector2& screenPoint)
 {
-	Renderer* renderer = Renderer::get();
-	assert(renderer != nullptr);
+	Vector2 result = (screenPoint - m_viewportSize / 2.f) / (float)m_pixelsPerMeter * Vector2(m_scale.x, -m_scale.y) + Vector2(m_position.x, m_position.y);
+	LOG_DEBUG("%d, %d | %d, %d", (int)screenPoint.x, (int)screenPoint.y, (int)result.x, (int)result.y); /* + m_viewportSize / 2.f*/
 
-	const Vector2 ratio = Vector2(1.f / (m_pixelsPerMeter * m_scale.x),
-								  -1.f / (m_pixelsPerMeter * m_scale.y));
-	const Vector2i view = Renderer::get()->getScreenSize();
-	const Vector2 worldPos = Vector2(screenPoint.x * ratio.x - (view.x * ratio.x / 2.f),
-									 screenPoint.y * ratio.y - (view.y * ratio.y / 2.f))
-		 + Vector2(m_position.x, m_position.y) / 2.f;
-	return worldPos;
+	return result;
 }

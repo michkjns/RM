@@ -5,19 +5,10 @@
 
 #include <graphics/renderer.h>
 
-namespace graphics {
-	enum class ProjectionMode
-	{
-		Orthographic,
-		Perspective
-	};
-}; //namespace graphics
-
 class Camera // TODO(Rename Camera2D?)
 {
 public:
-	Camera(graphics::ProjectionMode projection, float width, float height,
-		   int32_t pixelsPerMeter);
+	Camera(Vector2 viewportSize, int32_t pixelsPerMeter);
 	~Camera();
 
 	void translate(Vector3 translation);
@@ -34,24 +25,22 @@ public:
 	Vector3   getPosition()         const;
 	glm::quat getRotation()         const;
 	Vector3   getEulerAngles()      const;
-	glm::mat4 getViewMatrix();
+	glm::mat4 getViewMatrix()       const;
 	glm::mat4 getProjectionMatrix() const;
 
 	Vector2 screenToWorld(const Vector2& screenPoint);
 
 	void updateViewMatrix();
-private:
 
+private:
 	glm::mat4 m_viewMatrix;
 	glm::mat4 m_projectionMatrix;
 	Vector3   m_position;
 	Vector3   m_scale;
 	glm::quat m_rotation;
-	Vector2   m_projSize;
+	Vector2   m_projectionSize;
+	Vector2   m_viewportSize;
 
 	bool    m_isDirty;
 	int32_t m_pixelsPerMeter;
-
-public:
-	static Camera* mainCamera;
 };

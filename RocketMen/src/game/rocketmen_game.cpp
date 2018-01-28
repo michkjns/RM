@@ -8,34 +8,32 @@
 #include <game/rocketmen_state_factory.h>
 #include <graphics/camera.h>
 #include <core/entity_manager.h>
+#include <core/window.h>
 #include <game/character.h>
 #include <utility/commandline_options.h>
 
 using namespace input;
 using namespace rm;
 
-void RocketMenGame::initialize(const CommandLineOptions& options)
+void RocketMenGame::initialize(const GameContext& context)
 {
 	MenuState* menu = dynamic_cast<MenuState*>(Game::initialize(new RocketMenStateFactory(), GameStateID::Menu));
 	assert(menu != nullptr);
-	menu->parseCommandLineOptions(this, options);
+	menu->parseCommandLineOptions(this, context.options);
 
-	const int32_t pixelsPerMeter = 16;
+	const int32_t pixelsPerMeter = 32;
 
 	if (Renderer* renderer = Renderer::get())
 	{
-		Camera::mainCamera = new Camera(graphics::ProjectionMode::Orthographic,
-			                            static_cast<float>(renderer->getScreenSize().x),
-			                            static_cast<float>(renderer->getScreenSize().y),
-		                                pixelsPerMeter);
+		assert(context.window != nullptr);
 
-		Camera::mainCamera->setScale(Vector3(2.f));
+		const Vector2 viewportSize(context.window->getWidth(), context.window->getHeight());
+		setMainCamera(new Camera(viewportSize, pixelsPerMeter));	
 	}
 }
 
 void RocketMenGame::terminate()
 {
-	delete Camera::mainCamera;
 	Game::terminate();
 }
 

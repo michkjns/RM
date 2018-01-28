@@ -128,12 +128,12 @@ void RemoteClientManager::setLocalClientId(int32_t id)
 	m_localClientId = id;
 }
 
-int32_t network::RemoteClientManager::getLocalClientId() const
+int32_t RemoteClientManager::getLocalClientId() const
 {
 	return m_localClientId;
 }
 
-RemoteClient* network::RemoteClientManager::getClient(const Address& address) const
+RemoteClient* RemoteClientManager::getClient(const Address& address) const
 {
 	for (RemoteClient* client = begin(); client != end(); client++)
 	{
@@ -145,7 +145,7 @@ RemoteClient* network::RemoteClientManager::getClient(const Address& address) co
 	return nullptr;
 }
 
-RemoteClient* network::RemoteClientManager::getClient(const Connection* connection) const
+RemoteClient* RemoteClientManager::getClient(const Connection* connection) const
 {
 	for (RemoteClient* client = begin(); client != end(); client++)
 	{

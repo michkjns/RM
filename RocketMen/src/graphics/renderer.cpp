@@ -4,6 +4,7 @@
 #include <core/debug.h>
 #include <core/entity.h>
 #include <core/entity_manager.h>
+#include <core/game.h>
 #include <core/resource_manager.h>
 #include <core/window.h>
 #include <graphics/camera.h>
@@ -21,49 +22,37 @@ static Renderer* s_renderer;
 class Renderer_glfw : public Renderer
 {
 public:
-	Renderer_glfw();
-	~Renderer_glfw();
+	Renderer_glfw() {}
+	~Renderer_glfw() {};
 
-	bool initialize(Window* window) override;
+	bool initialize() override;
 	void initializeGLBuffers();
-	void destroy() override;
+	void destroy() override {};
 
-	void render() override;
+	void render(const RenderContext& context, bool debugDrawEnabled) override;
+
+	void renderDebug(const RenderContext& context);
+
+	void clearScreenBuffers();
+
 	void drawPolygon(const Vector2* vertices,
 	                 int32_t vertexCount,
 	                 const Color& color,
 	                 bool screenSpace = false) override;
 
-	void drawLineSegment(const Vector2& p1, const Vector2& p2,
-		                 const Color& color, bool screenSpace) override;
-
-	Vector2i Renderer_glfw::getScreenSize() const;
+	void drawLineSegment(const LineSegment& segment, const Color& color) override;
 
 private:
-	void renderSprites();
+	void renderSprites(const Camera& camera);
 
 	SpriteRenderer m_spriteRenderer;
 	TileRenderer   m_tileRenderer;
-	Window*        m_window;
 	GLuint         m_lineVAO;
 	GLuint         m_lineVBO;
 };
 
-Renderer_glfw::Renderer_glfw()
-	: m_window(nullptr)
+bool Renderer_glfw::initialize()
 {
-}
-
-Renderer_glfw::~Renderer_glfw()
-{
-}
-
-bool Renderer_glfw::initialize(Window* window)
-{
-	assert(window != nullptr);
-
-	m_window = window;
-
 	if (!m_tileRenderer.initialize())
 	{
 		LOG_ERROR("Renderer: Tilemap::initialize Error");
@@ -75,7 +64,6 @@ bool Renderer_glfw::initialize(Window* window)
 		LOG_ERROR("Renderer: SpriteRenderer::initialize Error");
 		return false;
 	}
-
 
 	initializeGLBuffers();
 
@@ -105,28 +93,49 @@ void Renderer_glfw::initializeGLBuffers()
 	glBindVertexArray(0);
 }
 
-void Renderer_glfw::destroy()
+void Renderer_glfw::render(const RenderContext& context, bool enableDebugRendering)
 {
-}
+	clearScreenBuffers();
 
-void Renderer_glfw::render()
-{
-	if (Camera::mainCamera) 
+	if (Camera* camera = context.game.getMainCamera())
 	{
-		Camera::mainCamera->updateViewMatrix();	
+		m_currentCamera = camera;
+		camera->updateViewMatrix();
 
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
 		m_tileRenderer.render(ResourceManager::getTileMap("testmap"),
-			Camera::mainCamera->getProjectionMatrix()
-			* Camera::mainCamera->getViewMatrix());
+			camera->getProjectionMatrix() * camera->getViewMatrix());
 
-		renderSprites();
+		renderSprites(*camera);
+
+		if (enableDebugRendering)
+		{
+			renderDebug(context);
+		}
+
+		m_currentCamera = nullptr;
 	}
 }
 
-void Renderer_glfw::renderSprites()
+void Renderer_glfw::renderDebug(const RenderContext& context)
+{
+	for (auto& it : EntityManager::getEntities())
+	{
+		it->debugDraw();
+	}
+
+	if (context.physics != nullptr)
+	{
+		context.physics->drawDebug();
+	}
+}
+
+void Renderer_glfw::clearScreenBuffers()
+{
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer_glfw::renderSprites(const Camera& camera)
 {
 	for (const auto& it : EntityManager::getEntities())
 	{
@@ -135,25 +144,26 @@ void Renderer_glfw::renderSprites()
 			glm::mat4 origin = glm::translate(it->getTransform().getWorldMatrix(), Vector3(-.5f, -.50f, 0.0f));
 
 			m_spriteRenderer.render(origin,
-				Camera::mainCamera->getProjectionMatrix() * Camera::mainCamera->getViewMatrix(),
+				camera.getProjectionMatrix() * camera.getViewMatrix(),
 				it->getSpriteName());
 		}
 	}
 }
 
-void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, 
-                                bool screenSpace)
+void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, bool inScreenSpace)
 {
-	Shader::unbindShader();
+	assert(m_currentCamera != nullptr);
+
+	Shader::unbindCurrentShader();
+
 	GLfloat glverts[16];
 	glVertexPointer(2, GL_FLOAT, 0, glverts);
 	glEnableClientState(GL_VERTEX_ARRAY);
 
 	for (int i = 0; i < vertexCount; i++) 
 	{
-		Vector4 xy = (screenSpace) ? Vector4(vertices[i], 0.0f, 0.0f)
-			: Camera::mainCamera->getProjectionMatrix() * Camera::mainCamera->getViewMatrix() *
-			Vector4(vertices[i], 1.0f, 1.0f);
+		Vector4 xy = (inScreenSpace) ? Vector4(vertices[i], 0.0f, 0.0f)
+			: m_currentCamera->getProjectionMatrix() * m_currentCamera->getViewMatrix()	* Vector4(vertices[i], 1.0f, 1.0f);
 
 		glverts[i * 2]     = xy.x;
 		glverts[i * 2 + 1] = xy.y;
@@ -168,21 +178,20 @@ void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, co
 	glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void Renderer_glfw::drawLineSegment(const Vector2& p1, const Vector2& p2, const Color& color, 
-	                                bool screenSpace)
+void Renderer_glfw::drawLineSegment(const LineSegment& segment, const Color& color)
 {
-	assert(Camera::mainCamera != nullptr);
+	assert(m_currentCamera != nullptr);
 
 	Shader& lineShader = ResourceManager::getShader("line_shader");
 	lineShader.use();
 	
-	glm::mat4 projectionMatrix = (screenSpace) ? glm::mat4()
-	                            : Camera::mainCamera->getProjectionMatrix()
-	                              * Camera::mainCamera->getViewMatrix();
+	glm::mat4 projectionMatrix = (segment.renderSpace == RenderSpace::ScreenSpace) ? glm::mat4()
+	                            : m_currentCamera->getProjectionMatrix()
+	                              * m_currentCamera->getViewMatrix();
 	                                          
 	glm::mat4 modelMatrix(1.f);
-	modelMatrix = glm::translate(glm::mat4(), Vector3(p1, 0.0f));
-	modelMatrix = glm::scale(modelMatrix, glm::vec3(p2-p1, 1.f));
+	modelMatrix = glm::translate(glm::mat4(), Vector3(segment.pointA, 0.0f));
+	modelMatrix = glm::scale(modelMatrix, glm::vec3(segment.pointB - segment.pointA, 1.f));
 
 	lineShader.setMatrix4("model", modelMatrix);
 	lineShader.setMatrix4("projection", projectionMatrix);
@@ -193,11 +202,6 @@ void Renderer_glfw::drawLineSegment(const Vector2& p1, const Vector2& p2, const 
 	glBindVertexArray(0);
 
 	checkGL();
-}
-
-Vector2i Renderer_glfw::getScreenSize() const
-{ 
-	return m_window->getSize();
 }
 
 Renderer* Renderer::create()

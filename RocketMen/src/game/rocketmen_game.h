@@ -3,8 +3,6 @@
 
 #include <core/game.h>
 
-class CommandLineOptions;
-
 namespace rm
 {
 	class RocketMenGame : public Game
@@ -15,10 +13,10 @@ namespace rm
 		~RocketMenGame() {}
 
 	public:
-		void initialize(const CommandLineOptions& options) override;
-		void terminate()                     override;
-		void onPlayerJoin(int16_t playerId)  override;
-		void onPlayerLeave(int16_t playerId) override;
+		void initialize(const GameContext& context) override;
+		void terminate()                            override;
+		void onPlayerJoin(int16_t playerId)         override;
+		void onPlayerLeave(int16_t playerId)        override;
 	};
 
 }; // namespace rm

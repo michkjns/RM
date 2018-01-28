@@ -354,7 +354,7 @@ void PhysicsDraw::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color&
 {
 	if (Renderer* renderer = Renderer::get())
 	{
-		renderer->drawLineSegment(toVector2(p1), toVector2(p2), Color(color.r, color.g, color.b, color.a));
+		renderer->drawLineSegment({ toVector2(p1), toVector2(p2), RenderSpace::WorldSpace }, Color(color.r, color.g, color.b, color.a));
 	}
 }
 
