@@ -1,11 +1,9 @@
 
 #pragma once
 
-#include <graphics/tile_map.h>
+class Shader;
+class TileMap;
 
-//namespace graphics {
-	class Shader;
-//};//
 class TileRenderer
 {
 public:
