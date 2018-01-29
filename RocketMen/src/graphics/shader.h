@@ -6,7 +6,7 @@
 class Shader
 {
 public:
-	enum class EType
+	enum class Type
 	{
 		FRAGMENT_SHADER = GL_FRAGMENT_SHADER,
 		VERTEX_SHADER   = GL_VERTEX_SHADER,

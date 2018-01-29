@@ -219,12 +219,11 @@ bool Physics::destroyStaticbody(Staticbody* staticBody)
 
 void Physics::loadCollisionFromTilemap(const std::string& tilemapName)
 {
-	TileMap& tilemap = ResourceManager::getTileMap(tilemapName.c_str());
+	Tilemap* tilemap = ResourceManager::getTileMap(tilemapName.c_str());
 
-	if (tilemap.isInitalized() == false)
+	if (tilemap == nullptr)
 	{
 		LOG_ERROR("Physics::loadCollisionFromTilemap - Invalid tilemap");
-		ensure(false);
 		return;
 	}
 
@@ -235,17 +234,17 @@ void Physics::loadCollisionFromTilemap(const std::string& tilemapName)
 		uint32_t w;
 		uint32_t h;
 	};
-	
+
 	std::vector<Rect> rects;
-	char* tempMap = new char[tilemap.getMapWidth() * tilemap.getMapHeight()];
-	memcpy(tempMap, tilemap.getMap(), tilemap.getMapWidth() * tilemap.getMapHeight());
+	char* tempMap = new char[tilemap->getMapWidth() * tilemap->getMapHeight()];
+	memcpy(tempMap, tilemap->getMap(), tilemap->getMapWidth() * tilemap->getMapHeight());
 
 	Rect currentRect;
-	for (uint32_t x = 0; x < tilemap.getMapWidth(); x++)
+	for (uint32_t x = 0; x < tilemap->getMapWidth(); x++)
 	{
-		for (uint32_t y = 0; y < tilemap.getMapHeight(); y++)
+		for (uint32_t y = 0; y < tilemap->getMapHeight(); y++)
 		{
-			char tile = tempMap[x + y * tilemap.getMapWidth()];
+			char tile = tempMap[x + y * tilemap->getMapWidth()];
 			if (tile != '0')
 			{
 				currentRect.x = x;
@@ -253,13 +252,13 @@ void Physics::loadCollisionFromTilemap(const std::string& tilemapName)
 				currentRect.w = 0;
 				currentRect.h = 0;
 				bool _break = false;
-				uint32_t y_lim = tilemap.getMapHeight();
-				for (uint32_t x1 = x; x1 < tilemap.getMapWidth(); x1++)
+				uint32_t y_lim = tilemap->getMapHeight();
+				for (uint32_t x1 = x; x1 < tilemap->getMapWidth(); x1++)
 				{
 					if (_break) break;
 					for (uint32_t y1 = y; y1 < y_lim; y1++)
 					{
-						char& tile1 = tempMap[x1 + y1 * tilemap.getMapWidth()];
+						char& tile1 = tempMap[x1 + y1 * tilemap->getMapWidth()];
 						if (y1 == y)
 						{
 							if (tile1 != '0')
@@ -283,9 +282,9 @@ void Physics::loadCollisionFromTilemap(const std::string& tilemapName)
 							{
 								currentRect.h++;
 							}
-							
+
 						}
-						else 
+						else
 						{
 							y_lim = y1;
 							break;
@@ -301,10 +300,10 @@ void Physics::loadCollisionFromTilemap(const std::string& tilemapName)
 	physics::Fixture fixture;
 	for (auto& rect : rects)
 	{
-		const Vector2 offset(-static_cast<float>(tilemap.getMapWidth() / 2.0f) + 0.5f * rect.w,
-							 static_cast<float>(tilemap.getMapHeight() / 2.0f) - 0.5f * rect.h);
-		Physics::createStaticBody(Vector2(rect.x, -1.f * rect.y) + offset ,
-								  Vector2(rect.w, rect.h), fixture);
+		const Vector2 offset(-static_cast<float>(tilemap->getMapWidth() / 2.0f) + 0.5f * rect.w,
+			static_cast<float>(tilemap->getMapHeight() / 2.0f) - 0.5f * rect.h);
+		Physics::createStaticBody(Vector2(rect.x, -1.f * rect.y) + offset,
+			Vector2(rect.w, rect.h), fixture);
 	}
 }
 

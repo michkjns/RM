@@ -66,9 +66,6 @@
     <ClCompile Include="src\graphics\tile_renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\graphics\tile_map.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\physics\rigidbody.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -192,6 +189,9 @@
     <ClCompile Include="src\network\local_client.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\graphics\tilemap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\network\address.h">
@@ -240,9 +240,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\graphics\tile_renderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\graphics\tile_map.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\physics\rigidbody.h">
@@ -450,6 +447,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\network\local_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\graphics\tilemap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

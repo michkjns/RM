@@ -3,48 +3,41 @@
 
 #include <common.h>
 
-struct TileMapParam
+struct TilemapParam
 {
 	const char* name;
-	const char* tileSheetName;
-	char*       tiles;
-	uint32_t    mapWidth;
-	uint32_t    mapHeight;
-	uint32_t    sheetWidth;
-	uint32_t    sheetHeight;
+	std::string tileData;
+	Vector2i    dimensions;
 	uint32_t    tileSize;
+	const char* tileSheetName;
 };
 
-class TileMap
+class Tilemap
 {
 public:
-	TileMap();
-	~TileMap();
-
-	bool initialize(const TileMapParam& parameters);        
-
-	void createTexture();
-
+	static Vector2i getDimensionsFromFilename(const char* filename);
+public:
+	Tilemap(const TilemapParam& parameters);
+	~Tilemap();
+	
 	std::string getName()          const { return m_name; }
 	uint32_t    getTileSize()      const { return m_tileSize; }
-	uint32_t    getMapWidth()      const { return m_mapWidth; }
-	uint32_t    getMapHeight()     const { return m_mapHeight; }
+	uint32_t    getMapWidth()      const { return m_width; }
+	uint32_t    getMapHeight()     const { return m_height; }
 	uint32_t    getSheetWidth()    const { return m_sheetWidth; }
 	uint32_t    getSheetHeight()   const { return m_sheetHeight; }
 	char*       getMap()           const { return m_map; }
-	bool        isInitalized()     const { return m_isInitialized; }
 	std::string getTileSheetName() const { return m_tileSheetName; }
 
-	void destroy();
-
 private:
+	void createTexture();
+
 	std::string m_name;
 	uint32_t    m_tileSize;
-	uint32_t    m_mapWidth;
-	uint32_t    m_mapHeight;
+	uint32_t    m_width;
+	uint32_t    m_height;
 	uint32_t    m_sheetWidth;
 	uint32_t    m_sheetHeight;
 	std::string m_tileSheetName;
 	char*       m_map;
-	bool        m_isInitialized;
 };

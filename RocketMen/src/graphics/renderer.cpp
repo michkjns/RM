@@ -59,12 +59,6 @@ bool Renderer_glfw::initialize()
 		return false;
 	}
 
-	if (!m_spriteRenderer.initialize())
-	{
-		LOG_ERROR("Renderer: SpriteRenderer::initialize Error");
-		return false;
-	}
-
 	initializeGLBuffers();
 
 	glEnable(GL_BLEND);
@@ -102,8 +96,12 @@ void Renderer_glfw::render(const RenderContext& context, bool enableDebugRenderi
 		m_currentCamera = camera;
 		camera->updateViewMatrix();
 
-		m_tileRenderer.render(ResourceManager::getTileMap("testmap"),
-			camera->getProjectionMatrix() * camera->getViewMatrix());
+		Tilemap* tilemap = ResourceManager::getTileMap("testmap");
+		if (tilemap != nullptr)
+		{
+			m_tileRenderer.render(*tilemap,
+				camera->getProjectionMatrix() * camera->getViewMatrix());
+		}
 
 		renderSprites(*camera);
 
@@ -182,8 +180,10 @@ void Renderer_glfw::drawLineSegment(const LineSegment& segment, const Color& col
 {
 	assert(m_currentCamera != nullptr);
 
-	Shader& lineShader = ResourceManager::getShader("line_shader");
-	lineShader.use();
+	Shader* lineShader = ResourceManager::getShader("line_shader");
+	assert(lineShader != nullptr);
+
+	lineShader->use();
 	
 	glm::mat4 projectionMatrix = (segment.renderSpace == RenderSpace::ScreenSpace) ? glm::mat4()
 	                            : m_currentCamera->getProjectionMatrix()
@@ -193,9 +193,9 @@ void Renderer_glfw::drawLineSegment(const LineSegment& segment, const Color& col
 	modelMatrix = glm::translate(glm::mat4(), Vector3(segment.pointA, 0.0f));
 	modelMatrix = glm::scale(modelMatrix, glm::vec3(segment.pointB - segment.pointA, 1.f));
 
-	lineShader.setMatrix4("model", modelMatrix);
-	lineShader.setMatrix4("projection", projectionMatrix);
-	lineShader.setVec4f("lineColor", color);
+	lineShader->setMatrix4("model", modelMatrix);
+	lineShader->setMatrix4("projection", projectionMatrix);
+	lineShader->setVec4f("lineColor", color);
 
 	glBindVertexArray(m_lineVAO);
 	glDrawArrays(GL_LINES, 0, 2);

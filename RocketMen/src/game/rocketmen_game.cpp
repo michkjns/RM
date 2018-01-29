@@ -21,7 +21,6 @@ void RocketMenGame::initialize(const GameContext& context)
 	assert(menu != nullptr);
 	menu->parseCommandLineOptions(this, context.options);
 
-
 	if (Renderer* renderer = Renderer::get())
 	{
 		assert(context.window != nullptr);
@@ -41,7 +40,7 @@ void RocketMenGame::onPlayerJoin(int16_t playerId)
 {
 	Character* character = new Character();
 
-	character->getTransform().setLocalPosition( Vector2(-3.f, 3.f));
+	character->getTransform().setLocalPosition(Vector2(-3.f, 3.f));
 	character->setSprite("demoTexture");
 	character->posessbyPlayer(playerId);
 	

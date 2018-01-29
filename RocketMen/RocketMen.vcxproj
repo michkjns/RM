@@ -176,7 +176,7 @@
     <ClCompile Include="src\core\entity.cpp" />
     <ClCompile Include="src\game\menu_state.cpp" />
     <ClCompile Include="src\game\rocket.cpp" />
-    <ClCompile Include="src\graphics\tile_map.cpp" />
+    <ClCompile Include="src\graphics\tilemap.cpp" />
     <ClCompile Include="src\graphics\tile_renderer.cpp" />
     <ClCompile Include="src\network\network.cpp" />
     <ClCompile Include="src\network\address.cpp" />
@@ -263,7 +263,7 @@
     <ClInclude Include="src\network\local_client.h" />
     <ClInclude Include="src\core\input.h" />
     <ClInclude Include="src\core\keys.h" />
-    <ClInclude Include="src\graphics\tile_map.h" />
+    <ClInclude Include="src\graphics\tilemap.h" />
     <ClInclude Include="src\graphics\tile_renderer.h" />
     <ClInclude Include="src\network\network.h" />
     <ClInclude Include="src\core\core.h" />

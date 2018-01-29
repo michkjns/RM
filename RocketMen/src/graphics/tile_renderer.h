@@ -2,7 +2,7 @@
 #pragma once
 
 class Shader;
-class TileMap;
+class Tilemap;
 
 class TileRenderer
 {
@@ -12,12 +12,11 @@ public:
 
 	bool initialize();
 
-	void render(const TileMap& tileMap, const glm::mat4& projectionMatrix);
+	void render(const Tilemap& tileMap, const glm::mat4& projectionMatrix);
 
 private:
 	GLuint  m_VAO;
 	GLuint  m_VBO;
 
 	std::string m_tilemap;
-	Shader*     m_tileShader;
 };

@@ -4,7 +4,7 @@
 #include <common.h>
 
 #define LOG_INFO(...)    Debug::log(Debug::Verbosity::Info,    __VA_ARGS__);
-#define LOG_ERROR(...)   Debug::log(Debug::Verbosity::Error,   __VA_ARGS__);
+#define LOG_ERROR(...)   Debug::log(Debug::Verbosity::Error,   __VA_ARGS__), ensure(false);
 #define LOG_WARNING(...) Debug::log(Debug::Verbosity::Warning, __VA_ARGS__);
 #define LOG_DEBUG(...)   Debug::log(Debug::Verbosity::Debug,   __VA_ARGS__);
 

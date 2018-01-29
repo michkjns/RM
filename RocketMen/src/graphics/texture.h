@@ -6,14 +6,12 @@
 class Texture
 {
 public:
-	Texture();
+	Texture(const void* imageData, uint32_t width, uint32_t height);
 	~Texture();
 
 	void bind();
 	bool isBound() const;
 	void unbind();
-
-	bool generate(const void* imageData, uint32_t width, uint32_t height);
 
 	uint32_t getWidth() const;
 	uint32_t getHeight() const;

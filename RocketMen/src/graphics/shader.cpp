@@ -57,7 +57,7 @@ bool Shader::isInitialized() const
 bool Shader::compile(const std::string& vertexShader, const std::string& fragmentShader)
 {
 	const std::string sources[] = { vertexShader, fragmentShader };
-	const Shader::EType type[] = { EType::VERTEX_SHADER, EType::FRAGMENT_SHADER };
+	const Shader::Type type[] = { Type::VERTEX_SHADER, Type::FRAGMENT_SHADER };
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -89,9 +89,9 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 
 			switch (type[i])
 			{
-				case EType::FRAGMENT_SHADER: LOG_ERROR("Failed to compile fragment shader");		break;
-				case EType::VERTEX_SHADER:	LOG_ERROR("Failed to compile vertex shader ");			break;
-					//	case Type::GEOMETRY_SHADER: LOG_ERROR("Failed to compile geometry shader '%s'", shaderFile);		break;
+				case Type::FRAGMENT_SHADER: LOG_ERROR("Failed to compile fragment shader");	break;
+				case Type::VERTEX_SHADER:	LOG_ERROR("Failed to compile vertex shader ");	break;
+				//case Type::GEOMETRY_SHADER: LOG_ERROR("Failed to compile geometry shader '%s'", shaderFile);		break;
 			}
 			assert(false);
 			return false;
@@ -155,7 +155,7 @@ void Shader::destroy()
 	m_glShader[1] = 0; 
 }
 
-// TODO Prevent overwriting identical values
+// TODO Prevent uploading identical values
 void Shader::setFloat(const char* name, float value)
 {
 	glUniform1f(glGetUniformLocation(m_glProgramID, name), value);
