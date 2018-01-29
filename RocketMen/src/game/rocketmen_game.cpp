@@ -21,12 +21,12 @@ void RocketMenGame::initialize(const GameContext& context)
 	assert(menu != nullptr);
 	menu->parseCommandLineOptions(this, context.options);
 
-	const int32_t pixelsPerMeter = 32;
 
 	if (Renderer* renderer = Renderer::get())
 	{
 		assert(context.window != nullptr);
 
+		const int32_t pixelsPerMeter = 32;
 		const Vector2 viewportSize(context.window->getWidth(), context.window->getHeight());
 		setMainCamera(new Camera(viewportSize, pixelsPerMeter));	
 	}

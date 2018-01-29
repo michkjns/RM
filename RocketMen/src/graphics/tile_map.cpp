@@ -6,7 +6,7 @@
 #include <graphics/texture.h>
 
 TileMap::TileMap() :
-	m_tileSheet(""),
+	m_tileSheetName(""),
 	m_map(nullptr),
 	m_name(""),
 	m_mapWidth(0),
@@ -18,102 +18,57 @@ TileMap::TileMap() :
 {
 }
 
-bool TileMap::initialize(const std::string& tileSheet,
-				 char*       map,
-				 const char* name,
-				 uint32_t    mapWidth,
-				 uint32_t    mapHeight,
-				 uint32_t    sheetWidth,
-				 uint32_t    sheetHeight,
-				 uint32_t    tileSize)
-{
-	if (map == nullptr || name == nullptr)
-	{
-       	LOG_ERROR("TileMap::initialize: Invalid arguments.");
-		assert(map != nullptr); assert(name != nullptr);
-		return false;
-	}
-	const uint32_t numTiles = mapWidth * mapHeight;
-	m_tileSheet   = tileSheet;
-	m_map         = new char[numTiles];
-	memcpy_s(m_map, numTiles, map, numTiles);
-	
-	m_name        = name;
-	m_mapWidth    = mapWidth;
-	m_mapHeight   = mapHeight;
-	m_sheetWidth  = sheetWidth;
-	m_sheetHeight = sheetHeight;
-	m_tileSize    = tileSize;
-
-	const uint32_t imgWidth  = mapWidth  * tileSize;
-	const uint32_t imgHeight = mapHeight * tileSize;
-
-	uint32_t* image = new uint32_t[imgWidth * imgHeight];
-	for (uint32_t y = 0; y < mapHeight; y++)
-	{
-		for (uint32_t x = 0; x < mapWidth; x++)
-		{
-			image[x + y * imgWidth] = map[x + y * mapWidth] - '0' ;
-		}
-	}
-
- 	ResourceManager::createTexture(image, imgWidth, imgHeight, name);
-	delete[] image;
-	m_isInitialized = true;
-	return true;
-}
-
 TileMap::~TileMap()
 {
 
 }
 
-std::string TileMap::getName() const
-{
-	return m_name;
-}
-
-uint32_t TileMap::getTileSize() const
-{
-	return m_tileSize;
-}
-
-uint32_t TileMap::getMapWidth() const
-{
-	return m_mapWidth;
-}
-
-uint32_t TileMap::getMapHeight() const
-{
-	return m_mapHeight;
-}
-
-uint32_t TileMap::getSheetWidth() const
-{
-	return m_sheetWidth;
-}
-
-uint32_t TileMap::getSheetHeight() const
-{
-	return m_sheetHeight;
-}
-
-char* TileMap::getMap() const
-{
-	return m_map;
-}
-
-bool TileMap::isInitalized() const
-{
-	return m_isInitialized;
-}
-
-std::string TileMap::getTileSheetName() const
-{
-	return m_tileSheet;
-}
-
 void TileMap::destroy()
 {
 	delete[] m_map;
+}
+
+
+bool TileMap::initialize(const TileMapParam& parameters)
+{
+	if (parameters.tiles == nullptr || parameters.name == nullptr)
+	{
+       	LOG_ERROR("TileMap::initialize: Invalid arguments.");
+		return false;
+	}
+
+	const uint32_t numTiles = parameters.mapWidth * parameters.mapHeight;
+	m_tileSheetName = parameters.tileSheetName;
+	m_map = new char[numTiles];
+	memcpy_s(m_map, numTiles, parameters.tiles, numTiles);
+	
+	m_name        = parameters.name;
+	m_mapWidth    = parameters.mapWidth;
+	m_mapHeight   = parameters.mapHeight;
+	m_sheetWidth  = parameters.sheetWidth;
+	m_sheetHeight = parameters.sheetHeight;
+	m_tileSize    = parameters.tileSize;
+
+	createTexture();
+	
+	m_isInitialized = true;
+	return true;
+}
+
+void TileMap::createTexture()
+{
+	const uint32_t imageWidth = m_mapWidth * m_tileSize;
+	const uint32_t imageHeight = m_mapHeight * m_tileSize;
+
+	uint32_t* imageData = new uint32_t[imageWidth * imageHeight];
+	for (uint32_t y = 0; y < m_mapHeight; y++)
+	{
+		for (uint32_t x = 0; x < m_mapWidth; x++)
+		{
+			imageData[x + y * imageWidth] = m_map[x + y * m_mapWidth] - '0';
+		}
+	}
+
+	ResourceManager::createTexture(imageData, imageWidth, imageHeight, m_name.c_str());
+	delete[] imageData;
 }

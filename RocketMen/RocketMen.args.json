@@ -12,7 +12,7 @@
     },
     {
       "Id": "942758b9-f56b-4e81-ae68-90a5f9646c38",
-      "Command": "-l -o rm_l.lg -v 3"
+      "Command": "-l -o rm_l.log -v 3"
     }
   ]
 }

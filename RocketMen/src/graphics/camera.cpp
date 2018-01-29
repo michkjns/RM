@@ -120,12 +120,7 @@ Vector3 Camera::getEulerAngles() const
 	return glm::degrees(glm::eulerAngles(m_rotation));
 }
 
-#include <core/debug.h>
-
 Vector2 Camera::screenToWorld(const Vector2& screenPoint)
 {
-	Vector2 result = (screenPoint - m_viewportSize / 2.f) / (float)m_pixelsPerMeter * Vector2(m_scale.x, -m_scale.y) + Vector2(m_position.x, m_position.y);
-	LOG_DEBUG("%d, %d | %d, %d", (int)screenPoint.x, (int)screenPoint.y, (int)result.x, (int)result.y); /* + m_viewportSize / 2.f*/
-
-	return result;
+	return (screenPoint - m_viewportSize / 2.f) / (float)m_pixelsPerMeter * Vector2(m_scale.x, -m_scale.y) + Vector2(m_position.x, m_position.y);
 }

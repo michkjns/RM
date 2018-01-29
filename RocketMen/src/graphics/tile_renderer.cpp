@@ -70,9 +70,9 @@ void TileRenderer::render(const TileMap& tileMap, const glm::mat4& projectionVie
 		m_tileShader->setMatrix4("projection", projectionViewMatrix);
 
 		m_tileShader->setVec4f("map_info", glm::vec4(tileMap.getTileSize(),
-													 tileMap.getMapWidth(),
-													 tileMap.getMapHeight(),
-													 0));
+		                                             tileMap.getMapWidth(),
+		                                             tileMap.getMapHeight(),
+		                                             0));
 
 		glActiveTexture(GL_TEXTURE0);
 		ResourceManager::getTexture(tileMap.getName()).bind();

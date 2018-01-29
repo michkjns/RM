@@ -53,26 +53,25 @@ Shader& ResourceManager::getShader(const std::string& name)
 	return m_shaders[name];
 }
 
-Texture& ResourceManager::createTexture(const void*        imageData, 
-	                                    uint32_t           width,
-	                                    uint32_t           height,
-	                                    const char*        name)
+Texture& ResourceManager::createTexture(const void* imageData, 
+	                                    uint32_t    width,
+	                                    uint32_t    height,
+	                                    const char* name)
 {
-	if(Renderer::get() == nullptr)
-		return dummyTexture;
+	assert(Renderer::get() != nullptr);
 
 	LOG_INFO("ResourceManager: Creating texture %s", name);
 	Texture texture;
 	texture.generate(imageData, width, height);
 	m_textures[name] = texture;
+
 	return m_textures[name];
 }
 
-Texture& ResourceManager::loadTexture(const char*        file, 
-									  const char*        name)
+Texture& ResourceManager::loadTexture(const char* file, 
+									  const char* name)
 {
-	if (Renderer::get() == nullptr)
-		return dummyTexture;
+	assert(Renderer::get() != nullptr);
 
 	LOG_DEBUG("ResourceManager: Loading texture %s", file);
 	int width, height;
@@ -146,15 +145,19 @@ TileMap& ResourceManager::loadTilemap(const char* file,
 	const uint32_t mapHeight = atoi(heightStr.c_str());
 
 	TileMap tileMap;
-	bool success = tileMap.initialize(
-	    sheetName,
-	    &mapInput[0],
-	    name,
-	    mapWidth,
-	    mapHeight,
-	    2, 2, 16);
+	const TileMapParam param = 
+	{ 
+		name,
+		sheetName,
+		mapInput.data(),
+		mapWidth,
+		mapHeight,
+		2, 2,
+		16 
+	};
 
-	assert(success);
+	assert(tileMap.initialize(param));
+
 	m_tileMaps[name] = tileMap;
 	return m_tileMaps[name];
 }
