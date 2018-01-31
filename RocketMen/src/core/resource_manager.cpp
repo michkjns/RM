@@ -17,7 +17,7 @@
 
 std::map<std::string, Shader*>	ResourceManager::m_shaders;
 std::map<std::string, Texture*>	ResourceManager::m_textures;
-std::map<std::string, Tilemap*> ResourceManager::m_tileMaps;
+std::map<std::string, Tilemap*> ResourceManager::m_tilemaps;
 
 Shader* ResourceManager::loadShader(const char* vertexShaderFilePath,
 									const char* fragmentShaderFilePath, 
@@ -166,7 +166,7 @@ Tilemap* ResourceManager::loadTilemap(const char* filename,
 		Tilemap* tilemap = new Tilemap(param);
 		if (tilemap->getMap() != nullptr)
 		{
-			m_tileMaps[name] = tilemap;
+			m_tilemaps[name] = tilemap;
 			return tilemap;
 		}
 		else
@@ -183,17 +183,17 @@ Tilemap* ResourceManager::loadTilemap(const char* filename,
 
 Tilemap* ResourceManager::getTileMap(const char* name)
 {
-	return m_tileMaps[name];
+	return m_tilemaps[name];
 }
 
 void ResourceManager::clearTileMaps()
 {
-	for (auto tm : m_tileMaps)
+	for (auto tm : m_tilemaps)
 	{
 		delete tm.second;
 	}
 
-	m_tileMaps.clear();
+	m_tilemaps.clear();
 }
 
 void ResourceManager::clearTextures()

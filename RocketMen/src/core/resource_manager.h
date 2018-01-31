@@ -65,5 +65,5 @@ private:
 	
 	static std::map<std::string, Shader*>  m_shaders;
 	static std::map<std::string, Texture*> m_textures;
-	static std::map<std::string, Tilemap*> m_tileMaps;
+	static std::map<std::string, Tilemap*> m_tilemaps;
 };

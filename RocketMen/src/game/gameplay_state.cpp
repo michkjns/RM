@@ -49,6 +49,7 @@ void GameplayState::destroy(Game* /*game*/)
 
 void GameplayState::update(Game* game, const Time& time)
 {
+	ASSERT(game != nullptr);
 	const float deltaTime = time.getDeltaSeconds();
 
 	if (Network::isClient())
