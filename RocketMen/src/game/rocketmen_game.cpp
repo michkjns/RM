@@ -18,12 +18,12 @@ using namespace rm;
 void RocketMenGame::initialize(const GameContext& context)
 {
 	MenuState* menu = dynamic_cast<MenuState*>(Game::initialize(new RocketMenStateFactory(), GameStateID::Menu));
-	assert(menu != nullptr);
+	ASSERT(menu != nullptr);
 	menu->parseCommandLineOptions(this, context.options);
 
 	if (Renderer* renderer = Renderer::get())
 	{
-		assert(context.window != nullptr);
+		ASSERT(context.window != nullptr);
 
 		const int32_t pixelsPerMeter = 32;
 		const Vector2 viewportSize(context.window->getWidth(), context.window->getHeight());

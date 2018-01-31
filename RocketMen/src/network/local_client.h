@@ -67,7 +67,12 @@ namespace network
 		void readInput();
 		void connect(const Address& address, 
 			std::function<void(Game*, JoinSessionResult)> callback);
+
+		bool canConnect()    const { return m_state == LocalClient::State::Disconnected; }
+		bool canDisconnect() const { return m_state != State::Connected && m_state != State::Connecting;}
+
 		void disconnect();
+
 
 		LocalPlayer& addLocalPlayer(int32_t controllerId, bool listenMouseKB = false);
 		void requestEntity(int32_t netId);

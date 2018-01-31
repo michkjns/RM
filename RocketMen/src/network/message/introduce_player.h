@@ -20,7 +20,7 @@ namespace message {
 
 			if (Stream::isWriting)
 			{
-				assert(numPlayers >= 1 && numPlayers <= s_maxPlayersPerClient);
+				ASSERT(numPlayers >= 1 && numPlayers <= s_maxPlayersPerClient);
 			}
 
 			serializeInt(stream, numPlayers, 1, s_maxPlayersPerClient);

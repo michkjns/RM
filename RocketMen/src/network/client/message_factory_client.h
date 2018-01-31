@@ -62,7 +62,7 @@ namespace network {
 				case MessageType::ServerTime:
 				case MessageType::NUM_MESSAGE_TYPES:
 				{
-					assert(false);
+					ASSERT(false, "Illegal MessageType passed");
 					return nullptr;
 				}
 			}

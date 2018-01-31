@@ -47,7 +47,7 @@ inline Buffer<T>::~Buffer()
 template<typename T>
 inline T& Buffer<T>::insert()
 {
-	assert(m_count < m_capacity);
+	ASSERT(m_count < m_capacity, "Buffer overflow detected");
 	new (m_buffer + m_count) T();
 	return m_buffer[m_count++];
 }
@@ -55,7 +55,7 @@ inline T& Buffer<T>::insert()
 template<typename T>
 inline T& Buffer<T>::insert(T value)
 {
-	assert(m_count < m_capacity);
+	ASSERT(m_count < m_capacity, "Buffer overflow detected");
 	new (m_buffer + m_count) T();
 	m_buffer[m_count] = value;
 	return m_buffer[m_count++];
@@ -65,7 +65,7 @@ template<typename T>
 inline void Buffer<T>::remove(T& element)
 {
 	const uint32_t index = static_cast<uint32_t>(&element - m_buffer);
-	assert(index < m_count);
+	ASSERT(index < m_count, "invalid element");
 	m_buffer[index].~T();
 	std::swap(m_buffer[index], m_buffer[--m_count]);
 }

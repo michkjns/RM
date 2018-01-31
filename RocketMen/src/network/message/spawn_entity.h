@@ -23,9 +23,9 @@ namespace message {
 			{
 				serializeCheck(stream, "begin_entity");
 				LOG_DEBUG("SpawnEntity::write %d", rand());
-				assert(entity != nullptr);
+				ASSERT(entity != nullptr);
 				int32_t networkId = entity->getNetworkId();
-				assert(networkId >= 0 && networkId < s_maxNetworkedEntities);
+				ASSERT(networkId >= 0 && networkId < s_maxNetworkedEntities);
 
 				serializeInt(stream, networkId);
 
@@ -33,13 +33,13 @@ namespace message {
 				EntityManager::serializeFullEntity(entity, measureStream);
 
 				int32_t entitySize = measureStream.getMeasuredBits();
-				assert(entitySize > 0);
+				ASSERT(entitySize > 0);
 
 				serializeInt(stream, entitySize);
 				serializeCheck(stream, "begin_entity_data");
 				if (!EntityManager::serializeFullEntity(entity, stream))
 				{
-					assert(false);
+					ASSERT(false, "Unexpected error serializing entity");
 					return false;
 				}
 				serializeCheck(stream, "end_entity_data");

@@ -22,7 +22,7 @@ public:
 	static void instantiateEntity(Entity* entity, bool enableReplication = true);
 	static Entity* instantiateEntity(class ReadStream& stream);
 	static Entity* instantiateEntity(class ReadStream& stream, int32_t networkId);
-	static Entity* instantiateEntity(class WriteStream&, int32_t) { assert(false); return nullptr; }
+	static Entity* instantiateEntity(class WriteStream&, int32_t) { ASSERT(false, "Attempted to instantiate Entity with WriteStream"); return nullptr; }
 
 	static bool serializeFullEntity(Entity* entity, class ReadStream& stream,
 		bool includeType = true);

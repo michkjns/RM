@@ -41,7 +41,7 @@ LocalClient::LocalClient(Game* game) :
 {
 	clearSession();
 	m_socket = Socket::create();
-	assert(m_socket != nullptr);
+	ASSERT(m_socket != nullptr, "Failed to create valid socket instance");
 }
 
 LocalClient::~LocalClient()
@@ -64,7 +64,7 @@ void LocalClient::update(const Time& time)
 		return;
 	}
 
-	assert(m_connection != nullptr);
+	ASSERT(m_connection != nullptr);
 	m_timeSinceLastInputMessage += deltaTime;
 
 	const State prevState = m_state;
@@ -112,7 +112,7 @@ void LocalClient::update(const Time& time)
 void LocalClient::tick(Sequence frameCounter)
 {
 	Frame* currentFrame = m_clientHistory.insertFrame(frameCounter);
-	assert(currentFrame != nullptr);
+	ASSERT(currentFrame != nullptr);
 
 	for (LocalPlayer& player : m_localPlayers)
 	{
@@ -145,7 +145,7 @@ void LocalClient::sendPlayerActions()
 		{
 			const Sequence frameId = static_cast<Sequence>(startFromFrame) + i;
 			Frame* frame = m_clientHistory.getFrame(frameId);
-			assert(frame != nullptr);
+			ASSERT(frame != nullptr);
 			for (int32_t j = 0; j < message->numPlayers; j++)
 			{
 				frame->actions[j].serialize(stream);
@@ -159,7 +159,7 @@ void LocalClient::sendPlayerActions()
 		}
 
 		stream.flush();
-		assert(stream.getDataLength() < message::PlayerInput::maxDataLength);
+		ASSERT(stream.getDataLength() < message::PlayerInput::maxDataLength);
 		memcpy(message->data, stream.getData(), stream.getDataLength());
 		message->dataLength = stream.getDataLength();
 
@@ -186,15 +186,9 @@ void LocalClient::readInput()
 void LocalClient::connect(const Address& address, std::function<void(Game*, JoinSessionResult)> callback)
 {
 	using namespace std::placeholders;
-
-	if (!ensure(m_state == LocalClient::State::Disconnected))
-	{
-		LOG_ERROR("Client::connect: Already connected");
-		return;
-	}
-
-	assert(m_connection == nullptr);
-	assert(m_socket->isInitialized() == false);
+	ASSERT(canConnect(), "LocalClient must be disconnected before calling connect()");
+	ASSERT(m_connection == nullptr);
+	ASSERT(m_socket->isInitialized() == false);
 
 	if (m_socket->initialize(m_port))
 	{
@@ -213,20 +207,17 @@ void LocalClient::connect(const Address& address, std::function<void(Game*, Join
 
 void LocalClient::disconnect()
 {
-	if (m_state != State::Connected && m_state != State::Connecting)
-	{
-		return;
-	}
+	ASSERT(canDisconnect(), "LocalCLient must be connected before able to disconnect");
+	ASSERT(m_connection != nullptr);
 
 	m_connection->sendMessage(m_messageFactory.createMessage(MessageType::Disconnect));
-
 	setState(State::Disconnecting);
 	m_connection->close();
 }
 
 LocalPlayer& LocalClient::addLocalPlayer(int32_t controllerId, bool enableMouseKB)
 {
-	assert(m_localPlayers.getCount() < s_maxPlayersPerClient);
+	ASSERT(m_localPlayers.getCount() < s_maxPlayersPerClient, "Too many local players were added");
 
 	LocalPlayer& player = m_localPlayers.insert();
 	player.controllerId = controllerId;
@@ -236,7 +227,7 @@ LocalPlayer& LocalClient::addLocalPlayer(int32_t controllerId, bool enableMouseK
 
 void LocalClient::requestEntity(int32_t netId)
 {
-	assert(netId > INDEX_NONE && netId < s_maxNetworkedEntities);
+	ASSERT(netId > INDEX_NONE && netId < s_maxNetworkedEntities, "Invalid NetworkId provided");
 	if (!m_requestedEntities.contains(netId))
 	{
 		m_requestedEntities.insert(netId);
@@ -336,7 +327,7 @@ void LocalClient::readMessage(const Message& message, const Time& localTime)
 		case MessageType::RequestTime:
 		case MessageType::NUM_MESSAGE_TYPES:
 		{
-			assert(false);
+			ASSERT(false, "Illegal MessageType received");
 			break;
 		}
 	}
@@ -344,7 +335,7 @@ void LocalClient::readMessage(const Message& message, const Time& localTime)
 
 void LocalClient::onConnectionAccepted(const message::AcceptConnection& inMessage)
 {
-	assert(m_state == State::Connecting);
+	ASSERT(m_state == State::Connecting);
 
 	setState(State::Connected);
 	LOG_INFO("Client: Connection established with the server. My ID: %d", inMessage.clientId);
@@ -385,7 +376,7 @@ void LocalClient::onAcceptPlayer(const message::AcceptPlayer& inMessage)
 
 void LocalClient::onSpawnEntity(const message::SpawnEntity& inMessage)
 {
-	assert(inMessage.entity != nullptr);
+	ASSERT(inMessage.entity != nullptr, "No valid entity provided by the message");
 
 	const int32_t networkId = inMessage.entity->getNetworkId();
 	LOG_DEBUG("Client: Received entity %d", networkId);
@@ -423,7 +414,7 @@ void LocalClient::onSnapshot(const message::Snapshot& inMessage)
 	{
 		for (int32_t i = 0; i < inMessage.numMissingEntities; i++)
 		{
-			assert(inMessage.missingEntityIds[i] != INDEX_NONE);
+			ASSERT(inMessage.missingEntityIds[i] != INDEX_NONE, "Entity must have a valid NetworkId");
 			requestEntity(inMessage.missingEntityIds[i]);
 		}
 	}
@@ -441,19 +432,19 @@ void LocalClient::onServerTime(const message::ServerTime& inMessage, const Time&
 
 void LocalClient::onDisconnected()
 {
-	assert(m_connection != nullptr);
+	ASSERT(m_connection != nullptr);
 	setState(LocalClient::State::Disconnected);
 }
 
 void LocalClient::sendMessage(Message* message)
 {
-	assert(m_connection != nullptr);
+	ASSERT(m_connection != nullptr);
 	m_connection->sendMessage(message);
 }
 
 void LocalClient::sendPendingMessages(const Time& localTime)
 {
-	assert(m_connection != nullptr);
+	ASSERT(m_connection != nullptr);
 
 	m_connection->sendPendingMessages(localTime);
 }
@@ -498,14 +489,14 @@ void LocalClient::readMessages(const Time& localTime)
 	while (Message* message = m_connection->getNextMessage())
 	{
 		readMessage(*message, localTime);
-		assert(message->releaseRef());
+		ASSERT(message->releaseRef(), "Message had dangling references at the end of their lifetime");
 	}
 }
 
 void LocalClient::onConnectionCallback(ConnectionCallback type, Connection* connection)
 {
-	assert(connection != nullptr);
-	assert(connection == m_connection);
+	ASSERT(connection != nullptr);
+	ASSERT(connection == m_connection);
 
 	switch (type)
 	{
@@ -530,7 +521,7 @@ void LocalClient::onConnectionCallback(ConnectionCallback type, Connection* conn
 		}
 		case ConnectionCallback::ConnectionReceived:
 		{
-			assert(false);
+			ASSERT(false, "LocalClient is not allowed to receive incoming connections");
 			break;
 		}
 	}

@@ -55,9 +55,9 @@ Window* Window::create()
 
 bool Window_glfw::initialize(const char* title, const Vector2i& size)
 {
-	assert(title != nullptr);
-	assert(size.x > 0);
-	assert(size.y > 0);
+	ASSERT(title != nullptr);
+	ASSERT(size.x > 0, "Window width must be > 0");
+	ASSERT(size.y > 0, "Window height must be > 0");
 
 	m_size = size;
 
@@ -101,7 +101,7 @@ void Window_glfw::terminate()
 
 void Window_glfw::swapBuffers()
 {
-	assert(m_glfwWindow != nullptr);
+	ASSERT(m_glfwWindow != nullptr);
 	GLenum error = glGetError();
 	if (error != GL_NO_ERROR)
 	{
@@ -120,7 +120,7 @@ bool Window_glfw::pollEvents()
 
 void Window_glfw::onResize(GLFWwindow* glfwWindow, const Vector2i& newSize)
 {
-	assert(glfwWindow == m_glfwWindow);
+	ASSERT(glfwWindow == m_glfwWindow, "Unknown glfw window instance");
 
 	glViewport(0, 0, newSize.x, newSize.y);
 	m_size = newSize;

@@ -26,7 +26,7 @@ MenuState::~MenuState()
 
 void MenuState::initialize(Game* game)
 {
-	assert(game != nullptr);
+	ASSERT(game != nullptr);
 	m_locked = false;
 }
 
@@ -41,7 +41,7 @@ void MenuState::destroy(Game* /*game*/)
 
 void MenuState::update(Game* game, const Time& /*time*/)
 {
-	assert(game != nullptr);
+	ASSERT(game != nullptr);
 
 	if (!m_locked)
 	{
@@ -72,7 +72,7 @@ void MenuState::render(Game* /*game*/)
 
 void MenuState::parseCommandLineOptions(Game* game, const CommandLineOptions& options)
 {
-	assert(game != nullptr);
+	ASSERT(game != nullptr);
 
 	if (options.isSet("--listen"))
 	{
@@ -99,7 +99,7 @@ void MenuState::host(Game* game)
 
 void MenuState::join(Game* game, const network::Address& address)
 {
-	assert(game != nullptr);
+	ASSERT(game != nullptr);
 
 	m_locked = true;
 	game->joinSession(address, std::bind(&MenuState::onSessionJoinCallback, this, _1, _2));
@@ -107,7 +107,7 @@ void MenuState::join(Game* game, const network::Address& address)
 
 void MenuState::onSessionJoinCallback(Game* game, JoinSessionResult result)
 {
-	assert(game != nullptr);
+	ASSERT(game != nullptr);
 
 	if (result == JoinSessionResult::Joined)
 	{

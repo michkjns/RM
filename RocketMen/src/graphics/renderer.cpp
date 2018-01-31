@@ -150,7 +150,7 @@ void Renderer_glfw::renderSprites(const Camera& camera)
 
 void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, const Color& color, bool inScreenSpace)
 {
-	assert(m_currentCamera != nullptr);
+	ASSERT(m_currentCamera != nullptr);
 
 	Shader::unbindCurrentShader();
 
@@ -178,10 +178,10 @@ void Renderer_glfw::drawPolygon(const Vector2* vertices, int32_t vertexCount, co
 
 void Renderer_glfw::drawLineSegment(const LineSegment& segment, const Color& color)
 {
-	assert(m_currentCamera != nullptr);
+	ASSERT(m_currentCamera != nullptr, "No active camera");
 
 	Shader* lineShader = ResourceManager::getShader("line_shader");
-	assert(lineShader != nullptr);
+	ASSERT(lineShader != nullptr);
 
 	lineShader->use();
 	

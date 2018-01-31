@@ -12,7 +12,6 @@
 
 using namespace input;
 
-const uint32_t s_numMaxControllers = 4;
 const int32_t s_maxControllerButtons = 16;
 
 /** Raw Input Data */
@@ -41,7 +40,7 @@ struct ControllerState
 	std::unordered_map<ControllerButton, ActionEvent> buttonMap;
 };
 
-static ControllerState s_controllerState[s_numMaxControllers];
+static ControllerState s_controllerState[NumSupportedControllers];
 static std::unordered_map<Key, ActionEvent> s_keyMap;
 static std::unordered_map<MouseButton, ActionEvent> s_mouseMap;
 static ActionBuffer s_mouseAndKeyboardActions;
@@ -51,7 +50,8 @@ static GLFWwindow* s_glfwWindow = nullptr;
 // ============================================================================
 static void keyCallback(GLFWwindow* window, int key, int /*scancode*/, int glfw_action, int /*mods*/)
 {
-	assert(window == s_glfwWindow);
+	ASSERT(window == s_glfwWindow, "callback came from another glswf window instance");
+
 //	LOG_DEBUG("%i", key);
 
 	if (key == GLFW_KEY_UNKNOWN)
@@ -74,7 +74,7 @@ static void keyCallback(GLFWwindow* window, int key, int /*scancode*/, int glfw_
 
 static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
 {
-	assert(window == s_glfwWindow);
+	ASSERT(window == s_glfwWindow, "Callback came from another glswf window instance");
 	s_mousePosxRel = xpos - s_mousePosx;
 	s_mousePosyRel = ypos - s_mousePosy;
 	s_mousePosx = xpos;
@@ -83,7 +83,7 @@ static void cursorPositionCallback(GLFWwindow* window, double xpos, double ypos)
 
 static void mouseButtonCallback(GLFWwindow* window, int button, int glfw_action, int /*mods*/)
 {
-	assert(window == s_glfwWindow);
+	ASSERT(window == s_glfwWindow, "Callback came from another glswf window instance");
 
 	const bool repeat = s_prevMouseState[button] != ButtonState::Release && glfw_action == GLFW_PRESS;
 	const ButtonState state = repeat ? ButtonState::Repeat : ButtonState(glfw_action);
@@ -106,7 +106,7 @@ static void controllerCallback(int joy, int /*event*/)
 
 static void refreshControllerStates()
 {
-	for (ControllerId controllerId = GLFW_JOYSTICK_1; controllerId < s_numMaxControllers; controllerId++)
+	for (ControllerId controllerId = GLFW_JOYSTICK_1; controllerId < input::NumSupportedControllers; controllerId++)
 	{
 		if(!glfwJoystickPresent(controllerId))
 			continue;
@@ -139,19 +139,16 @@ static void refreshControllerStates()
 
 bool input::initialize(Window* window)
 {
-	if (assert(window != nullptr))
-	{
-		s_glfwWindow = window->getGLFWwindow();
-		assert(s_glfwWindow != nullptr);
+	ASSERT(window != nullptr);
+	s_glfwWindow = window->getGLFWwindow();
+	ASSERT(s_glfwWindow != nullptr);
 
-		glfwSetKeyCallback(s_glfwWindow, keyCallback);
-		glfwSetCursorPosCallback(s_glfwWindow, cursorPositionCallback);
-		glfwSetMouseButtonCallback(s_glfwWindow, mouseButtonCallback);
-		glfwSetJoystickCallback(controllerCallback);
+	glfwSetKeyCallback(s_glfwWindow, keyCallback);
+	glfwSetCursorPosCallback(s_glfwWindow, cursorPositionCallback);
+	glfwSetMouseButtonCallback(s_glfwWindow, mouseButtonCallback);
+	glfwSetJoystickCallback(controllerCallback);
 
-		return true;
-	}
-	return false;
+	return true;
 }
 
 void input::update()
@@ -206,9 +203,9 @@ bool input::getMouseDown(MouseButton button)
 
 float input::getAxis(ControllerId controllerId, int32_t axis)
 {
-	assert(controllerId >= 0);
-	assert(controllerId < s_numMaxControllers);
-	assert(axis >= 0);
+	ASSERT(controllerId >= 0, "controllerId cannot be negative");
+	ASSERT(controllerId < input::NumSupportedControllers, "controllerId exceeds maxControllers");
+	ASSERT(axis >= 0, "axis cannot be negativ");
 
 	if (s_controllerState[controllerId].numAxes <= 0
 		|| axis >= s_controllerState[controllerId].numAxes)
@@ -220,7 +217,7 @@ float input::getAxis(ControllerId controllerId, int32_t axis)
 
 void input::getActions(ControllerId controllerId, ActionBuffer& inputBuffer, bool includeMouseAndKeyboard)
 {
-	assert(controllerId >= 0);
+	ASSERT(controllerId >= 0, "controllerId cannot be negative");
 	if (controllerId != Controller::MouseAndKeyboard)
 	{
 		ControllerState& controller = s_controllerState[controllerId];
@@ -254,8 +251,8 @@ void input::mapAction(std::string name, MouseButton mouseButton, ButtonState inp
 
 void input::mapAction(std::string name, ControllerButton controllerButton, ButtonState inputEvent, const ControllerId controllerId)
 {
-	assert(controllerId != Controller::MouseAndKeyboard);
-	assert(controllerId >= 0 && controllerId < s_numMaxControllers);
+	ASSERT(controllerId != Controller::MouseAndKeyboard, "Cannot map ControllerButtons to the MouseAndKeyboard controller");
+	ASSERT(controllerId >= 0 && controllerId < input::NumSupportedControllers, "Invalid controllerId");
 
 	std::hash<std::string> strHash;
 	s_controllerState[controllerId].buttonMap[controllerButton] = { inputEvent, strHash(toLower(name)) };

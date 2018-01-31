@@ -80,7 +80,7 @@ GameState* Game::initialize(GameStateFactory* stateFactory, uint32_t stateId)
 {
 	LOG_INFO("Game: [%s v%s]\n", getName(), getVersion());
 
-	assert(stateFactory != nullptr);
+	ASSERT(stateFactory != nullptr);
 	m_stateFactory = stateFactory;
 
 	setTimestep(33333ULL / 2);
@@ -135,7 +135,7 @@ void Game::processPlayerActions(ActionBuffer& actions, int16_t playerId)
 GameState* Game::pushState(uint32_t stateId)
 {
 	GameState* state = m_stateFactory->getState(stateId);
-	assert(state != nullptr);
+	ASSERT(state != nullptr);
 
 	m_stateMachine.push(state, this);
 
@@ -150,7 +150,7 @@ void Game::popState()
 
 bool Game::createSession(GameSessionType type)
 {
-	assert(m_server == nullptr);
+	ASSERT(m_server == nullptr);
 
 	LOG_INFO("Game: Creating server..");
 	m_server = new network::Server(this);
@@ -163,7 +163,7 @@ bool Game::createSession(GameSessionType type)
 void Game::joinSession(const network::Address& address, 
 	std::function<void(Game*, JoinSessionResult)> callback)
 {
-	assert(m_client == nullptr);
+	ASSERT(m_client == nullptr, "a LocalClient already exists");
 
 	LOG_INFO("Game: connecting to %s...", address.toString().c_str());
 	m_client = new network::LocalClient(this);

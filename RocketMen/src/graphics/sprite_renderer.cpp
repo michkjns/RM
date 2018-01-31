@@ -7,7 +7,7 @@
 
 SpriteRenderer::SpriteRenderer()
 {
-	assert(initialize());
+	ASSERT(initialize(), "Unexpected error initializing SpriteRenderer");
 }
 
 SpriteRenderer::~SpriteRenderer()

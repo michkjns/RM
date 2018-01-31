@@ -148,8 +148,7 @@ inline Sequence SequenceBuffer<T>::getCurrentSequence() const
 template<typename T>
 inline T* SequenceBuffer<T>::getAtIndex(int32_t index) const
 {
-	assert(index >= 0);
-	assert(index < m_size);
+	ASSERT(index >= 0 && index < m_size, "index out of range");
 	return m_exist[index] ? &m_buffer[index] : nullptr;
 }
 

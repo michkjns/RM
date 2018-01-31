@@ -22,8 +22,8 @@ RemoteClient::~RemoteClient()
 
 void RemoteClient::initialize(int32_t id, Connection* connection)
 {
-	assert(isAvailable());
-	assert(connection != nullptr);
+	ASSERT(isAvailable());
+	ASSERT(connection != nullptr);
 
 	m_connection = connection;
 	m_id         = id;
@@ -40,13 +40,13 @@ void RemoteClient::clear()
 
 void RemoteClient::addPlayer(int16_t playerId)
 {
-	assert(playerId >= 0);
+	ASSERT(playerId >= 0);
 	m_playerIds.insert(playerId);
 }
 
 void RemoteClient::sendMessage(Message* message)
 {
-	assert(m_connection != nullptr);
+	ASSERT(m_connection != nullptr);
 	m_connection->sendMessage(message);
 }
 

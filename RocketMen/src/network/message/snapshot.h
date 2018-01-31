@@ -29,7 +29,7 @@ namespace message {
 			}
 
 			int32_t numEntities = static_cast<int32_t>(networkEntities.size());
-			assert(numEntities <= s_maxNetworkedEntities);
+			ASSERT(numEntities <= s_maxNetworkedEntities, "Number of networked entities exceeds the maximum");
 			serializeInt(stream, numEntities, 0, s_maxNetworkedEntities);
 
 			for (int32_t networkId = 0; networkId < s_maxNetworkedEntities; networkId++)
@@ -60,7 +60,7 @@ namespace message {
 				}
 			}
 
-			assert(serializeCheck(stream, "end_snapshot"));
+			serializeCheck(stream, "end_snapshot");
 
 			return true;
 		}
@@ -120,10 +120,6 @@ namespace message {
 						if (numMissingEntities < maxMissingEntityIds)
 						{
 							missingEntityIds[numMissingEntities++] = networkId;
-						}
-						else
-						{
-							assert(false);
 						}
 
 						serializeCheck(stream, "begin_entity_data");

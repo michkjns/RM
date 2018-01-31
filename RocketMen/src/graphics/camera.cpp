@@ -11,7 +11,7 @@ Camera::Camera(Vector2 viewportSize, int32_t pixelsPerMeter) :
 	m_isDirty(false),
 	m_pixelsPerMeter(pixelsPerMeter)
 {
-	assert(pixelsPerMeter != 0);
+	ASSERT(pixelsPerMeter != 0);
 
 	m_projectionSize = Vector2(viewportSize.x / pixelsPerMeter, viewportSize.y / pixelsPerMeter);
 

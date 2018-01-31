@@ -13,7 +13,7 @@ ActionBuffer::ActionBuffer() :
 
 void ActionBuffer::insert(const Action& action)
 {
-	assert(m_actions.getCount() < s_maxActions);
+	ASSERT(m_actions.getCount() < s_maxActions, "ActionBuffer overflow");
 	m_actions.insert(action);
 }
 

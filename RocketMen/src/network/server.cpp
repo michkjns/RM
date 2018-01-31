@@ -47,7 +47,7 @@ void Server::reset()
 	
 	delete m_socket;
 	m_socket = Socket::create();
-	assert(m_socket != nullptr);
+	ASSERT(m_socket != nullptr);
 }
 
 void Server::update(const Time& time)
@@ -68,14 +68,9 @@ void Server::fixedUpdate()
 
 bool Server::host(uint16_t port, GameSessionType type)
 {
-	assert(m_socket != nullptr);
-	assert(type != GameSessionType::None);
-
-	if (!ensure(m_socket->isInitialized() == false))
-	{
-		LOG_WARNING("Server: Already listening to connections on port %d", m_socket->getPort());
-		return false;
-	}
+	ASSERT(m_socket != nullptr);
+	ASSERT(type != GameSessionType::None);
+	ASSERT(m_socket->isInitialized() == false, "Cannot host if a socket is already active");
 
 	if (m_socket->initialize(port))
 	{
@@ -103,7 +98,7 @@ void Server::registerLocalClientId(int32_t clientId)
 
 void Server::destroyEntity(int32_t networkId)
 {
-	assert(networkId < s_maxNetworkedEntities);
+	ASSERT(networkId < s_maxNetworkedEntities);
 	message::DestroyEntity* message = dynamic_cast<message::DestroyEntity*>(m_messageFactory.createMessage(MessageType::DestroyEntity));
 	message->entityNetworkId = networkId;
 	m_clients.sendMessage(message, true);
@@ -214,8 +209,8 @@ void Server::onKeepAlive(RemoteClient& client)
 
 void Server::sendEntitySpawn(Entity* entity, RemoteClient& client)
 {
-	assert(entity != nullptr);
-	assert(entity->getNetworkId() > INDEX_NONE);
+	ASSERT(entity != nullptr);
+	ASSERT(entity->getNetworkId() > INDEX_NONE);
 
 	message::SpawnEntity* spawnMessage = 
 		dynamic_cast<message::SpawnEntity*>(m_messageFactory.createMessage(MessageType::SpawnEntity));
@@ -228,8 +223,8 @@ void Server::sendEntitySpawn(Entity* entity, RemoteClient& client)
 
 void Server::sendEntitySpawn(Entity* entity)
 {
-	assert(entity != nullptr);
-	assert(entity->getNetworkId() > INDEX_NONE);
+	ASSERT(entity != nullptr);
+	ASSERT(entity->getNetworkId() > INDEX_NONE);
 
 	message::SpawnEntity* message = dynamic_cast<message::SpawnEntity*>(m_messageFactory.createMessage(MessageType::SpawnEntity));
 	message->entity = entity;
@@ -308,7 +303,7 @@ void Server::createSnapshots(float deltaTime)
 
 void Server::receivePackets()
 {
-	assert(m_game->getSessionType() != GameSessionType::Offline);
+	ASSERT(m_game->getSessionType() != GameSessionType::Offline);
 
 	m_packetReceiver->receivePackets(m_socket, &m_clientMessageFactory);
 
@@ -349,11 +344,11 @@ void Server::readMessages(const Time& time)
 		if (client.isUsed())
 		{
 			Connection* connection = client.getConnection();
-			assert(connection != nullptr);
+			ASSERT(connection != nullptr);
 			while (Message* message = connection->getNextMessage())
 			{
 				readMessage(*message, client, time);
-				assert(message->releaseRef());
+				ASSERT(message->releaseRef(), "Message has unexpected dangling references");
 			}
 		}
 	}
@@ -361,14 +356,14 @@ void Server::readMessages(const Time& time)
 
 void Server::onConnectionCallback(ConnectionCallback type, Connection* connection)
 {
-	assert(connection != nullptr);
+	ASSERT(connection != nullptr);
 
 	switch (type)
 	{
 		case ConnectionCallback::ConnectionLost:
 		{
 			RemoteClient* client = m_clients.getClient(connection);
-			assert(client != nullptr);
+			ASSERT(client != nullptr);
 
 			for (auto playerId : client->getPlayerIds())
 			{
@@ -402,10 +397,10 @@ Connection* Server::addConnection(const Address& address)
 			message::AcceptConnection* message = 
 				dynamic_cast<message::AcceptConnection*>(m_messageFactory.createMessage(MessageType::AcceptConnection));
 
-			assert(message != nullptr);
+			ASSERT(message != nullptr);
 
 			message->clientId = client->getId();
-			assert(message->clientId >= 0 && message->clientId < s_maxConnectedClients);
+			ASSERT(message->clientId >= 0 && message->clientId < s_maxConnectedClients, "ClientId out of range");
 			LOG_INFO("Server::addConnection: New ClientId: %d", message->clientId);
 
 			client->sendMessage(message);
@@ -416,7 +411,7 @@ Connection* Server::addConnection(const Address& address)
 		else
 		{
 			delete connection;
-			assert(false);
+			ASSERT(false, "Unexpected error adding new client");
 		}
 	}
 	else

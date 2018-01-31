@@ -81,7 +81,7 @@ public:
 	void alignToByte() { m_writer.alignToByte(); }
 	void flush() { m_writer.flush(); }
 	void release() { m_buffer = nullptr; }
-	void skipBits(int32_t /*numBits*/) { assert(false); }
+	void skipBits(int32_t /*numBits*/) { ASSERT(false, "Attempted to skip bits on a WriteStream"); }
 
 	char*  getData() const { return m_buffer; }
 	inline int32_t getDataLength() const { return m_writer.getDataLength(); }
@@ -172,8 +172,8 @@ inline int32_t bitsRequired(uint32_t min, uint32_t max)
 template<typename Stream, typename T>
 void serializeBits(Stream& stream, T& value, int32_t numBits)
 {
-	assert(numBits > 0);
-	assert(numBits <= 32);
+	ASSERT(numBits > 0);
+	ASSERT(numBits <= 32);
 	uint32_t var32 = static_cast<uint32_t>(value);
 	stream.serializeBits(var32, numBits);
 	value = static_cast<T>(var32);
@@ -190,8 +190,8 @@ void serializeBool(Stream& stream, bool& value)
 template<typename Stream>
 void serializeData(Stream& stream, char* data, int32_t length)
 {
-	assert(data != nullptr);
-	assert(length > 0);
+	ASSERT(data != nullptr);
+	ASSERT(length > 0);
 	stream.serializeData(data, length);
 }
 
@@ -199,20 +199,20 @@ void serializeData(Stream& stream, char* data, int32_t length)
 template<typename Stream>
 void serializeInt(Stream& stream, uint32_t& value, uint32_t min, uint32_t max)
 {
-	assert(min < max);
+	ASSERT(min < max);
 
 	if (Stream::isWriting)
 	{
-		assert(value >= min);
-		assert(value <= max);
+		ASSERT(value >= min);
+		ASSERT(value <= max);
 	}
 
 	stream.serializeInt(value, min, max);
 
 	if (Stream::isReading)
 	{
-		assert(value >= min);
-		assert(value <= max);
+		ASSERT(value >= min);
+		ASSERT(value <= max);
 	}
 }
 
@@ -234,20 +234,20 @@ void serializeInt(Stream& stream, uint32_t& value)
 template<typename Stream>
 void serializeInt(Stream& stream, int32_t& value, int32_t min, int32_t max)
 {
-	assert(min < max);
+	ASSERT(min < max, "min was larger than max");
 
 	if (Stream::isWriting)
 	{
-		assert(value >= min);
-		assert(value <= max);
+		ASSERT(value >= min);
+		ASSERT(value <= max);
 	}
 
 	stream.serializeInt(value, min, max);
 
 	if (Stream::isReading)
 	{
-		assert(value >= min);
-		assert(value <= max);
+		ASSERT(value >= min, "value out of range");
+		ASSERT(value <= max, "value out of range");
 	}
 }
 
@@ -278,7 +278,7 @@ template<typename Stream>
 bool serializeFloat(Stream& stream, float& value, float min, 
                         float max, float precision)
 {
-	assert(min < max);
+	ASSERT(min < max, "min was smaller than max");
 	if (min > max) return false;
 
 	const float delta = max - min;
@@ -393,5 +393,7 @@ void serializeVector3(Stream& stream, Vector3& vector)
 template<typename Stream>
 bool serializeCheck(Stream& stream, const char* string)
 {
-	return assert(stream.serializeCheck(string));
+	const bool success = stream.serializeCheck(string);
+	ASSERT(success, "Serialize Check failed");
+	return success;
 }

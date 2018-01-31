@@ -19,7 +19,7 @@ static Game* s_gameInstance;
 
 inline bool isReplicated(Entity* entity)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	for (const auto& ent : s_entities)
 	{
 		if (ent == entity)
@@ -36,15 +36,15 @@ IEntityFactory* EntityManager::getFactory(EntityType type)
 
 void EntityManager::registerFactory(IEntityFactory* factory)
 {
-	assert(factory != nullptr);
+	ASSERT(factory != nullptr);
 	s_factories[static_cast<int32_t>(factory->getType())] = factory;
 }
 
 void EntityManager::instantiateEntity(Entity* entity, bool enableReplication)
 {
-	assert(entity != nullptr);
-	assert(!isReplicated(entity));
-	ensure(s_entityIds.hasAvailable());
+	ASSERT(entity != nullptr);
+	ASSERT(!isReplicated(entity));
+	ASSERT(s_entityIds.hasIdsAvailable(), "Ran out of Entity Ids");
 
 	entity->m_id = s_entityIds.getNext();
 	s_newEntities.push_back(entity);
@@ -61,7 +61,7 @@ Entity* EntityManager::instantiateEntity(ReadStream& stream)
 	int32_t intType = INDEX_NONE;
 	stream.serializeInt(intType, 0, s_numEntityTypes);
 
-	assert(intType > INDEX_NONE && intType < s_numEntityTypes);
+	ASSERT(intType > INDEX_NONE && intType < s_numEntityTypes);
 	type = static_cast<EntityType>(intType);
 	Entity* entity = getFactory(type)->instantiate(stream);
 
@@ -72,12 +72,12 @@ Entity* EntityManager::instantiateEntity(ReadStream& stream)
 
 Entity* EntityManager::instantiateEntity(ReadStream& stream, int32_t networkId)
 {
-	assert(networkId >= INDEX_NONE);
+	ASSERT(networkId >= INDEX_NONE, "Entity already has a NetworkId");
 	EntityType type = EntityType::Entity;
 	int32_t intType = INDEX_NONE;
 	stream.serializeInt(intType, 0, s_numEntityTypes);
 
-	assert(intType > INDEX_NONE && intType < s_numEntityTypes);
+	ASSERT(intType > INDEX_NONE && intType < s_numEntityTypes, "Illegal entity type");
 	type = static_cast<EntityType>(intType);
 	Entity* entity = getFactory(type)->instantiate(stream);
 
@@ -92,13 +92,13 @@ Entity* EntityManager::instantiateEntity(ReadStream& stream, int32_t networkId)
 
 bool EntityManager::serializeFullEntity(Entity* entity, ReadStream& stream, bool includeType)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
 		int32_t readType = INDEX_NONE;
 		stream.serializeInt(readType, 0, s_numEntityTypes);
-		ensure(readType == intType);
+		ASSERT(readType == intType, "Serialized EntityType does not match the entity's type");
 	}
 
 	const bool result = getFactory(entity->getType())->serializeFull(entity, stream);
@@ -108,7 +108,7 @@ bool EntityManager::serializeFullEntity(Entity* entity, ReadStream& stream, bool
 
 bool EntityManager::serializeFullEntity(Entity* entity, WriteStream& stream, bool includeType)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
@@ -122,7 +122,7 @@ bool EntityManager::serializeFullEntity(Entity* entity, WriteStream& stream, boo
 
 bool EntityManager::serializeFullEntity(Entity* entity, MeasureStream& stream, bool includeType)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	if (includeType)
 	{
 		int32_t intType = static_cast<int32_t>(entity->getType());
@@ -136,36 +136,24 @@ bool EntityManager::serializeFullEntity(Entity* entity, MeasureStream& stream, b
 
 bool EntityManager::serializeEntity(Entity* entity, WriteStream& stream)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	const bool result = getFactory(entity->getType())->serialize(entity, stream);
 	return result;
 }
 
 bool EntityManager::serializeEntity(Entity* entity, ReadStream& stream)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	const bool result = getFactory(entity->getType())->serialize(entity, stream);
 	return result;
 }
 
 bool EntityManager::serializeEntity(Entity* entity, MeasureStream& stream)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	const bool result = getFactory(entity->getType())->serialize(entity, stream);
 	return result;
 }
-
-//bool EntityManager::serializeClientVars(Entity* entity, WriteStream& stream)
-//{
-//	assert(entity != nullptr);
-//	return getFactory(entity->getType())->serializeClientVars(entity, stream);
-//}
-//
-//bool EntityManager::serializeClientVars(Entity* entity, ReadStream& stream)
-//{
-//	assert(entity != nullptr);
-//	return getFactory(entity->getType())->serializeClientVars(entity, stream);
-//}
 
 void EntityManager::flushEntities()
 {

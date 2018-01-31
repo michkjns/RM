@@ -52,24 +52,25 @@ namespace network
 		template<typename Stream>
 		bool serialize(Stream& stream, MessageFactory* messageFactory)
 		{
-			assert(serializeCheck(stream, "packet_start"));
+			serializeCheck(stream, "packet_start");
 
 			/** Serialize Header */
 			if (Stream::isWriting)
 			{
-				assert(header.numMessages >= 0 && header.numMessages < g_maxMessagesPerPacket);
+				ASSERT(header.numMessages >= 0 && header.numMessages < g_maxMessagesPerPacket,
+					"Invalid number of messages specified in packet");
 			}
 			serializeData(stream, (char*)&header, sizeof(header));
 			if (Stream::isReading)
 			{
-//				int32_t asdc = 3;
 				if (header.numMessages <= 0 || header.numMessages >= g_maxMessagesPerPacket)
 				{
-					return ensure(false);
+					ASSERT(false, "Invalid value for numMessages");
+					return false;
 				}
 			}
 
-			assert(serializeCheck(stream, "packet_test"));
+			serializeCheck(stream, "packet_test");
 
 			/** Serialize Message Ids */
 			for (int32_t i = 0; i < header.numMessages; i++)
@@ -86,36 +87,36 @@ namespace network
 			{
 				if (Stream::isWriting)
 				{
-					assert(messageTypes[i] > MessageType::None);
-					assert(messageTypes[i] < MessageType::NUM_MESSAGE_TYPES);
+					ASSERT(messageTypes[i] > MessageType::None);
+					ASSERT(messageTypes[i] < MessageType::NUM_MESSAGE_TYPES);
 				}
 			
 				if (Stream::isReading)
 				{
-					assert(messageFactory != nullptr);
+					ASSERT(messageFactory != nullptr);
 					if (messageTypes[i] <= MessageType::None || messageTypes[i] >= MessageType::NUM_MESSAGE_TYPES)
 					{
-						return ensure(false);
+						return false;
 					}
 
 					messages[i] = messageFactory->createMessage(messageTypes[i]);
 
 					if (messages[i] == nullptr)
 					{
-						return ensure(false);
+						return false;
 					}
 					messages[i]->assignId(messageIds[i]);
 				}
 
-				assert(serializeCheck(stream, "begin_message"));
+				serializeCheck(stream, "begin_message");
 				if (!messages[i]->serialize(stream))
 				{
-					return ensure(false);
+					return false;
 				}
-				assert(serializeCheck(stream, "end_message"));
+				serializeCheck(stream, "end_message");
 			}
 
-			assert(serializeCheck(stream, "packet_end"));
+			serializeCheck(stream, "packet_end");
 			if (Stream::isWriting)
 			{
 				stream.flush();

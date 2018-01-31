@@ -3,6 +3,7 @@
 
 #include <core/debug.h>
 #include <core/game.h>
+#include <core/input.h>
 #include <network/local_client.h>
 #include <network/server.h>
 
@@ -23,7 +24,7 @@ bool Network::isServer()
 
 void Network::generateNetworkId(Entity* entity)
 {
-	assert(entity != nullptr);
+	ASSERT(entity != nullptr);
 	if (isServer())
 	{
 		s_server->generateNetworkId(entity);
@@ -32,8 +33,8 @@ void Network::generateNetworkId(Entity* entity)
 
 void Network::addLocalPlayer(int32_t controllerId)
 {
-	assert(s_client != nullptr);
-	assert(controllerId >= 0);
+	ASSERT(s_client != nullptr);
+	ASSERT(controllerId >= 0 && controllerId <= input::NumSupportedControllers, "Invalid controllerId");
 	s_client->addLocalPlayer(controllerId);
 }
 

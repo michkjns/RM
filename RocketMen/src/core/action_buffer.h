@@ -38,15 +38,15 @@ private:
 	Buffer<input::Action> m_actions;
 
 public:
-	inline input::Action operator[] (uint32_t i) const
+	inline input::Action operator[] (uint32_t index) const
 	{
-		assert(i < getCount() && i >= 0);
-		return (m_actions[i]);
+		ASSERT(index < getCount() && index >= 0, "Invalid index");
+		return (m_actions[index]);
 	}
 
-	inline input::Action& operator[] (uint32_t i)
+	inline input::Action& operator[] (uint32_t index)
 	{
-		assert(i < getCount() && i >= 0);
-		return (m_actions[i]);
+		ASSERT(index < getCount() && index >= 0, "Invalid index");
+		return (m_actions[index]);
 	}
 };

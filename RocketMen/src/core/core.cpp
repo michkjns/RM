@@ -37,7 +37,7 @@ Core::~Core()
 
 void Core::initialize(Game* game, const CommandLineOptions& options)
 {
-	assert(game != nullptr);
+	ASSERT(game != nullptr, "game cannot be null");
 	m_game = game;
 
 	crcInit();
@@ -107,7 +107,7 @@ bool Core::loadResources()
 
 void Core::run()
 {
-	assert(m_game != nullptr);
+	ASSERT(m_game != nullptr, "No valid game instance set");
 
 	float currentTime = m_gameTime.getSeconds();
 	float accumulator = 0.0f;

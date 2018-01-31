@@ -13,11 +13,11 @@ Tilemap::Tilemap(const TilemapParam& parameters) :
 	m_tileSheetName(parameters.tileSheetName),
 	m_map(nullptr)
 {
-	assert(parameters.name != nullptr);
-	assert(parameters.tileSheetName != nullptr);
-	assert(parameters.tileData.size() > 0);
-	assert(m_width > 0);
-	assert(m_height > 0);
+	ASSERT(parameters.name != nullptr, "Tilemap name cannot be null");
+	ASSERT(parameters.tileSheetName != nullptr, "Tilesheet name Cannot be null");
+	ASSERT(parameters.tileData.size() > 0, "tileData cannot be empty");
+	ASSERT(m_width > 0, "Tilemap width cannot be 0");
+	ASSERT(m_height > 0, "Tilemap height cannot be 0");
 
 	std::string tiles;
 	for (char character : parameters.tileData)
@@ -49,7 +49,7 @@ Tilemap::~Tilemap()
 
 Vector2i Tilemap::getDimensionsFromFilename(const char* filename)
 {
-	assert(filename != nullptr);
+	ASSERT(filename != nullptr);
 	std::string widthHeight(filename);
 
 	const int32_t dotFirst = static_cast<int32_t>(widthHeight.find_first_of('.', 0));

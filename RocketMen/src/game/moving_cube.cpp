@@ -53,10 +53,14 @@ template<typename Stream>
 inline bool MovingCube::serializeFull(Stream& stream)
 {
 	serializeCheck(stream, "begin_moving_cube_full");
-	ensure(Entity::serializeFull(stream));
+	if (!Entity::serializeFull(stream))
+	{
+		return false;
+	}
+
 	if (!serialize(stream))
 	{
-		return ensure(false);
+		return false;
 	}
 	serializeCheck(stream, "end_moving_cube_full");
 	return true;
@@ -68,7 +72,7 @@ inline bool MovingCube::serialize(Stream& stream)
 	serializeCheck(stream, "begin_moving_cube");
 	if (!m_transform.serialize(stream))
 	{
-		return ensure(false);
+		return false;
 	}
 
 	serializeCheck(stream, "end_moving_cube");

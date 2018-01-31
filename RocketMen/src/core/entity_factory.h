@@ -31,7 +31,7 @@ class EntityFactory : public IEntityFactory
 public:
 	EntityFactory()
 	{
-		assert(EntityManager::getFactory(getType()) == nullptr);
+		ASSERT(EntityManager::getFactory(getType()) == nullptr, "Cannot register more than one factory per Entity Type");
 		EntityManager::registerFactory(dynamic_cast<IEntityFactory*>(this));
 	}
 
@@ -54,37 +54,37 @@ public:
 
 	virtual bool serializeFull(Entity* entity, WriteStream& stream) override
 	{
-		assert(entity != nullptr);
+		ASSERT(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serializeFull(stream);
 	}
 
 	bool serializeFull(Entity* entity, ReadStream& stream) override
 	{
-		assert(entity != nullptr);
+		ASSERT(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serializeFull(stream);
 	}
 
 	bool serializeFull(Entity* entity, MeasureStream& stream) override
 	{
-		assert(entity != nullptr);
+		ASSERT(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serializeFull(stream);
 	}
 
 	bool serialize(Entity* entity, WriteStream& stream) override
 	{
-		assert(entity != nullptr);
+		ASSERT(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 
 	bool serialize(Entity* entity, ReadStream& stream) override
 	{
-		assert(entity != nullptr);
+		ASSERT(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 
 	bool serialize(Entity* entity, MeasureStream& stream) override
 	{
-		assert(entity != nullptr);
+		ASSERT(entity != nullptr);
 		return dynamic_cast<T*>(entity)->serialize(stream);
 	}
 

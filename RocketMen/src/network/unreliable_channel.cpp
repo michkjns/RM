@@ -24,7 +24,7 @@ UnreliableChannel::~UnreliableChannel()
 	{
 		if (message)
 		{
-			assert(message->releaseRef());
+			ASSERT(message->releaseRef());
 		}
 	}
 
@@ -32,14 +32,14 @@ UnreliableChannel::~UnreliableChannel()
 	{
 		if (message)
 		{
-			assert(message->releaseRef());
+			ASSERT(message->releaseRef());
 		}
 	}
 }
 
 void UnreliableChannel::sendMessage(Message* message)
 {
-	assert(message->getChannel() == ChannelType::UnreliableUnordered);
+	ASSERT(message->getChannel() == ChannelType::UnreliableUnordered);
 	m_sendQueue.insert(message);
 	m_queuedSendMessages++;
 }
@@ -70,9 +70,9 @@ Message* UnreliableChannel::getNextMessage()
 		if (messageEntry != nullptr)
 		{
 			Message* message = messageEntry;
-			assert(message != nullptr);
-			assert(message->getType() != MessageType::None);
-			assert(message->getChannel() == ChannelType::UnreliableUnordered);
+			ASSERT(message != nullptr);
+			ASSERT(message->getType() != MessageType::None);
+			ASSERT(message->getChannel() == ChannelType::UnreliableUnordered);
 
 			messageEntry = nullptr;
 			return message;
@@ -100,7 +100,7 @@ Packet* UnreliableChannel::createPacket(const Time& /*time*/)
 		Message* message = m_sendQueue[i];
 		if (message != nullptr)
 		{
-			assert(message->getChannel() == ChannelType::UnreliableUnordered);
+			ASSERT(message->getChannel() == ChannelType::UnreliableUnordered);
 
 			message->assignId(m_nextMessageId++);
 

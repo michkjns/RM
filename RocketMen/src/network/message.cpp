@@ -11,7 +11,7 @@ Message::Message() :
 
 Message::~Message()
 {
-	assert(m_refCount == 0);
+	ASSERT(m_refCount == 0);
 }
 
 Message* Message::addRef()
@@ -22,7 +22,7 @@ Message* Message::addRef()
 
 bool Message::releaseRef()
 {
-	assert(m_refCount > 0);
+	ASSERT(m_refCount > 0);
 
 	m_refCount--;
 	if (m_refCount == 0)

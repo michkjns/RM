@@ -10,9 +10,9 @@ using namespace network;
 
 void NetworkChannel::sendPacket(Socket* socket, const Address& address, Packet* packet, MessageFactory* messageFactory)
 {
-	assert(socket != nullptr);
-	assert(packet != nullptr);
-	assert(socket->isInitialized());
+	ASSERT(socket != nullptr);
+	ASSERT(packet != nullptr);
+	ASSERT(socket->isInitialized());
 	
 	WriteStream packetStream(g_maxPacketSize);
 

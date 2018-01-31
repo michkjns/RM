@@ -27,7 +27,7 @@ public:
 		return m_max;
 	}
 
-	inline bool hasAvailable() const
+	inline bool hasIdsAvailable() const
 	{
 		for (int32_t i = 0; i < m_size - 1; i++)
 		{
@@ -39,7 +39,7 @@ public:
 
 	inline bool exists(int32_t id) const
 	{
-		assert(id >= 0 && id < m_max);
+		ASSERT(id >= 0 && id < m_max, "id out of range");
 		const int32_t index = id == 0 ? 0 : id / 64;
 		const int64_t remainder = static_cast<uint64_t>(id % 64);
 
@@ -53,7 +53,7 @@ public:
 
 	inline void set(int32_t id)
 	{
-		assert(id >= 0 && id <= m_max);
+		ASSERT(id >= 0 && id <= m_max, "id out of range");
 
 		const int32_t index = id == 0 ? 0 : id / 64;
 		const int32_t remainder = id % 64;
@@ -62,7 +62,7 @@ public:
 
 	inline void remove(int32_t id)
 	{
-		assert(id >= 0 && id < m_max);
+		ASSERT(id >= 0 && id < m_max, "id out of range");
 
 		const int32_t index = id == 0 ? 0 : id / 64;
 		const int32_t remainder = id % 64;
@@ -77,7 +77,7 @@ public:
 
 	inline int32_t getNext()
 	{
-		if (!hasAvailable())
+		if (!hasIdsAvailable())
 		{
 			return INDEX_NONE;
 		}
@@ -85,7 +85,7 @@ public:
 		const int32_t result = m_nextId;
 		set(result);
 
-		if (hasAvailable())
+		if (hasIdsAvailable())
 		{
 			while (exists(m_nextId))
 			{

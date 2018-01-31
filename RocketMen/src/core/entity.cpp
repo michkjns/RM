@@ -55,7 +55,7 @@ std::string Entity::getSpriteName() const
 
 void Entity::setNetworkId(int32_t networkId)
 {
-	assert(m_networkId <= INDEX_NONE);
+	ASSERT(m_networkId <= INDEX_NONE, "NetworkId cannot be changed once set");
 	m_networkId = networkId;
 }
 

@@ -18,7 +18,7 @@ namespace message {
 
 				if (Stream::isWriting)
 				{
-					assert(numPlayers >= 1 && numPlayers <= s_maxPlayersPerClient);
+					ASSERT(numPlayers >= 1 && numPlayers <= s_maxPlayersPerClient);
 				}
 
 				serializeInt(stream, numPlayers, 1, s_maxPlayersPerClient);
@@ -35,7 +35,7 @@ namespace message {
 				{
 					if (Stream::isWriting)
 					{
-						assert(playerIds[i] >= 0);
+						ASSERT(playerIds[i] >= 0);
 					}
 
 					serializeBits(stream, playerIds[i], 16);

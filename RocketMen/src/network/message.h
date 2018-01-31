@@ -17,7 +17,6 @@ namespace network
 	struct Message
 	{
 		Message();
-		~Message();
 
 		void assignId(Sequence id) { m_id = id;	}
 		Sequence getId() const { return m_id; }
@@ -31,7 +30,10 @@ namespace network
 		virtual bool serialize(WriteStream& stream) = 0;
 		virtual bool serialize(ReadStream& stream) = 0;
 
+	protected:
+		virtual ~Message();
 	private: 
+
 		int32_t     m_refCount;
 		Sequence    m_id;
 	};

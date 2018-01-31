@@ -24,14 +24,14 @@ Connection::Connection(Socket* socket, const Address& address, ConnectionCallbac
 	m_connectionCallback(callback),
 	m_messageFactory(messageFactory)
 {
-	assert(socket != nullptr);
-	assert(socket->isInitialized());
+	ASSERT(socket != nullptr);
+	ASSERT(socket->isInitialized());
 	m_socket = socket;
 }
 
 Connection::~Connection()
 {
-	assert(m_state == State::Closed);
+	ASSERT(m_state == State::Closed, "Connection state not properly closed");
 	
 	delete m_unreliableChannel;
 	delete m_reliableOrderedChannel;
@@ -104,7 +104,7 @@ void Connection::receivePacket(Packet& packet)
 	}
 	else
 	{
-		assert(channel == ChannelType::ReliableOrdered);
+		ASSERT(channel == ChannelType::ReliableOrdered);
 		m_reliableOrderedChannel->receivePacket(packet);
 	}
 
@@ -155,7 +155,7 @@ Connection::State Connection::getState() const
 
 void Connection::tryConnect()
 {
-	assert(m_state == State::Disconnected);
+	ASSERT(m_state == State::Disconnected);
 
 	Message* message = m_messageFactory.createMessage(MessageType::RequestConnection);
 	sendMessage(message);

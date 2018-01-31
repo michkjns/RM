@@ -36,10 +36,10 @@ void Character::update(float /*deltaTime*/)
 	if (Network::isClient())
 	{
 		Game* game = getGame();
-		assert(game != nullptr);
+		ASSERT(game != nullptr);
 		
 		Camera* camera = game->getMainCamera();
-		assert(camera != nullptr);
+		ASSERT(camera != nullptr);
 
 		const Vector2 screenMousePosition = input::getMousePosition();
 		const Vector2 worldMousePosition = camera->screenToWorld(screenMousePosition);
@@ -56,10 +56,10 @@ void Character::debugDraw()
 	if (Network::isLocalPlayer(getOwnerPlayerId()))
 	{
 		Game* game = getGame();
-		assert(game != nullptr);
+		ASSERT(game != nullptr);
 		
 		Camera* camera = game->getMainCamera();
-		assert(camera != nullptr);
+		ASSERT(camera != nullptr);
 
 		const Vector2 position = m_transform.getWorldPosition();
 		const float aimLineLength = 10.f;
@@ -99,8 +99,8 @@ Rigidbody* Character::getRigidbody() const
 
 void Character::posessbyPlayer(int16_t playerId)
 {
-	assert(m_actionListener == nullptr);
-	assert(playerId != INDEX_NONE);
+	ASSERT(m_actionListener == nullptr);
+	ASSERT(playerId != INDEX_NONE);
 
 	m_actionListener = new ActionListener(playerId);
 	m_actionListener->registerAction("Fire", &Character::Fire, this);
@@ -132,7 +132,7 @@ bool Character::serializeFull(Stream& stream)
 
 	if (!serialize(stream))
 	{
-		return ensure(false);
+		return false;
 	}
 	
 	serializeCheck(stream, "end_character_full");
@@ -147,7 +147,7 @@ bool Character::serialize(Stream& stream)
 
 	if (!m_transform.serialize(stream))
 	{
-		return ensure(false);
+		return false;
 	}
 
 	serializeCheck(stream, "end_character");

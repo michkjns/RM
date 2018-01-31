@@ -43,7 +43,7 @@ ReliableOrderedChannel::~ReliableOrderedChannel()
 
 void ReliableOrderedChannel::sendMessage(Message* message)
 {
-	assert(canSendMessage());
+	ASSERT(canSendMessage());
 	if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.insert(m_nextSendMessageId))
 	{
 		message->assignId(m_nextSendMessageId);
@@ -56,8 +56,7 @@ void ReliableOrderedChannel::sendMessage(Message* message)
 	}
 	else
 	{
-		LOG_ERROR("ReliableOrderedChannel::sendMessage: Failed to queue message");
-		assert(false);
+		ASSERT(false, "ReliableOrderedChannel::sendMessage: Unexpected error queueing message");
 	}
 }
 
@@ -109,10 +108,10 @@ Message* ReliableOrderedChannel::getNextMessage()
 	if (IncomingMessageEntry* messageEntry = m_messageReceiveQueue.getEntry(m_nextReceiveMessageId))
 	{
 		Message* message = messageEntry->message;
-		assert(message != nullptr);
-		assert(message->getType() != MessageType::None);
-		assert(message->getId() == m_nextReceiveMessageId);
-		assert(message->getChannel() == ChannelType::ReliableOrdered);
+		ASSERT(message != nullptr);
+		ASSERT(message->getType() != MessageType::None);
+		ASSERT(message->getId() == m_nextReceiveMessageId);
+		ASSERT(message->getChannel() == ChannelType::ReliableOrdered);
 		
 		m_messageReceiveQueue.remove(m_nextReceiveMessageId);
 
@@ -212,7 +211,7 @@ Packet* ReliableOrderedChannel::createPacket(const Time& time)
 {
 	const Sequence packetSequence = m_sentPackets.getCurrentSequence();
 	SentPacketEntry* packetEntry = m_sentPackets.insert(packetSequence);
-	assert(packetEntry != nullptr);
+	ASSERT(packetEntry != nullptr, "Failed to create packet entry");
 	packetEntry->numMessages = 0;
 
 	Packet* packet = new Packet();
@@ -224,8 +223,8 @@ Packet* ReliableOrderedChannel::createPacket(const Time& time)
 		if (OutgoingMessageEntry* messageEntry = m_messageSendQueue.getAtIndex(i))
 		{
 			Message* message = messageEntry->message;
-			assert(message->getType() != MessageType::None);
-			assert(message->getChannel() == ChannelType::ReliableOrdered);
+			ASSERT(message->getType() != MessageType::None);
+			ASSERT(message->getChannel() == ChannelType::ReliableOrdered);
 
 			if (time.getSeconds() - messageEntry->timeLastSent >= s_messageResendTime)
 			{

@@ -32,7 +32,7 @@ static inline const char* entityTypeAsString(EntityType type)
 		}
 	}
 
-	assert(false);
+	ASSERT(false, "Invalid EntityType value");
 	return "Invalid EntityType";
 }
 #undef CASE_RETURN_STRING

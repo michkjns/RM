@@ -57,7 +57,7 @@ void GameplayState::update(Game* game, const Time& time)
 		const float cameraSpeed = 2.20f * deltaTime;
 
 		Camera* camera = game->getMainCamera();
-		assert(camera != nullptr);
+		ASSERT(camera != nullptr);
 
 		camera->translate(Vector3(axis, 0.0f, 0.0f) * cameraSpeed);
 

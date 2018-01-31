@@ -93,7 +93,7 @@ bool Shader::compile(const std::string& vertexShader, const std::string& fragmen
 				case Type::VERTEX_SHADER:	LOG_ERROR("Failed to compile vertex shader ");	break;
 				//case Type::GEOMETRY_SHADER: LOG_ERROR("Failed to compile geometry shader '%s'", shaderFile);		break;
 			}
-			assert(false);
+			ASSERT(false, "Invalid shader type");
 			return false;
 			/// Compile error!
 		}

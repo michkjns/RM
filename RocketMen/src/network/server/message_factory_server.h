@@ -68,13 +68,12 @@ namespace network {
 				case MessageType::RequestTime:
 				case MessageType::NUM_MESSAGE_TYPES:
 				{
-					LOG_ERROR("MessageFactoryServer::createMessage Message Type %d not allowed", (int32_t)type);
-					assert(false);
+					ASSERT(false, "MessageFactoryServer::createMessage Message Type %d not allowed", (int32_t)type);
 					return nullptr;
 				}
 			}
 
-			assert(false);
+			ASSERT(false);
 			return nullptr;
 		}
 	};

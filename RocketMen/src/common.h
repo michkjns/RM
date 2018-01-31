@@ -28,20 +28,18 @@ using iColor   = glm::ivec4;
 using Sequence = uint16_t;
 
 #ifdef assert
-#undef assert
+	#undef assert
 #endif
 
-#if defined __GNUC__
-#define LIKELY(EXPR)  __builtin_expect(!!(EXPR), 1)
+#ifdef _DEBUG
+#define ASSERT(expression, ...) do { if (!(expression)) \
+{ \
+	( fprintf(stderr, "Assertion Failed: " __VA_ARGS__) && fprintf(stderr," at %s:%d\n",__FILE__,__LINE__));\
+__debugbreak();  \
+} } while (0) 
 #else
-#define LIKELY(EXPR)  (!!(EXPR))
+#define ASSERT(test, msg, ...) ((void)0)
 #endif
-
-#define ensure(X) (LIKELY(!!(X)) || (__debugbreak(), !!(X)))
-
-#define _assert(expression) (!!(expression)) || \
-    (_wassert(_CRT_WIDE(#expression), _CRT_WIDE(__FILE__), (unsigned)(__LINE__)), 0)
-#define assert(X) ((bool)(X) ? true : (_assert(false), false))
 
 inline bool sequenceGreaterThan(Sequence s1, Sequence s2)
 {

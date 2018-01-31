@@ -9,6 +9,8 @@
 class Window;
 namespace input {
 
+	static const int32_t NumSupportedControllers = 4;
+
 	bool initialize(Window* window);
 	void update();
 

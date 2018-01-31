@@ -58,7 +58,7 @@ public:
 template<typename Stream>
 inline bool Transform2D::serializeFull(Stream& stream)
 {
-	return ensure(serialize(stream));
+	return serialize(stream);
 }
 
 template<typename Stream>
@@ -67,7 +67,7 @@ inline bool Transform2D::serialize(Stream& stream)
 	Vector2 position = getLocalPosition();
 	if (!serializeVector2(stream, position))
 	{
-		return ensure(false);
+		return false;
 	}
 
 	if (Stream::isReading)

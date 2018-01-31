@@ -9,9 +9,9 @@ Texture::Texture(const void* imageData, uint32_t width, uint32_t height) :
 	m_width(0),
 	m_height(0)
 {
-	assert(imageData != nullptr);
-	assert(width > 0);
-	assert(height > 0);
+	ASSERT(imageData != nullptr);
+	ASSERT(width > 0, "Texture width must be > 0");
+	ASSERT(height > 0, "Texture height must be > 0");
 
 	glGenTextures(1, &m_id);
 	glBindTexture(GL_TEXTURE_2D, m_id);

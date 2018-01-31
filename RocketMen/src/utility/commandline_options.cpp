@@ -86,6 +86,6 @@ std::vector<std::string> CommandLineOptions::getArgs(const char* optionName) con
 		}
 	}
 
-	assert(false);
+	ASSERT(false, "Unknown option passed");
 	return std::vector<std::string>();
 }

@@ -12,7 +12,7 @@ RemoteClientManager::RemoteClientManager(int32_t size) :
 	m_localClientId(INDEX_NONE),
 	m_clientIdCounter(0)
 {
-	assert(size > 0);
+	ASSERT(size > 0, "size cannot be 0");
 	m_size = size;
 	m_clients = new RemoteClient[m_size];
 }
@@ -24,7 +24,7 @@ RemoteClientManager::~RemoteClientManager()
 
 RemoteClient* RemoteClientManager::add(Connection* connection)
 {
-	assert(connection != nullptr);
+	ASSERT(connection != nullptr);
 	if (getClient(connection))
 	{
 		return nullptr;
@@ -44,7 +44,7 @@ RemoteClient* RemoteClientManager::add(Connection* connection)
 
 void RemoteClientManager::remove(RemoteClient* client)
 {
-	assert(client != nullptr);
+	ASSERT(client != nullptr);
 
 	if (!client->getConnection()->isClosed())
 	{

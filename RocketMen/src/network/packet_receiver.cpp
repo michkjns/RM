@@ -31,8 +31,8 @@ PacketReceiver::~PacketReceiver()
 
 void PacketReceiver::receivePackets(Socket* socket, MessageFactory* messageFactory)
 {
-	assert(socket != nullptr);
-	assert(socket->isInitialized());
+	ASSERT(socket != nullptr);
+	ASSERT(socket->isInitialized(), "Socket must be initialized first");
 
 	Address address;
 	char    buffer[g_maxPacketSize];

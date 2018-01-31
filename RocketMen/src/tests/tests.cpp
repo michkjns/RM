@@ -30,20 +30,20 @@ struct SerializationTestStruct
 	template<typename Stream>
 	bool serialize(Stream& stream)
 	{
-		assert(serializeCheck(stream, "begin_SerializationTestStruct"));
+		serializeCheck(stream, "begin_SerializationTestStruct");
 		serializeInt(stream, ivalue, 0, 10);
-		assert(serializeFloat(stream, fvalue, 0.0f, 1.0f, 0.01f));
+		ASSERT(serializeFloat(stream, fvalue, 0.0f, 1.0f, 0.01f));
 		serializeInt(stream, rand_ivalue);
 		serializeVector3(stream, vector);
 		serializeVector3(stream, vector2, 0.0f, 2.0f, 0.1f);
 		serializeInt(stream, ivalue2);
-		assert(serializeVector2(stream, vector3));
-		assert(serializeFloat(stream, fvalue2));
-		assert(serializeVector2(stream, vector3));
+		ASSERT(serializeVector2(stream, vector3));
+		ASSERT(serializeFloat(stream, fvalue2));
+		ASSERT(serializeVector2(stream, vector3));
 		serializeInt(stream, ivalue2);
-		assert(serializeVector2(stream, vector3));
-		assert(serializeVector2(stream, vector4));
-		assert(serializeCheck(stream, "end_SerializationTestStruct"));
+		ASSERT(serializeVector2(stream, vector3));
+		ASSERT(serializeVector2(stream, vector4));
+		serializeCheck(stream, "end_SerializationTestStruct");
 		return true;
 	}
 };
@@ -74,7 +74,7 @@ bool testMeasureStream()
 	
 	const int32_t measuredSize = measureStream.getMeasuredBytes();
 	const int32_t writeSize = writeStream.getDataLength();
-	assert(measuredSize == writeSize);
+	ASSERT(measuredSize == writeSize);
 	if (measuredSize != writeSize)
 	{
 		return false;
@@ -103,59 +103,70 @@ bool testSerialization()
 
 	const int32_t measuredSize = measureStream.getMeasuredBytes();
 	const int32_t writeSize = writeStream.getDataLength();
-	assert(measuredSize == writeSize);
+	ASSERT(measuredSize == writeSize);
 
 	memcpy(readStream.getData(), writeStream.getData(), writeStream.getDataLength());
 
 	SerializationTestStruct receiveStruct;
 	receiveStruct.serialize(readStream);
 
-	if (!assert(receiveStruct.ivalue2 == testStruct.ivalue2))
+	if (receiveStruct.ivalue2 != testStruct.ivalue2)
 	{
-		return false;
-	}
-	if (!assert(receiveStruct.ivalue == testStruct.ivalue))
-	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if (!assert(receiveStruct.fvalue == testStruct.fvalue))
+	if (receiveStruct.ivalue != testStruct.ivalue)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if (!assert(receiveStruct.rand_ivalue == testStruct.rand_ivalue))
+	if (receiveStruct.fvalue != testStruct.fvalue)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if (!assert(glm::distance(receiveStruct.vector, testStruct.vector) < 0.01f))
+	if (receiveStruct.rand_ivalue != testStruct.rand_ivalue)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if(!assert(glm::distance(receiveStruct.vector2, testStruct.vector2) < 0.1f))
+	if (glm::distance(receiveStruct.vector, testStruct.vector) > 0.01f)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if(!assert(receiveStruct.fvalue2 == testStruct.fvalue2))
+	if(glm::distance(receiveStruct.vector2, testStruct.vector2) > 0.1f)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if(!assert(receiveStruct.ivalue2 == testStruct.ivalue2))
+	if(receiveStruct.fvalue2 != testStruct.fvalue2)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if (!assert(glm::distance(receiveStruct.vector3, testStruct.vector3) < 0.01f))
+	if(receiveStruct.ivalue2 != testStruct.ivalue2)
 	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 
-	if (!assert(glm::distance(receiveStruct.vector4, testStruct.vector4) < 0.01f))
+	if (glm::distance(receiveStruct.vector3, testStruct.vector3) > 0.01f)
 	{
+		ASSERT(false, "Serialization Test Failed");
+		return false;
+	}
+
+	if (glm::distance(receiveStruct.vector4, testStruct.vector4) > 0.01f)
+	{
+		ASSERT(false, "Serialization Test Failed");
 		return false;
 	}
 

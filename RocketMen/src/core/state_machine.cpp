@@ -13,7 +13,7 @@ StateMachine::StateMachine() :
 
 StateMachine::~StateMachine()
 {
-	assert(m_currentState == nullptr);
+	ASSERT(m_currentState == nullptr, "All states have to be destroyed before the StateMachine");
 }
 
 GameState* StateMachine::getState() const

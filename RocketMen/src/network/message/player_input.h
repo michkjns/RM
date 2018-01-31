@@ -18,7 +18,7 @@ namespace message {
 
 				if (Stream::isWriting)
 				{
-					assert(numFrames > 0);
+					ASSERT(numFrames > 0);
 				}
 				serializeInt(stream, numFrames);
 				if (Stream::isReading)

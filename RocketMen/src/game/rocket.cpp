@@ -50,7 +50,7 @@ void Rocket::update(float /*deltaTime*/)
 
 void Rocket::fixedUpdate(float deltaTime)
 {
-	assert(m_isInitialized);
+	ASSERT(m_isInitialized);
 	m_rigidbody->setLinearVelocity(m_direction * m_accelerationPower);
 	m_lifetimeSeconds += deltaTime;
 
@@ -105,12 +105,15 @@ void Rocket::endContact(Entity* /*other*/)
 template<typename Stream>
 bool Rocket::serializeFull(Stream& stream)
 {
-	ensure(Entity::serializeFull(stream));
+	if (!Entity::serializeFull(stream))
+	{
+		return false;
+	}
 
 	int32_t ownerId = INDEX_NONE;
 	if (Stream::isWriting)
 	{
-		assert(m_owner != nullptr);
+		ASSERT(m_owner != nullptr);
 		ownerId = m_owner->getNetworkId();
 	}
 
@@ -118,7 +121,7 @@ bool Rocket::serializeFull(Stream& stream)
 	if (Stream::isReading)
 	{
 		if (ownerId >= s_maxNetworkedEntities || ownerId < 0)
-			return ensure(false);
+			return false;
 
 		auto& entityList = EntityManager::getEntities();
 		m_owner = findPtrByPredicate(entityList.begin(), entityList.end(),
@@ -127,11 +130,11 @@ bool Rocket::serializeFull(Stream& stream)
 	
 	if (!serializeFloat(stream, m_accelerationPower))
 	{
-		return ensure(false);
+		return false;
 	}
 
 	if (!serialize(stream))
-		return ensure(false);
+		return false;
 
 	if (Stream::isReading)
 	{
@@ -145,7 +148,7 @@ template<typename Stream>
 bool Rocket::serialize(Stream& stream)
 {	
 	if (!m_transform.serialize(stream))
-		return ensure(false);
+		return false;
 
 	return true;
 }

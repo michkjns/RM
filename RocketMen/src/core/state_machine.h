@@ -27,7 +27,7 @@ private:
 template<typename T>
 void StateMachine::push(GameState* state, T* owner)
 {
-	assert(state != nullptr);
+	ASSERT(state != nullptr);
 	state->m_previousState = m_currentState;
 	m_currentState = state;
 

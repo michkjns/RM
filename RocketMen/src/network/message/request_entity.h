@@ -16,7 +16,7 @@ namespace message {
 			serializeCheck(stream, "begin_request_entity");
 			if (Stream::isWriting)
 			{
-				assert(entityNetworkId >= 0 && entityNetworkId < s_maxNetworkedEntities);
+				ASSERT(entityNetworkId >= 0 && entityNetworkId < s_maxNetworkedEntities);
 			}
 
 			serializeInt(stream, entityNetworkId, 0, s_maxNetworkedEntities);
