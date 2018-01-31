@@ -20,7 +20,7 @@ Message* Message::addRef()
 	return this;
 }
 
-bool Message::releaseRef()
+void Message::releaseRef()
 {
 	ASSERT(m_refCount > 0);
 
@@ -28,9 +28,6 @@ bool Message::releaseRef()
 	if (m_refCount == 0)
 	{
 		delete this;
-		return true;
 	}
-
-	return false;
 }
 

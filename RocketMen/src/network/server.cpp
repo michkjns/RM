@@ -348,7 +348,8 @@ void Server::readMessages(const Time& time)
 			while (Message* message = connection->getNextMessage())
 			{
 				readMessage(*message, client, time);
-				ASSERT(message->releaseRef(), "Message has unexpected dangling references");
+				ASSERT(message->getRefCount() == 1, "Message has unexpected dangling references");
+				message->releaseRef();
 			}
 		}
 	}

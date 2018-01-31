@@ -489,7 +489,8 @@ void LocalClient::readMessages(const Time& localTime)
 	while (Message* message = m_connection->getNextMessage())
 	{
 		readMessage(*message, localTime);
-		ASSERT(message->releaseRef(), "Message had dangling references at the end of their lifetime");
+		ASSERT(message->getRefCount() == 1, "Message had dangling references at the end of their lifetime");
+		message->releaseRef();
 	}
 }
 

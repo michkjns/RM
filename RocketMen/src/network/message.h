@@ -22,8 +22,9 @@ namespace network
 		Sequence getId() const { return m_id; }
 	
 		Message* addRef();
-		bool releaseRef();
+		void releaseRef();
 
+		int32_t getRefCount() const { return m_refCount; }
 		virtual MessageType getType() const = 0;
 		virtual ChannelType getChannel() const = 0;
 

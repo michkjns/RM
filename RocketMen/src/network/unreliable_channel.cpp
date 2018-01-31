@@ -24,7 +24,8 @@ UnreliableChannel::~UnreliableChannel()
 	{
 		if (message)
 		{
-			ASSERT(message->releaseRef());
+			ASSERT(message->getRefCount() == 1, "Message has unexpected dangling references");
+			message->releaseRef();
 		}
 	}
 
@@ -32,7 +33,8 @@ UnreliableChannel::~UnreliableChannel()
 	{
 		if (message)
 		{
-			ASSERT(message->releaseRef());
+			ASSERT(message->getRefCount() == 1, "Message has unexpected dangling references");
+			message->releaseRef();
 		}
 	}
 }
